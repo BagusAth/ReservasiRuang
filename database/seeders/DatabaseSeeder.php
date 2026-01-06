@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,11 +17,76 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Seed Roles
+        // 1 = Master Admin (dapat mengelola semua akun admin & user)
+        // 2 = Admin (dapat mengelola reservasi)
+        // 3 = User (dapat melakukan reservasi)
+        DB::table('roles')->insert([
+            [
+                'role_name' => 'master_admin',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'role_name' => 'admin',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'role_name' => 'user',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Seed Rooms
+        DB::table('rooms')->insert([
+            [
+                'room_name' => 'Ruang Rapat A',
+                'capacity' => 10,
+                'location' => 'Lantai 1',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'room_name' => 'Ruang Rapat B',
+                'capacity' => 20,
+                'location' => 'Lantai 2',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'room_name' => 'Ruang Konferensi',
+                'capacity' => 50,
+                'location' => 'Lantai 3',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+
+        // Seed Users
+        // Master Admin - dapat mengelola semua akun admin & user
+        User::create([
+            'name' => 'Master Admin',
+            'email' => 'master@gmail.com',
+            'password' => Hash::make('master123'),
+            'role_id' => 1, // master_admin
+        ]);
+
+        // Admin - dapat mengelola reservasi
+        User::create([
+            'name' => 'Admin',
+            'email' => 'admin@gmail.com',
+            'password' => Hash::make('admin123'),
+            'role_id' => 2, // admin
+        ]);
+
+        // Regular User - dapat melakukan reservasi
+        User::create([
+            'name' => 'User Demo',
+            'email' => 'user@gmail.com',
+            'password' => Hash::make('user123'),
+            'role_id' => 3, // user
         ]);
     }
 }

@@ -16,15 +16,10 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('room_id')->constrained('rooms')->onDelete('cascade');
             $table->date('meeting_date');
-            $table->timestamp('start_time');
-            $table->timestamp('end_time');
+            $table->time('start_time');
+            $table->time('end_time');
             $table->string('agenda');
-            $table->enum('status', [
-                'pending',
-                'approve',
-                'reject',
-                'cancelled'
-            ]);
+            $table->string('status');
             $table->timestamps();
         });
     }
