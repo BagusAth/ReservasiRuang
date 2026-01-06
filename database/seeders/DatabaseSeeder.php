@@ -18,9 +18,6 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Seed Roles
-        // 1 = Master Admin (dapat mengelola semua akun admin & user)
-        // 2 = Admin (dapat mengelola reservasi)
-        // 3 = User (dapat melakukan reservasi)
         DB::table('roles')->insert([
             [
                 'role_name' => 'master_admin',
@@ -65,7 +62,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Seed Users
-        // Master Admin - dapat mengelola semua akun admin & user
         User::create([
             'name' => 'Master Admin',
             'email' => 'master@gmail.com',
@@ -73,7 +69,6 @@ class DatabaseSeeder extends Seeder
             'role_id' => 1, // master_admin
         ]);
 
-        // Admin - dapat mengelola reservasi
         User::create([
             'name' => 'Admin',
             'email' => 'admin@gmail.com',
@@ -81,7 +76,6 @@ class DatabaseSeeder extends Seeder
             'role_id' => 2, // admin
         ]);
 
-        // Regular User - dapat melakukan reservasi
         User::create([
             'name' => 'User Demo',
             'email' => 'user@gmail.com',
