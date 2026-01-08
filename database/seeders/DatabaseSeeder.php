@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
         // Seed Roles
         DB::table('roles')->insert([
             [
-                'role_name' => 'master_admin',
+                'role_name' => 'super_admin',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -107,10 +107,10 @@ class DatabaseSeeder extends Seeder
 
         // Seed Users
         User::create([
-            'name' => 'Master Admin',
-            'email' => 'master@gmail.com',
-            'password' => Hash::make('master123'),
-            'role_id' => 1, // master_admin
+            'name' => 'Super Admin',
+            'email' => 'super@gmail.com',
+            'password' => Hash::make('super123'),
+            'role_id' => 1, // super_admin
         ]);
 
         User::create([
@@ -125,6 +125,54 @@ class DatabaseSeeder extends Seeder
             'email' => 'user@gmail.com',
             'password' => Hash::make('user123'),
             'role_id' => 3, // user
+        ]);
+
+        // Seed Bookings
+        DB::table('bookings')->insert([
+            [
+                'user_id' => 3, // User Demo
+                'room_id' => 1, // Ruang Rapat A1
+                'meeting_date' => '2026-01-10',
+                'start_time' => '09:00:00',
+                'end_time' => '11:00:00',
+                'agenda' => 'Rapat Koordinasi Tim',
+                'status' => 'approved',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'user_id' => 3, // User Demo
+                'room_id' => 4, // Ruang Konferensi B
+                'meeting_date' => '2026-01-12',
+                'start_time' => '13:00:00',
+                'end_time' => '15:00:00',
+                'agenda' => 'Presentasi Proyek',
+                'status' => 'pending',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'user_id' => 2, // Admin
+                'room_id' => 2, // Ruang Rapat A2
+                'meeting_date' => '2026-01-15',
+                'start_time' => '10:00:00',
+                'end_time' => '12:00:00',
+                'agenda' => 'Meeting Bulanan',
+                'status' => 'approved',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'user_id' => 3, // User Demo
+                'room_id' => 3, // Ruang Rapat B1
+                'meeting_date' => '2026-01-08',
+                'start_time' => '14:00:00',
+                'end_time' => '16:00:00',
+                'agenda' => 'Review Dokumen',
+                'status' => 'rejected',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
     }
 }
