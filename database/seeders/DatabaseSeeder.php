@@ -36,26 +36,70 @@ class DatabaseSeeder extends Seeder
             ],
         ]);
 
-        // Seed Rooms
-        DB::table('rooms')->insert([
+        // Seed Buildings (1 Unit memiliki beberapa Gedung)
+        DB::table('buildings')->insert([
             [
-                'room_name' => 'Ruang Rapat A',
+                'building_name' => 'Gedung A',
+                'unit' => 'Unit Pusat',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_name' => 'Gedung B',
+                'unit' => 'Unit Pusat',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_name' => 'Gedung C',
+                'unit' => 'Unit Cabang',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+
+        // Seed Rooms (1 Gedung memiliki beberapa Ruang Rapat)
+        DB::table('rooms')->insert([
+            // Gedung A (building_id: 1)
+            [
+                'building_id' => 1,
+                'room_name' => 'Ruang Rapat A1',
                 'capacity' => 10,
                 'location' => 'Lantai 1',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'room_name' => 'Ruang Rapat B',
+                'building_id' => 1,
+                'room_name' => 'Ruang Rapat A2',
                 'capacity' => 20,
                 'location' => 'Lantai 2',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            // Gedung B (building_id: 2)
             [
-                'room_name' => 'Ruang Konferensi',
+                'building_id' => 2,
+                'room_name' => 'Ruang Rapat B1',
+                'capacity' => 15,
+                'location' => 'Lantai 1',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 2,
+                'room_name' => 'Ruang Konferensi B',
                 'capacity' => 50,
                 'location' => 'Lantai 3',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Gedung C (building_id: 3)
+            [
+                'building_id' => 3,
+                'room_name' => 'Ruang Rapat C1',
+                'capacity' => 12,
+                'location' => 'Lantai 1',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
