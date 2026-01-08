@@ -18,6 +18,8 @@ return new class extends Migration
             $table->date('meeting_date');
             $table->time('start_time');
             $table->time('end_time');
+            $table->string('namePIC');
+            $table->string('no_telpPIC');
             $table->string('agenda');
             $table->string('status');
             $table->timestamps();

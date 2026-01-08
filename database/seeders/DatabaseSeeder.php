@@ -127,6 +127,13 @@ class DatabaseSeeder extends Seeder
             'role_id' => 3, // user
         ]);
 
+        User::create([
+            'name' => 'User Demo1',
+            'email' => 'user1@gmail.com',
+            'password' => Hash::make('user123'),
+            'role_id' => 3, // user1
+        ]);
+
         // Seed Bookings
         DB::table('bookings')->insert([
             [
@@ -135,6 +142,8 @@ class DatabaseSeeder extends Seeder
                 'meeting_date' => '2026-01-10',
                 'start_time' => '09:00:00',
                 'end_time' => '11:00:00',
+                'namePIC' => 'Alex',
+                'no_telpPIC' => '08123456789',
                 'agenda' => 'Rapat Koordinasi Tim',
                 'status' => 'approved',
                 'created_at' => now(),
@@ -146,28 +155,21 @@ class DatabaseSeeder extends Seeder
                 'meeting_date' => '2026-01-12',
                 'start_time' => '13:00:00',
                 'end_time' => '15:00:00',
+                'namePIC' => 'Maria',
+                'no_telpPIC' => '08987654321',
                 'agenda' => 'Presentasi Proyek',
                 'status' => 'pending',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'user_id' => 2, // Admin
-                'room_id' => 2, // Ruang Rapat A2
-                'meeting_date' => '2026-01-15',
-                'start_time' => '10:00:00',
-                'end_time' => '12:00:00',
-                'agenda' => 'Meeting Bulanan',
-                'status' => 'approved',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'user_id' => 3, // User Demo
+                'user_id' => 4, // User Demo1
                 'room_id' => 3, // Ruang Rapat B1
                 'meeting_date' => '2026-01-08',
                 'start_time' => '14:00:00',
                 'end_time' => '16:00:00',
+                'namePIC' => 'John',
+                'no_telpPIC' => '08223344556',
                 'agenda' => 'Review Dokumen',
                 'status' => 'rejected',
                 'created_at' => now(),
