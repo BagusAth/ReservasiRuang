@@ -206,7 +206,7 @@ class DatabaseSeeder extends Seeder
         // Super Admin
         User::create([
             'name' => 'Super Admin',
-            'email' => 'superadmin@reservasi.com',
+            'email' => 'superadmin@gmail.com',
             'password' => Hash::make('super123'),
             'role_id' => 1,
             'unit_id' => null,
@@ -217,7 +217,7 @@ class DatabaseSeeder extends Seeder
         // Admin Unit
         User::create([
             'name' => 'Admin Unit Pusat',
-            'email' => 'admin.unitpusat@reservasi.com',
+            'email' => 'admin.unitpusat@gmail.com',
             'password' => Hash::make('admin123'),
             'role_id' => 2, 
             'unit_id' => 1,
@@ -228,7 +228,7 @@ class DatabaseSeeder extends Seeder
         // Admin Unit
         User::create([
             'name' => 'Admin Unit Cabang',
-            'email' => 'admin.unitcabang@reservasi.com',
+            'email' => 'admin.unitcabang@gmail.com',
             'password' => Hash::make('admin123'),
             'role_id' => 2,
             'unit_id' => 2, 
@@ -239,7 +239,7 @@ class DatabaseSeeder extends Seeder
         // Admin Gedung
         User::create([
             'name' => 'Admin Gedung TDC',
-            'email' => 'admin.tdc@reservasi.com',
+            'email' => 'admin.tdc@gmail.com',
             'password' => Hash::make('admin123'),
             'role_id' => 3, 
             'unit_id' => null,
@@ -250,7 +250,7 @@ class DatabaseSeeder extends Seeder
         // Admin Gedung
         User::create([
             'name' => 'Admin Gedung Engineering',
-            'email' => 'admin.engineering@reservasi.com',
+            'email' => 'admin.engineering@gmail.com',
             'password' => Hash::make('admin123'),
             'role_id' => 3, 
             'unit_id' => null,
@@ -261,7 +261,7 @@ class DatabaseSeeder extends Seeder
         // Admin Gedung
         User::create([
             'name' => 'Admin Gedung Cabang',
-            'email' => 'admin.gedungcabang@reservasi.com',
+            'email' => 'admin.gedungcabang@gmail.com',
             'password' => Hash::make('admin123'),
             'role_id' => 3,
             'unit_id' => null,
@@ -271,7 +271,7 @@ class DatabaseSeeder extends Seeder
 
         User::create([
             'name' => 'Budi Santoso',
-            'email' => 'budi@reservasi.com',
+            'email' => 'budi@gmail.com',
             'password' => Hash::make('user123'),
             'role_id' => 4,
             'unit_id' => null,
@@ -281,7 +281,7 @@ class DatabaseSeeder extends Seeder
 
         User::create([
             'name' => 'Siti Aminah',
-            'email' => 'siti@reservasi.com',
+            'email' => 'siti@gmail.com',
             'password' => Hash::make('user123'),
             'role_id' => 4, 
             'unit_id' => null,
@@ -291,7 +291,7 @@ class DatabaseSeeder extends Seeder
 
         User::create([
             'name' => 'Andi Wijaya',
-            'email' => 'andi@reservasi.com',
+            'email' => 'andi@gmail.com',
             'password' => Hash::make('user123'),
             'role_id' => 4,
             'unit_id' => null,
