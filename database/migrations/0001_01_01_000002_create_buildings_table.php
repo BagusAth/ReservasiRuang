@@ -13,9 +13,11 @@ return new class extends Migration
     {
         Schema::create('buildings', function (Blueprint $table) {
             $table->id();
-            $table->string('building_name')->unique();
-            $table->string('unit');
+            $table->string('building_name');
+            $table->foreignId('unit_id')->constrained('units')->onDelete('cascade');
+            $table->text('description')->nullable();
             $table->timestamps();
+            $table->unique(['unit_id', 'building_name']);
         });
     }
 

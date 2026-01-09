@@ -22,6 +22,9 @@ class User extends Authenticatable
         'email',
         'password',
         'role_id',
+        'unit_id',
+        'building_id',
+        'is_active',
     ];
 
     /**
@@ -30,6 +33,70 @@ class User extends Authenticatable
     public function role()
     {
         return $this->belongsTo(Role::class);
+    }
+
+    /**
+     * Get the unit that belongs to the user (for admin_unit).
+     */
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class);
+    }
+
+    /**
+     * Get the building that belongs to the user (for admin_gedung).
+     */
+    public function building()
+    {
+        return $this->belongsTo(Building::class);
+    }
+
+    /**
+     * Get all bookings made by this user.
+     */
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    /**
+     * Get all bookings approved/rejected by this admin.
+     */
+    public function approvedBookings()
+    {
+        return $this->hasMany(Booking::class, 'approved_by');
+    }
+
+    /**
+     * Check if user is super admin.
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->role?->role_name === 'super_admin';
+    }
+
+    /**
+     * Check if user is admin unit.
+     */
+    public function isAdminUnit(): bool
+    {
+        return $this->role?->role_name === 'admin_unit';
+    }
+
+    /**
+     * Check if user is admin gedung.
+     */
+    public function isAdminGedung(): bool
+    {
+        return $this->role?->role_name === 'admin_gedung';
+    }
+
+    /**
+     * Check if user is regular user.
+     */
+    public function isUser(): bool
+    {
+        return $this->role?->role_name === 'user';
     }
 
     /**
@@ -52,6 +119,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 }

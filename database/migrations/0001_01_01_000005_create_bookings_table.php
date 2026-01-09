@@ -18,10 +18,14 @@ return new class extends Migration
             $table->date('meeting_date');
             $table->time('start_time');
             $table->time('end_time');
-            $table->string('namePIC');
-            $table->string('no_telpPIC');
-            $table->string('agenda');
-            $table->string('status');
+            $table->string('agenda_name');
+            $table->string('pic_name');
+            $table->string('pic_phone');
+            $table->text('agenda_detail');
+            $table->enum('status', ['Menunggu', 'Disetujui', 'Ditolak'])->default('Menunggu');
+            $table->text('rejection_reason')->nullable();
+            $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->timestamp('approved_at')->nullable();
             $table->timestamps();
         });
     }
