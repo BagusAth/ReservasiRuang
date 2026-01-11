@@ -13,11 +13,6 @@ class Building extends Model
         'building_name',
         'unit_id',
         'description',
-        'is_active',
-    ];
-
-    protected $casts = [
-        'is_active' => 'boolean',
     ];
 
     /**
@@ -52,14 +47,6 @@ class Building extends Model
     public function bookings()
     {
         return $this->hasManyThrough(Booking::class, Room::class);
-    }
-
-    /**
-     * Scope untuk gedung aktif.
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
     }
 
     /**
