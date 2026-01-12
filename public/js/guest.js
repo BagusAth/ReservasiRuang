@@ -46,7 +46,11 @@
         units: [],
         buildings: [],
         rooms: [],
-        isLoading: false
+        isLoading: false,
+        // Search state
+        searchQuery: '',
+        searchResults: [],
+        isSearching: false
     };
 
     // ============================================
@@ -73,8 +77,19 @@
         bookingModal: document.getElementById('bookingModal'),
         modalBody: document.getElementById('modalBody'),
         closeModal: document.getElementById('closeModal'),
-        // Search element
+        // Search elements
         searchInput: document.getElementById('searchInput'),
+        searchModal: document.getElementById('searchModal'),
+        searchModalInput: document.getElementById('searchModalInput'),
+        closeSearchModal: document.getElementById('closeSearchModal'),
+        searchClearBtn: document.getElementById('searchClearBtn'),
+        searchInfo: document.getElementById('searchInfo'),
+        searchResultsBody: document.getElementById('searchResultsBody'),
+        searchEmptyState: document.getElementById('searchEmptyState'),
+        searchLoading: document.getElementById('searchLoading'),
+        searchResultsList: document.getElementById('searchResultsList'),
+        searchNoResults: document.getElementById('searchNoResults'),
+        searchNoResultsText: document.getElementById('searchNoResultsText'),
         // Login modal elements
         loginModal: document.getElementById('loginModal'),
         openLoginModal: document.getElementById('openLoginModal'),
@@ -943,6 +958,293 @@
     }
 
     // ============================================
+    // Search Functions
+    // ============================================
+
+    /**
+     * Open search modal
+     */
+    function openSearchModal() {
+        elements.searchModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        // Focus on search input after modal animation
+        setTimeout(() => {
+            elements.searchModalInput.focus();
+        }, 100);
+        
+        // Sync search input values
+        if (elements.searchInput.value) {
+            elements.searchModalInput.value = elements.searchInput.value;
+            handleSearchInput({ target: elements.searchModalInput });
+        }
+    }
+
+    /**
+     * Close search modal
+     */
+    function closeSearchModal() {
+        elements.searchModal.classList.remove('active');
+        document.body.style.overflow = '';
+        
+        // Clear search state
+        state.searchQuery = '';
+        state.searchResults = [];
+        
+        // Reset modal to initial state
+        resetSearchModal();
+    }
+
+    /**
+     * Reset search modal to initial state
+     */
+    function resetSearchModal() {
+        elements.searchModalInput.value = '';
+        elements.searchInput.value = '';
+        elements.searchClearBtn.classList.add('hidden');
+        elements.searchInfo.innerHTML = '<span class="search-info-text">Ketik minimal 2 karakter untuk mencari</span>';
+        
+        // Show empty state, hide others
+        elements.searchEmptyState.classList.remove('hidden');
+        elements.searchLoading.classList.add('hidden');
+        elements.searchResultsList.classList.add('hidden');
+        elements.searchNoResults.classList.add('hidden');
+    }
+
+    /**
+     * Fetch search results from API
+     */
+    async function fetchSearchResults(keyword) {
+        if (state.isSearching) return;
+        
+        state.isSearching = true;
+        showSearchLoading();
+
+        try {
+            const response = await fetchAPI('/search', { q: keyword, limit: 15 });
+            
+            if (response.success) {
+                state.searchResults = response.data;
+                renderSearchResults(keyword);
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+            showSearchError();
+        } finally {
+            state.isSearching = false;
+        }
+    }
+
+    /**
+     * Show search loading state
+     */
+    function showSearchLoading() {
+        elements.searchEmptyState.classList.add('hidden');
+        elements.searchResultsList.classList.add('hidden');
+        elements.searchNoResults.classList.add('hidden');
+        elements.searchLoading.classList.remove('hidden');
+    }
+
+    /**
+     * Show search error state
+     */
+    function showSearchError() {
+        elements.searchLoading.classList.add('hidden');
+        elements.searchNoResults.classList.remove('hidden');
+        elements.searchNoResultsText.textContent = 'Terjadi kesalahan saat mencari. Silakan coba lagi.';
+    }
+
+    /**
+     * Render search results
+     */
+    function renderSearchResults(keyword) {
+        elements.searchLoading.classList.add('hidden');
+        
+        if (state.searchResults.length === 0) {
+            elements.searchResultsList.classList.add('hidden');
+            elements.searchNoResults.classList.remove('hidden');
+            elements.searchNoResultsText.textContent = `Tidak ada reservasi yang cocok dengan "${keyword}"`;
+            elements.searchInfo.innerHTML = `<span class="search-info-text">Tidak ada hasil untuk "<strong>${escapeHtml(keyword)}</strong>"</span>`;
+            return;
+        }
+
+        elements.searchInfo.innerHTML = `<span class="search-info-text">Ditemukan <strong>${state.searchResults.length}</strong> hasil untuk "<strong>${escapeHtml(keyword)}</strong>"</span>`;
+        
+        let html = '';
+        
+        state.searchResults.forEach(booking => {
+            const statusClass = getStatusClass(booking.status);
+            const badgeClass = getBadgeClass(booking.status);
+            const statusText = booking.status;
+            
+            html += `
+                <div class="search-result-item" data-booking-id="${booking.id}">
+                    <div class="search-result-status ${statusClass}"></div>
+                    <div class="search-result-content">
+                        <div class="search-result-header">
+                            <h4 class="search-result-title">${highlightKeyword(escapeHtml(booking.agenda_name), keyword)}</h4>
+                            <span class="search-result-badge ${badgeClass}">${statusText}</span>
+                        </div>
+                        ${booking.agenda_detail ? `<p class="search-result-detail">${highlightKeyword(escapeHtml(booking.agenda_detail), keyword)}</p>` : ''}
+                        <div class="search-result-meta">
+                            <span class="search-result-meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                ${booking.date_display}
+                            </span>
+                            <span class="search-result-meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                ${booking.start_time} - ${booking.end_time}
+                            </span>
+                            <span class="search-result-meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                </svg>
+                                ${booking.room.name}
+                            </span>
+                            <span class="search-result-meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                ${highlightKeyword(escapeHtml(booking.pic_name), keyword)}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        elements.searchResultsList.innerHTML = html;
+        elements.searchResultsList.classList.remove('hidden');
+        elements.searchNoResults.classList.add('hidden');
+        
+        // Add click event listeners to search results
+        elements.searchResultsList.querySelectorAll('.search-result-item').forEach(item => {
+            item.addEventListener('click', handleSearchResultClick);
+        });
+    }
+
+    /**
+     * Escape HTML special characters
+     */
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    /**
+     * Highlight keyword in text
+     */
+    function highlightKeyword(text, keyword) {
+        if (!keyword) return text;
+        
+        const regex = new RegExp(`(${escapeRegExp(keyword)})`, 'gi');
+        return text.replace(regex, '<span class="search-highlight">$1</span>');
+    }
+
+    /**
+     * Escape special regex characters
+     */
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    /**
+     * Get badge class based on status
+     */
+    function getBadgeClass(status) {
+        const statusLower = status.toLowerCase();
+        if (statusLower === 'disetujui') return 'badge-approved';
+        if (statusLower === 'menunggu') return 'badge-pending';
+        if (statusLower === 'ditolak') return 'badge-rejected';
+        return 'badge-pending';
+    }
+
+    /**
+     * Handle search result click
+     */
+    function handleSearchResultClick(e) {
+        const bookingId = e.currentTarget.dataset.bookingId;
+        if (bookingId) {
+            closeSearchModal();
+            fetchBookingDetail(bookingId);
+        }
+    }
+
+    /**
+     * Handle search input change (debounced)
+     */
+    const handleSearchInput = debounce(function(e) {
+        const keyword = e.target.value.trim();
+        state.searchQuery = keyword;
+        
+        // Sync the other input
+        if (e.target === elements.searchModalInput) {
+            elements.searchInput.value = keyword;
+        }
+        
+        // Show/hide clear button
+        if (keyword.length > 0) {
+            elements.searchClearBtn.classList.remove('hidden');
+        } else {
+            elements.searchClearBtn.classList.add('hidden');
+        }
+        
+        // Check minimum length
+        if (keyword.length < 2) {
+            if (keyword.length === 0) {
+                resetSearchModal();
+                // Keep the input value
+                elements.searchModalInput.value = '';
+            } else {
+                elements.searchInfo.innerHTML = '<span class="search-info-text">Ketik minimal 2 karakter untuk mencari</span>';
+                elements.searchEmptyState.classList.remove('hidden');
+                elements.searchResultsList.classList.add('hidden');
+                elements.searchNoResults.classList.add('hidden');
+                elements.searchLoading.classList.add('hidden');
+            }
+            return;
+        }
+        
+        // Fetch search results
+        fetchSearchResults(keyword);
+    }, 300);
+
+    /**
+     * Handle search clear button click
+     */
+    function handleSearchClear() {
+        resetSearchModal();
+        elements.searchModalInput.focus();
+    }
+
+    /**
+     * Handle search modal overlay click
+     */
+    function handleSearchModalClose(e) {
+        if (e.target === elements.searchModal || e.target.closest('.modal-close')) {
+            closeSearchModal();
+        }
+    }
+
+    /**
+     * Handle header search input focus - open search modal
+     */
+    function handleHeaderSearchFocus(e) {
+        openSearchModal();
+    }
+
+    // ============================================
     // Event Handlers
     // ============================================
 
@@ -1199,12 +1501,27 @@
      * Handle keyboard events
      */
     function handleKeydown(e) {
+        // Escape key - close modals
         if (e.key === 'Escape') {
+            if (elements.searchModal && elements.searchModal.classList.contains('active')) {
+                closeSearchModal();
+                return;
+            }
             if (elements.bookingModal.classList.contains('active')) {
                 closeModal();
+                return;
             }
             if (elements.loginModal && elements.loginModal.classList.contains('active')) {
                 closeLoginModal();
+                return;
+            }
+        }
+        
+        // Ctrl+K or Cmd+K - open search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            if (elements.searchModal && !elements.searchModal.classList.contains('active')) {
+                openSearchModal();
             }
         }
     }
@@ -1426,6 +1743,24 @@
         // Modal events
         elements.closeModal.addEventListener('click', handleModalClose);
         elements.bookingModal.addEventListener('click', handleModalClose);
+
+        // Search events
+        if (elements.searchInput) {
+            elements.searchInput.addEventListener('focus', handleHeaderSearchFocus);
+            elements.searchInput.addEventListener('click', handleHeaderSearchFocus);
+        }
+        if (elements.searchModal) {
+            elements.searchModal.addEventListener('click', handleSearchModalClose);
+        }
+        if (elements.closeSearchModal) {
+            elements.closeSearchModal.addEventListener('click', closeSearchModal);
+        }
+        if (elements.searchModalInput) {
+            elements.searchModalInput.addEventListener('input', handleSearchInput);
+        }
+        if (elements.searchClearBtn) {
+            elements.searchClearBtn.addEventListener('click', handleSearchClear);
+        }
 
         // Login modal events
         if (elements.openLoginModal) {

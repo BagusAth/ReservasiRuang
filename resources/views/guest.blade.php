@@ -300,6 +300,68 @@
         </div>
     </div>
 
+    <!-- Modal Search Results -->
+    <div class="modal-overlay" id="searchModal">
+        <div class="modal-content modal-search">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    </svg>
+                    Hasil Pencarian
+                </h3>
+                <button type="button" class="modal-close" id="closeSearchModal">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="search-modal-input-wrapper">
+                <svg class="search-modal-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" id="searchModalInput" class="search-modal-input" placeholder="Cari agenda, detail, atau nama PIC..." autofocus>
+                <button type="button" class="search-clear-btn hidden" id="searchClearBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="search-info" id="searchInfo">
+                <span class="search-info-text">Ketik minimal 2 karakter untuk mencari</span>
+            </div>
+            <div class="modal-body search-results-body" id="searchResultsBody">
+                <div class="search-empty-state" id="searchEmptyState">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <p class="search-empty-title">Cari Reservasi</p>
+                    <p class="search-empty-text">Temukan reservasi berdasarkan nama agenda, detail agenda, atau nama PIC</p>
+                </div>
+                <div class="search-loading hidden" id="searchLoading">
+                    <div class="spinner"></div>
+                    <span>Mencari...</span>
+                </div>
+                <div class="search-results-list hidden" id="searchResultsList">
+                    <!-- Search results will be loaded dynamically -->
+                </div>
+                <div class="search-no-results hidden" id="searchNoResults">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M16 16s-1.5-2-4-2-4 2-4 2"></path>
+                        <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                        <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                    </svg>
+                    <p class="search-no-results-title">Tidak Ditemukan</p>
+                    <p class="search-no-results-text" id="searchNoResultsText">Tidak ada reservasi yang cocok dengan pencarian Anda</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="{{ asset('js/guest.js') }}"></script>
 </body>

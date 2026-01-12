@@ -251,4 +251,82 @@ class GuestController extends Controller
             ]
         ]);
     }
+
+    /**
+     * Mencari reservasi berdasarkan keyword.
+     * Pencarian dilakukan pada kolom agenda_name, agenda_detail, dan pic_name.
+     * Guest hanya bisa melihat reservasi yang Disetujui dan Menunggu.
+     */
+    public function searchBookings(Request $request): JsonResponse
+    {
+        $request->validate([
+            'q' => 'required|string|min:2|max:100',
+            'limit' => 'nullable|integer|min:1|max:50',
+        ]);
+
+        $keyword = $request->input('q');
+        $limit = $request->input('limit', 10);
+
+        $bookings = Booking::with(['room.building.unit', 'user'])
+            ->whereIn('status', ['Disetujui', 'Menunggu'])
+            ->where(function ($query) use ($keyword) {
+                $query->where('agenda_name', 'like', "%{$keyword}%")
+                      ->orWhere('agenda_detail', 'like', "%{$keyword}%")
+                      ->orWhere('pic_name', 'like', "%{$keyword}%");
+            })
+            ->orderBy('start_date', 'desc')
+            ->orderBy('start_time', 'desc')
+            ->limit($limit)
+            ->get()
+            ->map(function ($booking) {
+                // Format time as H:i
+                $startTime = substr($booking->start_time, 0, 5);
+                $endTime = substr($booking->end_time, 0, 5);
+                
+                // Check if multi-day booking
+                $isMultiDay = $booking->start_date->ne($booking->end_date);
+                
+                // Format date display
+                if ($isMultiDay) {
+                    $dateDisplay = $booking->start_date->translatedFormat('d M Y') . ' - ' . $booking->end_date->translatedFormat('d M Y');
+                } else {
+                    $dateDisplay = $booking->start_date->translatedFormat('l, d M Y');
+                }
+
+                return [
+                    'id' => $booking->id,
+                    'agenda_name' => $booking->agenda_name,
+                    'agenda_detail' => \Str::limit($booking->agenda_detail, 100),
+                    'pic_name' => $booking->pic_name,
+                    'start_date' => $booking->start_date->format('Y-m-d'),
+                    'end_date' => $booking->end_date->format('Y-m-d'),
+                    'date_display' => $dateDisplay,
+                    'is_multi_day' => $isMultiDay,
+                    'start_time' => $startTime,
+                    'end_time' => $endTime,
+                    'status' => $booking->status,
+                    'room' => [
+                        'id' => $booking->room->id,
+                        'name' => $booking->room->room_name,
+                    ],
+                    'building' => [
+                        'id' => $booking->room->building->id,
+                        'name' => $booking->room->building->building_name,
+                    ],
+                    'unit' => [
+                        'id' => $booking->room->building->unit->id,
+                        'name' => $booking->room->building->unit->unit_name,
+                    ],
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $bookings,
+            'meta' => [
+                'keyword' => $keyword,
+                'total' => $bookings->count(),
+            ]
+        ]);
+    }
 }

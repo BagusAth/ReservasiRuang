@@ -23,4 +23,5 @@ Route::prefix('api/guest')->name('guest.api.')->group(function () {
     Route::get('/rooms', [GuestController::class, 'getRooms'])->name('rooms');
     Route::get('/bookings', [GuestController::class, 'getBookings'])->name('bookings');
     Route::get('/bookings/{id}', [GuestController::class, 'getBookingDetail'])->name('booking.detail');
+    Route::get('/search', [GuestController::class, 'searchBookings'])->name('search');
 });
