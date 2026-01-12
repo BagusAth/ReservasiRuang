@@ -531,7 +531,8 @@
         weekDates.forEach((date, dayIndex) => {
             const dateStr = formatDateString(date.getFullYear(), date.getMonth() + 1, date.getDate());
             const isTodayDate = isToday(date.getFullYear(), date.getMonth() + 1, date.getDate());
-            const dayBookings = state.bookings.filter(b => b.meeting_date === dateStr);
+            // Filter bookings that cover this date (including multi-day bookings)
+            const dayBookings = state.bookings.filter(b => isDateInBookingRange(dateStr, b));
             
             html += `<div class="week-day-column ${isTodayDate ? 'today-column' : ''}" data-date="${dateStr}">`;
             
@@ -553,15 +554,15 @@
                 // Calculate position as percentage
                 const topPercent = ((startMinutes - dayStartMinutes) / totalMinutes) * 100;
                 const heightPercent = ((endMinutes - startMinutes) / totalMinutes) * 100;
-                
                 const formattedStartTime = formatTime(booking.start_time);
                 const formattedEndTime = formatTime(booking.end_time);
+                const multiDayClass = booking.is_multi_day ? ' multi-day-event' : '';
                 
                 html += `
-                    <div class="booking-item week-event ${statusClass}" 
+                    <div class="booking-item week-event ${statusClass}${multiDayClass}" 
                          data-booking-id="${booking.id}" 
                          style="top: ${topPercent}%; height: ${heightPercent}%;"
-                         title="${booking.agenda_name} (${formattedStartTime} - ${formattedEndTime})">
+                         title="${booking.agenda_name} (${formattedStartTime} - ${formattedEndTime})${booking.is_multi_day ? ' [Multi-hari]' : ''}">
                         <span class="event-time">${formattedStartTime}</span>
                         <span class="event-title">${booking.agenda_name}</span>
                     </div>
@@ -577,6 +578,7 @@
     /**
      * Render day view
      * Displays a single day with time slots and properly spanning events
+     * Supports multi-day bookings by checking if date falls within booking range
      */
     function renderDayView() {
         // Hide weekdays header for day view
@@ -591,8 +593,8 @@
         const isTodayDate = isToday(state.currentYear, state.currentMonth, state.currentDay);
         const formattedDate = `${state.currentDay} ${CONFIG.MONTHS_ID[state.currentMonth - 1]} ${state.currentYear}`;
         
-        // Get all bookings for this day
-        const dayBookings = state.bookings.filter(b => b.meeting_date === dateStr);
+        // Get all bookings for this day (including multi-day bookings)
+        const dayBookings = state.bookings.filter(b => isDateInBookingRange(dateStr, b));
         
         // Calculate time range in minutes
         // Total hours displayed: HOUR_START to HOUR_END (inclusive labels)
@@ -634,19 +636,15 @@
                         <div class="day-events-layer">
         `;
         
-        // Render each booking as a single absolutely positioned element spanning full duration
+        // Render bookings as absolutely positioned elements
         dayBookings.forEach(booking => {
             const statusClass = getStatusClass(booking.status);
             const startMinutes = timeToMinutes(booking.start_time);
             const endMinutes = timeToMinutes(booking.end_time);
-            
-            // Calculate position as percentage of total day range
             const topPercent = ((startMinutes - dayStartMinutes) / totalMinutes) * 100;
             const heightPercent = ((endMinutes - startMinutes) / totalMinutes) * 100;
-            
             const formattedStartTime = formatTime(booking.start_time);
             const formattedEndTime = formatTime(booking.end_time);
-            // Support both 'name' (from API) and 'room_name' (legacy) for room name
             const roomName = booking.room ? (booking.room.name || booking.room.room_name) : '';
             
             html += `
@@ -675,13 +673,15 @@
 
     /**
      * Get bookings for a specific hour
+     * Checks if the booking covers this date (for multi-day bookings)
      */
     function getBookingsForHour(dateStr, hour) {
         const hourStart = hour * 60;
         const hourEnd = (hour + 1) * 60;
         
         return state.bookings.filter(b => {
-            if (b.meeting_date !== dateStr) return false;
+            // Check if this date falls within the booking's date range
+            if (!isDateInBookingRange(dateStr, b)) return false;
             const startMinutes = timeToMinutes(b.start_time);
             const endMinutes = timeToMinutes(b.end_time);
             return startMinutes < hourEnd && endMinutes > hourStart;
@@ -689,11 +689,21 @@
     }
 
     /**
+     * Check if a date falls within a booking's date range
+     * @param {string} dateStr - Date in YYYY-MM-DD format
+     * @param {object} booking - Booking object with start_date and end_date
+     * @returns {boolean}
+     */
+    function isDateInBookingRange(dateStr, booking) {
+        return dateStr >= booking.start_date && dateStr <= booking.end_date;
+    }
+
+    /**
      * Create day cell HTML (for month view)
      */
     function createDayCell(year, month, day, isOtherMonth, isCurrentDay = false) {
         const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const dayBookings = state.bookings.filter(b => b.meeting_date === dateStr);
+        const dayBookings = state.bookings.filter(b => isDateInBookingRange(dateStr, b));
         
         let classes = 'calendar-day';
         if (isOtherMonth) classes += ' other-month';
@@ -707,7 +717,9 @@
             displayBookings.forEach(booking => {
                 const statusClass = getStatusClass(booking.status);
                 eventsHtml += `
-                    <div class="booking-item ${statusClass}" data-booking-id="${booking.id}" title="${booking.agenda_name}">
+                    <div class="booking-item ${statusClass}" 
+                         data-booking-id="${booking.id}" 
+                         title="${booking.agenda_name}">
                         ${booking.start_time} ${booking.agenda_name}
                     </div>
                 `;
@@ -760,7 +772,7 @@
 
         elements.modalBody.innerHTML = `
             <div class="booking-detail-card">
-                <!-- Status Badge at Top -->
+                <!-- Status Badge -->
                 <div class="detail-status-banner ${statusClass}">
                     ${statusIcon}
                     <span>${booking.status}</span>
@@ -785,7 +797,8 @@
                         </div>
                         <div class="detail-info-content">
                             <span class="detail-info-label">Tanggal</span>
-                            <span class="detail-info-value">${booking.meeting_date_formatted}</span>
+                            <span class="detail-info-value">${booking.date_display_formatted}</span>
+                            ${booking.is_multi_day ? `<span class="detail-info-sub">${booking.start_date_formatted} s/d ${booking.end_date_formatted}</span>` : ''}
                         </div>
                     </div>
                     
@@ -797,7 +810,7 @@
                             </svg>
                         </div>
                         <div class="detail-info-content">
-                            <span class="detail-info-label">Waktu</span>
+                            <span class="detail-info-label">Waktu ${booking.is_multi_day ? '(per hari)' : ''}</span>
                             <span class="detail-info-value">${booking.start_time} - ${booking.end_time} WIB</span>
                         </div>
                     </div>

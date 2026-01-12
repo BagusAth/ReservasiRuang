@@ -638,7 +638,8 @@ body {
 }
 
 .calendar-day {
-    min-height: 120px;
+    min-height: 110px;
+    max-height: 130px;
     padding: 8px;
     border-right: 1px solid #E5E7EB;
     border-bottom: 1px solid #E5E7EB;
@@ -646,6 +647,7 @@ body {
     cursor: pointer;
     transition: background-color 0.15s ease;
     position: relative;
+    overflow: hidden;
 }
 
 .calendar-day:nth-child(7n) {
@@ -698,30 +700,31 @@ body {
 }
 
 .day-number {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: #374151;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 /* Booking Items */
 .booking-item {
-    padding: 6px 10px;
-    margin-bottom: 4px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
+    padding: 3px 6px;
+    margin-bottom: 2px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     border-left: 3px solid;
+    line-height: 1.2;
 }
 
 .booking-item:hover {
-    transform: translateX(2px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    transform: translateX(1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Approved - Blue (#00AEEF) */
@@ -1833,8 +1836,9 @@ body {
 .day-events {
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    margin-top: 4px;
+    gap: 2px;
+    margin-top: 2px;
+    overflow: hidden;
 }
 
 /* Responsive for Detail Modal */

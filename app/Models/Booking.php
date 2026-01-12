@@ -12,7 +12,8 @@ class Booking extends Model
     protected $fillable = [
         'user_id',
         'room_id',
-        'meeting_date',
+        'start_date',
+        'end_date',
         'start_time',
         'end_time',
         'agenda_name',
@@ -26,7 +27,8 @@ class Booking extends Model
     ];
 
     protected $casts = [
-        'meeting_date' => 'date',
+        'start_date' => 'date',
+        'end_date' => 'date',
         // Don't cast time columns to datetime to avoid parsing issues
         // Use raw string format from database (H:i:s)
         'approved_at' => 'datetime',
@@ -162,18 +164,44 @@ class Booking extends Model
 
     /**
      * Scope untuk booking pada tanggal tertentu.
+     * Booking aktif jika tanggal tersebut berada di antara start_date dan end_date
      */
     public function scopeOnDate($query, $date)
     {
-        return $query->where('meeting_date', $date);
+        return $query->where('start_date', '<=', $date)
+                     ->where('end_date', '>=', $date);
     }
 
     /**
      * Scope untuk booking dalam rentang tanggal.
+     * Booking aktif jika ada overlap dengan rentang yang dicari
      */
     public function scopeBetweenDates($query, $startDate, $endDate)
     {
-        return $query->whereBetween('meeting_date', [$startDate, $endDate]);
+        return $query->where('start_date', '<=', $endDate)
+                     ->where('end_date', '>=', $startDate);
+    }
+
+    /**
+     * Check if booking is multi-day
+     */
+    public function isMultiDay(): bool
+    {
+        return $this->start_date->ne($this->end_date);
+    }
+
+    /**
+     * Get all dates covered by this booking
+     */
+    public function getCoveredDates(): array
+    {
+        $dates = [];
+        $current = $this->start_date->copy();
+        while ($current->lte($this->end_date)) {
+            $dates[] = $current->format('Y-m-d');
+            $current->addDay();
+        }
+        return $dates;
     }
 
     /**
@@ -209,7 +237,7 @@ class Booking extends Model
      */
     public function scopeUpcoming($query)
     {
-        return $query->where('meeting_date', '>=', now()->toDateString());
+        return $query->where('end_date', '>=', now()->toDateString());
     }
 
     /**
@@ -217,6 +245,6 @@ class Booking extends Model
      */
     public function scopePast($query)
     {
-        return $query->where('meeting_date', '<', now()->toDateString());
+        return $query->where('end_date', '<', now()->toDateString());
     }
 }

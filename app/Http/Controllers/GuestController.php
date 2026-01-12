@@ -63,6 +63,7 @@ class GuestController extends Controller
     /**
      * Mendapatkan daftar reservasi untuk kalender.
      * Guest hanya bisa melihat reservasi yang Disetujui dan Menunggu.
+     * Mendukung multi-day booking dengan start_date dan end_date.
      */
     public function getBookings(Request $request): JsonResponse
     {
@@ -84,21 +85,24 @@ class GuestController extends Controller
         // Determine date range based on request parameters
         if ($request->filled('week_start') && $request->filled('week_end')) {
             // Week view with dates spanning multiple months
-            $startDate = \Carbon\Carbon::parse($request->week_start);
-            $endDate = \Carbon\Carbon::parse($request->week_end);
+            $viewStartDate = \Carbon\Carbon::parse($request->week_start);
+            $viewEndDate = \Carbon\Carbon::parse($request->week_end);
         } elseif ($request->filled('date')) {
             // Day view - specific date
-            $startDate = \Carbon\Carbon::parse($request->date);
-            $endDate = \Carbon\Carbon::parse($request->date);
+            $viewStartDate = \Carbon\Carbon::parse($request->date);
+            $viewEndDate = \Carbon\Carbon::parse($request->date);
         } else {
             // Month view - default behavior
-            $startDate = \Carbon\Carbon::createFromDate($year, $month, 1)->startOfMonth();
-            $endDate = \Carbon\Carbon::createFromDate($year, $month, 1)->endOfMonth();
+            $viewStartDate = \Carbon\Carbon::createFromDate($year, $month, 1)->startOfMonth();
+            $viewEndDate = \Carbon\Carbon::createFromDate($year, $month, 1)->endOfMonth();
         }
 
+        // Query bookings that overlap with the view date range
+        // A booking overlaps if: booking.start_date <= viewEndDate AND booking.end_date >= viewStartDate
         $query = Booking::with(['room.building', 'user'])
             ->whereIn('status', ['Disetujui', 'Menunggu'])
-            ->whereBetween('meeting_date', [$startDate, $endDate]);
+            ->where('start_date', '<=', $viewEndDate)
+            ->where('end_date', '>=', $viewStartDate);
 
         // Filter berdasarkan gedung
         if ($request->filled('building_id')) {
@@ -126,7 +130,7 @@ class GuestController extends Controller
             });
         }
 
-        $bookings = $query->orderBy('meeting_date')
+        $bookings = $query->orderBy('start_date')
                          ->orderBy('start_time')
                          ->get()
                          ->map(function ($booking) {
@@ -134,12 +138,17 @@ class GuestController extends Controller
                              $startTime = substr($booking->start_time, 0, 5);
                              $endTime = substr($booking->end_time, 0, 5);
                              
+                             // Check if multi-day booking
+                             $isMultiDay = $booking->start_date->ne($booking->end_date);
+                             
                              return [
                                  'id' => $booking->id,
                                  'agenda_name' => $booking->agenda_name,
-                                 'meeting_date' => $booking->meeting_date->format('Y-m-d'),
+                                 'start_date' => $booking->start_date->format('Y-m-d'),
+                                 'end_date' => $booking->end_date->format('Y-m-d'),
                                  'start_time' => $startTime,
                                  'end_time' => $endTime,
+                                 'is_multi_day' => $isMultiDay,
                                  'status' => $booking->status,
                                  'room' => [
                                      'id' => $booking->room->id,
@@ -168,6 +177,7 @@ class GuestController extends Controller
     /**
      * Mendapatkan detail reservasi tertentu.
      * Guest tidak bisa melihat alasan penolakan.
+     * Mendukung multi-day booking dengan start_date dan end_date.
      */
     public function getBookingDetail(int $id): JsonResponse
     {
@@ -185,6 +195,20 @@ class GuestController extends Controller
         // Format time as H:i (remove seconds if present)
         $startTime = substr($booking->start_time, 0, 5);
         $endTime = substr($booking->end_time, 0, 5);
+        
+        // Check if multi-day booking
+        $isMultiDay = $booking->start_date->ne($booking->end_date);
+        
+        // Format date display
+        $startDateFormatted = $booking->start_date->translatedFormat('l, d F Y');
+        $endDateFormatted = $booking->end_date->translatedFormat('l, d F Y');
+        
+        // Create date display string
+        if ($isMultiDay) {
+            $dateDisplayFormatted = $booking->start_date->translatedFormat('d F Y') . ' - ' . $booking->end_date->translatedFormat('d F Y');
+        } else {
+            $dateDisplayFormatted = $startDateFormatted;
+        }
 
         return response()->json([
             'success' => true,
@@ -192,8 +216,12 @@ class GuestController extends Controller
                 'id' => $booking->id,
                 'agenda_name' => $booking->agenda_name,
                 'agenda_detail' => $booking->agenda_detail,
-                'meeting_date' => $booking->meeting_date->format('Y-m-d'),
-                'meeting_date_formatted' => $booking->meeting_date->translatedFormat('l, d F Y'),
+                'start_date' => $booking->start_date->format('Y-m-d'),
+                'end_date' => $booking->end_date->format('Y-m-d'),
+                'start_date_formatted' => $startDateFormatted,
+                'end_date_formatted' => $endDateFormatted,
+                'date_display_formatted' => $dateDisplayFormatted,
+                'is_multi_day' => $isMultiDay,
                 'start_time' => $startTime,
                 'end_time' => $endTime,
                 'status' => $booking->status,
