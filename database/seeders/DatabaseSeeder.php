@@ -170,7 +170,6 @@ class DatabaseSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            // Ruang di Gedung Utama Cabang (building_id: 3)
             [
                 'building_id' => 3,
                 'room_name' => 'Ruang Rapat C1',
@@ -199,7 +198,7 @@ class DatabaseSeeder extends Seeder
      * - super_admin: tanpa unit_id dan building_id (kelola semua)
      * - admin_unit: dengan unit_id (1 admin = 1 unit)
      * - admin_gedung: dengan building_id (1 admin = 1 gedung)
-     * - user: tanpa unit_id dan building_id (bisa booking di mana saja)
+     * - user: tanpa unit_id dan building_id
      */
     private function seedUsers(): void
     {
@@ -309,7 +308,8 @@ class DatabaseSeeder extends Seeder
             [
                 'user_id' => 7,
                 'room_id' => 1,
-                'meeting_date' => '2026-01-15',
+                'start_date' => '2026-01-15',
+                'end_date' => '2026-01-15',
                 'start_time' => '09:00:00',
                 'end_time' => '11:00:00',
                 'agenda_name' => 'Rapat Koordinasi Tim',
@@ -326,7 +326,8 @@ class DatabaseSeeder extends Seeder
             [
                 'user_id' => 8, 
                 'room_id' => 4, 
-                'meeting_date' => '2026-01-16',
+                'start_date' => '2026-01-16',
+                'end_date' => '2026-01-16',
                 'start_time' => '13:00:00',
                 'end_time' => '15:00:00',
                 'agenda_name' => 'Presentasi Proyek',
@@ -343,7 +344,8 @@ class DatabaseSeeder extends Seeder
             [
                 'user_id' => 9, 
                 'room_id' => 3, 
-                'meeting_date' => '2026-01-10',
+                'start_date' => '2026-01-10',
+                'end_date' => '2026-01-10',
                 'start_time' => '14:00:00',
                 'end_time' => '16:00:00',
                 'agenda_name' => 'Workshop Internal',
@@ -360,13 +362,14 @@ class DatabaseSeeder extends Seeder
             [
                 'user_id' => 7,
                 'room_id' => 6,
-                'meeting_date' => '2026-01-20',
+                'start_date' => '2026-01-20',
+                'end_date' => '2026-01-21',
                 'start_time' => '10:00:00',
                 'end_time' => '12:00:00',
                 'agenda_name' => 'Meeting dengan Client',
                 'pic_name' => 'Budi Santoso',
                 'pic_phone' => '08123456789',
-                'agenda_detail' => 'Pertemuan dengan client dari cabang untuk membahas kerjasama baru.',
+                'agenda_detail' => 'Pertemuan dengan client dari cabang untuk membahas kerjasama baru selama 2 hari.',
                 'status' => 'Menunggu',
                 'rejection_reason' => null,
                 'approved_by' => null,
@@ -377,7 +380,8 @@ class DatabaseSeeder extends Seeder
             [
                 'user_id' => 8,
                 'room_id' => 5,
-                'meeting_date' => '2026-01-05',
+                'start_date' => '2026-01-05',
+                'end_date' => '2026-01-05',
                 'start_time' => '09:00:00',
                 'end_time' => '12:00:00',
                 'agenda_name' => 'Town Hall Meeting',
@@ -390,6 +394,42 @@ class DatabaseSeeder extends Seeder
                 'approved_at' => now()->subDays(7),
                 'created_at' => now()->subDays(10),
                 'updated_at' => now()->subDays(7),
+            ],
+            [
+                'user_id' => 9,
+                'room_id' => 5,
+                'start_date' => '2026-01-05',
+                'end_date' => '2026-01-05',
+                'start_time' => '13:00:00',
+                'end_time' => '15:00:00',
+                'agenda_name' => 'Monthly Meeting',
+                'pic_name' => 'Alex Johnson',
+                'pic_phone' => '08999988877',
+                'agenda_detail' => 'meeting bulanan divisi engineering.',
+                'status' => 'Disetujui',
+                'rejection_reason' => null,
+                'approved_by' => 5,
+                'approved_at' => now()->subDays(7),
+                'created_at' => now()->subDays(10),
+                'updated_at' => now()->subDays(7),
+            ],
+            [
+                'user_id' => 9,
+                'room_id' => 2,
+                'start_date' => '2026-01-25',
+                'end_date' => '2026-01-27',
+                'start_time' => '08:00:00',
+                'end_time' => '17:00:00',
+                'agenda_name' => 'Training New Employee',
+                'pic_name' => 'Andi Wijaya',
+                'pic_phone' => '08223344556',
+                'agenda_detail' => 'Training untuk karyawan baru selama 3 hari penuh.',
+                'status' => 'Disetujui',
+                'rejection_reason' => null,
+                'approved_by' => 4,
+                'approved_at' => now()->subDays(3),
+                'created_at' => now()->subDays(5),
+                'updated_at' => now()->subDays(3),
             ],
         ]);
     }
