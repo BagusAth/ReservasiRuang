@@ -170,7 +170,6 @@ class DatabaseSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            // Ruang di Gedung Utama Cabang (building_id: 3)
             [
                 'building_id' => 3,
                 'room_name' => 'Ruang Rapat C1',
@@ -199,7 +198,7 @@ class DatabaseSeeder extends Seeder
      * - super_admin: tanpa unit_id dan building_id (kelola semua)
      * - admin_unit: dengan unit_id (1 admin = 1 unit)
      * - admin_gedung: dengan building_id (1 admin = 1 gedung)
-     * - user: tanpa unit_id dan building_id (bisa booking di mana saja)
+     * - user: tanpa unit_id dan building_id
      */
     private function seedUsers(): void
     {
@@ -302,12 +301,10 @@ class DatabaseSeeder extends Seeder
 
     /**
      * Seed bookings
-     * Booking sekarang mendukung multi-day dengan start_date dan end_date
      */
     private function seedBookings(): void
     {
         DB::table('bookings')->insert([
-            // Booking 1 hari (single day)
             [
                 'user_id' => 7,
                 'room_id' => 1,
@@ -326,7 +323,6 @@ class DatabaseSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            // Booking 1 hari (single day)
             [
                 'user_id' => 8, 
                 'room_id' => 4, 
@@ -345,7 +341,6 @@ class DatabaseSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            // Booking 1 hari yang ditolak
             [
                 'user_id' => 9, 
                 'room_id' => 3, 
@@ -364,7 +359,6 @@ class DatabaseSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            // Booking multi-day (2 hari) - contoh kasus pemesanan 2 hari di jam yang sama
             [
                 'user_id' => 7,
                 'room_id' => 6,
@@ -383,7 +377,6 @@ class DatabaseSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            // Booking 1 hari
             [
                 'user_id' => 8,
                 'room_id' => 5,
@@ -402,7 +395,24 @@ class DatabaseSeeder extends Seeder
                 'created_at' => now()->subDays(10),
                 'updated_at' => now()->subDays(7),
             ],
-            // Booking multi-day (3 hari) - Training
+            [
+                'user_id' => 9,
+                'room_id' => 5,
+                'start_date' => '2026-01-05',
+                'end_date' => '2026-01-05',
+                'start_time' => '13:00:00',
+                'end_time' => '15:00:00',
+                'agenda_name' => 'Monthly Meeting',
+                'pic_name' => 'Alex Johnson',
+                'pic_phone' => '08999988877',
+                'agenda_detail' => 'meeting bulanan divisi engineering.',
+                'status' => 'Disetujui',
+                'rejection_reason' => null,
+                'approved_by' => 5,
+                'approved_at' => now()->subDays(7),
+                'created_at' => now()->subDays(10),
+                'updated_at' => now()->subDays(7),
+            ],
             [
                 'user_id' => 9,
                 'room_id' => 2,
