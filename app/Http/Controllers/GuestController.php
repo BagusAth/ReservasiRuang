@@ -68,6 +68,7 @@ class GuestController extends Controller
     public function getBookings(Request $request): JsonResponse
     {
         $request->validate([
+            'unit_id' => 'nullable|exists:units,id',
             'building_id' => 'nullable|exists:buildings,id',
             'room_id' => 'nullable|exists:rooms,id',
             'month' => 'nullable|integer|min:1|max:12',
@@ -103,6 +104,13 @@ class GuestController extends Controller
             ->whereIn('status', ['Disetujui', 'Menunggu'])
             ->where('start_date', '<=', $viewEndDate)
             ->where('end_date', '>=', $viewStartDate);
+
+        // Filter berdasarkan unit
+        if ($request->filled('unit_id')) {
+            $query->whereHas('room.building', function ($q) use ($request) {
+                $q->where('unit_id', $request->unit_id);
+            });
+        }
 
         // Filter berdasarkan gedung
         if ($request->filled('building_id')) {

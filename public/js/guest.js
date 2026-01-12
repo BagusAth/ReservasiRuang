@@ -37,11 +37,13 @@
         currentDay: new Date().getDate(),
         currentWeekStart: null, // Will be set on init
         currentView: 'month', // 'month', 'week', 'day'
+        selectedUnit: null,
         selectedBuilding: null,
         selectedRoom: null,
         startTime: null,
         endTime: null,
         bookings: [],
+        units: [],
         buildings: [],
         rooms: [],
         isLoading: false
@@ -52,6 +54,7 @@
     // ============================================
     const elements = {
         // Filter elements
+        filterUnit: document.getElementById('filterUnit'),
         filterBuilding: document.getElementById('filterBuilding'),
         filterRoom: document.getElementById('filterRoom'),
         filterStartTime: document.getElementById('filterStartTime'),
@@ -217,6 +220,21 @@
     }
 
     /**
+     * Fetch buildings based on unit
+     */
+    async function fetchBuildings(unitId) {
+        try {
+            const response = await fetchAPI('/buildings', { unit_id: unitId });
+            if (response.success) {
+                state.buildings = response.data;
+                updateBuildingSelect();
+            }
+        } catch (error) {
+            console.error('Error fetching buildings:', error);
+        }
+    }
+
+    /**
      * Fetch rooms based on building
      */
     async function fetchRooms(buildingId) {
@@ -244,6 +262,7 @@
             const params = {
                 year: state.currentYear,
                 month: state.currentMonth,
+                unit_id: state.selectedUnit,
                 building_id: state.selectedBuilding,
                 room_id: state.selectedRoom,
                 start_time: state.startTime,
@@ -300,11 +319,28 @@
     // ============================================
 
     /**
+     * Update building select options
+     */
+    function updateBuildingSelect() {
+        const select = elements.filterBuilding;
+        select.innerHTML = '<option value="">Pilih gedung</option>';
+
+        state.buildings.forEach(building => {
+            const option = document.createElement('option');
+            option.value = building.id;
+            option.textContent = building.building_name;
+            select.appendChild(option);
+        });
+
+        select.disabled = state.buildings.length === 0;
+    }
+
+    /**
      * Update room select options
      */
     function updateRoomSelect() {
         const select = elements.filterRoom;
-        select.innerHTML = '<option value="">pilih ruangan</option>';
+        select.innerHTML = '<option value="">Pilih ruangan</option>';
 
         state.rooms.forEach(room => {
             const option = document.createElement('option');
@@ -320,15 +356,20 @@
      * Update calendar title
      */
     function updateCalendarTitle() {
-        let title = 'Pilih Gedung dan Ruangan';
+        let title = 'Jadwal Reservasi Ruangan';
         
-        if (state.selectedBuilding) {
-            const building = elements.filterBuilding.options[elements.filterBuilding.selectedIndex].text;
-            if (state.selectedRoom) {
-                const room = elements.filterRoom.options[elements.filterRoom.selectedIndex].text;
-                title = `${building} - ${room}`;
-            } else {
-                title = building;
+        if (state.selectedUnit) {
+            const unit = elements.filterUnit.options[elements.filterUnit.selectedIndex].text;
+            title = unit;
+            
+            if (state.selectedBuilding) {
+                const building = elements.filterBuilding.options[elements.filterBuilding.selectedIndex].text;
+                title = `${unit} - ${building}`;
+                
+                if (state.selectedRoom) {
+                    const room = elements.filterRoom.options[elements.filterRoom.selectedIndex].text;
+                    title = `${building} - ${room}`;
+                }
             }
         }
 
@@ -906,6 +947,33 @@
     // ============================================
 
     /**
+     * Handle unit filter change
+     */
+    function handleUnitChange(e) {
+        state.selectedUnit = e.target.value || null;
+        state.selectedBuilding = null;
+        state.selectedRoom = null;
+        
+        // Reset building and room selects
+        elements.filterBuilding.value = '';
+        elements.filterBuilding.disabled = true;
+        elements.filterRoom.value = '';
+        elements.filterRoom.disabled = true;
+
+        if (state.selectedUnit) {
+            fetchBuildings(state.selectedUnit);
+        } else {
+            state.buildings = [];
+            state.rooms = [];
+            updateBuildingSelect();
+            updateRoomSelect();
+        }
+
+        updateCalendarTitle();
+        fetchBookings();
+    }
+
+    /**
      * Handle building filter change
      */
     function handleBuildingChange(e) {
@@ -1335,6 +1403,7 @@
      */
     function initEventListeners() {
         // Filter events
+        elements.filterUnit.addEventListener('change', handleUnitChange);
         elements.filterBuilding.addEventListener('change', handleBuildingChange);
         elements.filterRoom.addEventListener('change', handleRoomChange);
         elements.filterStartTime.addEventListener('change', handleTimeChange);

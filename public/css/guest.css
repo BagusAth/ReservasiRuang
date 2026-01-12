@@ -2493,7 +2493,71 @@ body {
     display: none !important;
 }
 
-/* Checkbox Enhanced */
+/* Checkbox Enhanced - Remember Me */
+.form-remember {
+    margin-top: 4px;
+    margin-bottom: 8px;
+}
+
+.form-remember .checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+.form-remember .checkbox-wrapper input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.form-remember .checkmark {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    background-color: #FAFBFC;
+    border: 2px solid #E5E7EB;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.form-remember .checkbox-wrapper:hover .checkmark {
+    border-color: #00A2B9;
+}
+
+.form-remember .checkbox-wrapper input:checked ~ .checkmark {
+    background: linear-gradient(135deg, #00A2B9 0%, #0095A8 100%);
+    border-color: #00A2B9;
+}
+
+.form-remember .checkbox-wrapper input:checked ~ .checkmark::after {
+    content: '';
+    width: 5px;
+    height: 9px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    margin-bottom: 2px;
+}
+
+.form-remember .checkbox-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #4B5563;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+/* Legacy Checkbox Support */
 .form-checkbox {
     margin-top: 4px;
 }

@@ -79,15 +79,28 @@
                 </div>
 
                 <div class="filter-body">
+                    <!-- Unit Filter -->
+                    <div class="filter-group">
+                        <label class="filter-label">Unit</label>
+                        <div class="select-wrapper">
+                            <select id="filterUnit" class="filter-select">
+                                <option value="">Pilih unit</option>
+                                @foreach($units as $unit)
+                                    <option value="{{ $unit->id }}">{{ $unit->unit_name }}</option>
+                                @endforeach
+                            </select>
+                            <svg class="select-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+
                     <!-- Gedung Filter -->
                     <div class="filter-group">
                         <label class="filter-label">Gedung</label>
                         <div class="select-wrapper">
-                            <select id="filterBuilding" class="filter-select">
+                            <select id="filterBuilding" class="filter-select" disabled>
                                 <option value="">Pilih gedung</option>
-                                @foreach($buildings as $building)
-                                    <option value="{{ $building->id }}">{{ $building->building_name }}</option>
-                                @endforeach
                             </select>
                             <svg class="select-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="6 9 12 15 18 9"></polyline>
@@ -248,7 +261,7 @@
                         </div>
                         <span class="form-error" id="passwordError"></span>
                     </div>
-                    <div class="form-group form-checkbox">
+                    <div class="form-group form-remember">
                         <label class="checkbox-wrapper">
                             <input type="checkbox" id="rememberMe" name="remember">
                             <span class="checkmark"></span>
