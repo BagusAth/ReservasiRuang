@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,4 +25,17 @@ Route::prefix('api/guest')->name('guest.api.')->group(function () {
     Route::get('/bookings', [GuestController::class, 'getBookings'])->name('bookings');
     Route::get('/bookings/{id}', [GuestController::class, 'getBookingDetail'])->name('booking.detail');
     Route::get('/search', [GuestController::class, 'searchBookings'])->name('search');
+});
+
+// User Routes (Role: user)
+Route::middleware(['role:user'])->group(function () {
+    // Dashboard
+    Route::get('/user/dashboard', [UserController::class, 'dashboard'])->name('user.dashboard');
+    
+    // API untuk User
+    Route::prefix('api/user')->name('user.api.')->group(function () {
+        Route::get('/bookings', [UserController::class, 'getBookings'])->name('bookings');
+        Route::get('/bookings/{id}', [UserController::class, 'getBookingDetail'])->name('booking.detail');
+        Route::get('/stats', [UserController::class, 'getStats'])->name('stats');
+    });
 });

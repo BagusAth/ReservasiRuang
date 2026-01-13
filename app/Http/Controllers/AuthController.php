@@ -116,10 +116,10 @@ class AuthController extends Controller
         $roleName = $user->role->role_name ?? null;
 
         return match ($roleName) {
-            'Super Admin' => '/admin/dashboard',
-            'Admin Unit' => '/unit/dashboard',
-            'Admin Gedung' => '/building/dashboard',
-            'User' => '/user/dashboard',
+            'super_admin' => '/admin/dashboard',
+            'admin_unit' => '/unit/dashboard',
+            'admin_gedung' => '/building/dashboard',
+            'user' => '/user/dashboard',
             default => '/'
         };
     }

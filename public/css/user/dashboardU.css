@@ -1,0 +1,731 @@
+/**
+ * User Dashboard Styles
+ * PLN Nusantara Power Services - Reservasi Ruang Rapat
+ * 
+ * Color Palette:
+ * - Background: #F5F8F8
+ * - Primary: #00A2B9
+ * - Approved: #00AEEF
+ * - Rejected: #ED1C24
+ * - Pending: #FFF200
+ */
+
+/* ============================================
+   Base Styles & Font Face
+   ============================================ */
+@font-face {
+    font-family: 'Helvetica';
+    src: local('Helvetica');
+    font-weight: normal;
+}
+
+@font-face {
+    font-family: 'Helvetica Light';
+    src: local('Helvetica Light'), local('Helvetica-Light');
+    font-weight: 300;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #00A2B9 #F5F8F8;
+}
+
+*::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+    background: #F5F8F8;
+    border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: #00A2B9;
+    border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: #008799;
+}
+
+/* ============================================
+   Sidebar Styles - Modern Professional Design
+   ============================================ */
+.sidebar {
+    background: linear-gradient(180deg, #00A2B9 0%, #0090A5 50%, #007A8C 100%);
+    box-shadow: 
+        4px 0 20px rgba(0, 0, 0, 0.15),
+        inset -1px 0 0 rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(0, 0, 0, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.nav-link.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-left: 4px solid #FFFFFF;
+    margin-left: -4px;
+    box-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+}
+
+.nav-link:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateX(4px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mobile sidebar animation */
+@media (max-width: 1023px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    
+    .sidebar-overlay.active {
+        display: block;
+    }
+}
+
+/* ============================================
+   Calendar Styles
+   ============================================ */
+.calendar-day {
+    min-height: 80px;
+    border: 1px solid #e5e7eb;
+    margin: -0.5px;
+    padding: 8px;
+    background: white;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.calendar-day:hover {
+    background: #f0fafa;
+    z-index: 1;
+}
+
+.calendar-day.other-month {
+    background: #f9fafb;
+    color: #9ca3af;
+}
+
+.calendar-day.today {
+    background: linear-gradient(135deg, #e0f7fa 0%, #f0fafa 100%);
+    border-color: #00A2B9;
+    box-shadow: inset 0 0 0 1px #00A2B9;
+}
+
+.calendar-day.has-booking {
+    position: relative;
+}
+
+.calendar-day .day-number {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+.calendar-day.other-month .day-number {
+    color: #9ca3af;
+}
+
+.calendar-day.today .day-number {
+    color: #00A2B9;
+    font-weight: 700;
+}
+
+/* Booking Items - Matching Guest Page Style */
+.booking-item {
+    padding: 3px 6px;
+    margin-bottom: 2px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-left: 3px solid;
+    line-height: 1.2;
+}
+
+.booking-item:hover {
+    transform: translateX(1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Approved - Blue (#00AEEF) */
+.booking-item.status-approved,
+.booking-item.approved {
+    background: linear-gradient(135deg, rgba(0, 174, 239, 0.15) 0%, rgba(0, 162, 185, 0.1) 100%);
+    color: #0077B5;
+    border-left-color: #00AEEF;
+}
+
+/* Pending - Yellow (#FFF200) */
+.booking-item.status-pending,
+.booking-item.pending {
+    background: linear-gradient(135deg, rgba(255, 242, 0, 0.25) 0%, rgba(255, 215, 0, 0.18) 100%);
+    color: #9A7B00;
+    border-left-color: #FFF200;
+}
+
+/* Rejected - Red (#ED1C24) */
+.booking-item.status-rejected,
+.booking-item.rejected {
+    background: linear-gradient(135deg, rgba(237, 28, 36, 0.12) 0%, rgba(217, 25, 32, 0.08) 100%);
+    color: #C41E24;
+    border-left-color: #ED1C24;
+}
+
+.more-bookings {
+    font-size: 11px;
+    font-weight: 600;
+    color: #00A2B9;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+}
+
+.more-bookings:hover {
+    background-color: rgba(0, 162, 185, 0.1);
+}
+
+/* ============================================
+   Stat Cards
+   ============================================ */
+.stat-card {
+    transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    border-color: #00A2B9;
+}
+
+/* ============================================
+   Modal Styles - Modern & Professional Design
+   ============================================ */
+.modal-overlay {
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: linear-gradient(180deg, #FFFFFF 0%, #FAFBFC 100%);
+    border-radius: 24px;
+    width: 90%;
+    max-width: 520px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 
+        0 0 0 1px rgba(0, 162, 185, 0.1),
+        0 25px 50px -12px rgba(0, 0, 0, 0.35),
+        0 0 100px rgba(0, 162, 185, 0.15);
+    transform: scale(0.9) translateY(30px);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-overlay.active .modal-content {
+    transform: scale(1) translateY(0);
+}
+
+/* Custom Scrollbar for Modal */
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #00A2B9 #F0F0F0;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #F0F0F0;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #00A2B9 0%, #0095A8 100%);
+    border-radius: 10px;
+    border: 2px solid #F0F0F0;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #0095A8 0%, #008799 100%);
+}
+
+/* Booking Detail Card - Modern Futuristic Design */
+.booking-detail-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+}
+
+/* Decorative Background Elements */
+.booking-detail-card::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(0, 162, 185, 0.08) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Status Banner - Futuristic Style */
+.detail-status-banner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 24px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.detail-status-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transform: translateX(-100%);
+    animation: shimmer 2.5s infinite;
+}
+
+@keyframes shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.detail-status-banner.status-approved {
+    background: linear-gradient(135deg, #00AEEF 0%, #00A2B9 100%);
+    color: #FFFFFF;
+    box-shadow: 
+        0 4px 15px rgba(0, 174, 239, 0.4),
+        0 0 30px rgba(0, 174, 239, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.detail-status-banner.status-pending {
+    background: linear-gradient(135deg, #FFD93D 0%, #F0C000 100%);
+    color: #5D4E00;
+    box-shadow: 
+        0 4px 15px rgba(255, 217, 61, 0.4),
+        0 0 30px rgba(255, 217, 61, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.detail-status-banner.status-rejected {
+    background: linear-gradient(135deg, #ED1C24 0%, #C41E24 100%);
+    color: #FFFFFF;
+    box-shadow: 
+        0 4px 15px rgba(237, 28, 36, 0.4),
+        0 0 30px rgba(237, 28, 36, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Agenda Section - Premium Look */
+.detail-agenda {
+    text-align: center;
+    padding-bottom: 24px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid transparent;
+    background-image: linear-gradient(#fff, #fff), linear-gradient(90deg, transparent, #00A2B9, transparent);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+    position: relative;
+    z-index: 1;
+}
+
+.detail-agenda-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a1a2e;
+    margin-bottom: 10px;
+    letter-spacing: -0.5px;
+    line-height: 1.3;
+    background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.detail-agenda-desc {
+    font-size: 14px;
+    font-weight: 400;
+    color: #6B7280;
+    line-height: 1.6;
+    max-width: 90%;
+    margin: 0 auto;
+}
+
+/* Info Grid - Modern Card Design */
+.detail-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 1;
+}
+
+.detail-info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px;
+    background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFB 100%);
+    border-radius: 16px;
+    border: 1px solid rgba(0, 162, 185, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.detail-info-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(0, 162, 185, 0.05) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.detail-info-item:hover {
+    transform: translateY(-3px);
+    border-color: rgba(0, 162, 185, 0.3);
+    box-shadow: 
+        0 10px 25px rgba(0, 162, 185, 0.15),
+        0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.detail-info-item:hover::before {
+    opacity: 1;
+}
+
+.detail-info-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(145deg, #00A2B9 0%, #0090A5 100%);
+    border-radius: 12px;
+    color: #FFFFFF;
+    flex-shrink: 0;
+    box-shadow: 
+        0 4px 12px rgba(0, 162, 185, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    position: relative;
+    z-index: 1;
+}
+
+.detail-info-icon svg {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+.detail-info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.detail-info-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #00A2B9;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+.detail-info-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a2e;
+    word-break: break-word;
+    line-height: 1.3;
+}
+
+.detail-info-sub {
+    font-size: 12px;
+    font-weight: 500;
+    color: #6B7280;
+    margin-top: 2px;
+}
+
+/* Unit Badge - Futuristic Style */
+.detail-unit-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, rgba(0, 162, 185, 0.08) 0%, rgba(0, 162, 185, 0.03) 100%);
+    border: 2px solid rgba(0, 162, 185, 0.2);
+    border-radius: 14px;
+    color: #00A2B9;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.detail-unit-badge::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(0, 162, 185, 0.1) 0%, transparent 50%);
+    transform: translate(-50%, -50%);
+    animation: pulse-glow 3s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        opacity: 0.5;
+        transform: translate(-50%, -50%) scale(0.8);
+    }
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+/* Rejection Reason - Alert Style */
+.detail-rejection {
+    margin-top: 20px;
+    padding: 18px;
+    background: linear-gradient(135deg, rgba(237, 28, 36, 0.08) 0%, rgba(237, 28, 36, 0.03) 100%);
+    border: 1px solid rgba(237, 28, 36, 0.2);
+    border-left: 4px solid #ED1C24;
+    border-radius: 12px;
+    position: relative;
+    z-index: 1;
+}
+
+.detail-rejection-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #C41E24;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.detail-rejection-value {
+    font-size: 14px;
+    font-weight: 500;
+    color: #991B1B;
+    line-height: 1.6;
+}
+
+/* Responsive for Detail Modal */
+@media (max-width: 480px) {
+    .modal-content {
+        max-height: 90vh;
+        border-radius: 20px 20px 0 0;
+        margin-top: auto;
+    }
+    
+    .detail-info-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .detail-agenda-title {
+        font-size: 18px;
+    }
+    
+    .detail-info-item {
+        padding: 14px;
+    }
+    
+    .detail-info-icon {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .detail-status-banner {
+        padding: 12px 18px;
+        font-size: 12px;
+    }
+}
+
+/* ============================================
+   User Dropdown
+   ============================================ */
+.user-dropdown {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+}
+
+.user-dropdown.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* ============================================
+   Time Picker Button
+   ============================================ */
+.time-picker-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+    border-radius: 0.5rem;
+}
+
+/* ============================================
+   Loading States
+   ============================================ */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+@media (max-width: 640px) {
+    .calendar-day {
+        min-height: 60px;
+        padding: 4px;
+    }
+    
+    .calendar-day .day-number {
+        font-size: 0.75rem;
+    }
+    
+    .booking-indicator {
+        font-size: 0.5rem;
+        padding: 1px 4px;
+    }
+    
+    .stat-card p:first-child {
+        font-size: 0.75rem;
+    }
+    
+    .stat-card p:last-of-type {
+        font-size: 1.5rem !important;
+    }
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease forwards;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+@media print {
+    .sidebar,
+    .sidebar-overlay,
+    header,
+    .modal-overlay {
+        display: none !important;
+    }
+    
+    main {
+        margin-left: 0 !important;
+    }
+}
