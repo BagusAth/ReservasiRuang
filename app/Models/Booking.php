@@ -247,4 +247,76 @@ class Booking extends Model
     {
         return $query->where('end_date', '<', now()->toDateString());
     }
+
+    /**
+     * Check if there's a conflicting approved booking.
+     * 
+     * A conflict exists when:
+     * - Same room
+     * - Date range overlaps (booking dates intersect)
+     * - Time range overlaps (booking times intersect)
+     * - Status is approved
+     *
+     * @param int $roomId
+     * @param string $startDate
+     * @param string $endDate
+     * @param string $startTime
+     * @param string $endTime
+     * @param int|null $excludeBookingId Exclude this booking ID (for updates)
+     * @return Booking|null Returns the conflicting booking if found, null otherwise
+     */
+    public static function findConflict(
+        int $roomId,
+        string $startDate,
+        string $endDate,
+        string $startTime,
+        string $endTime,
+        ?int $excludeBookingId = null
+    ): ?self {
+        $query = self::with(['room.building.unit'])
+            ->where('room_id', $roomId)
+            ->where('status', self::STATUS_APPROVED)
+            // Date range overlap: booking.start_date <= endDate AND booking.end_date >= startDate
+            ->where('start_date', '<=', $endDate)
+            ->where('end_date', '>=', $startDate)
+            // Time range overlap: booking.start_time < endTime AND booking.end_time > startTime
+            ->where('start_time', '<', $endTime)
+            ->where('end_time', '>', $startTime);
+
+        // Exclude current booking when updating
+        if ($excludeBookingId) {
+            $query->where('id', '!=', $excludeBookingId);
+        }
+
+        return $query->first();
+    }
+
+    /**
+     * Generate a user-friendly conflict message.
+     *
+     * @param Booking $conflictingBooking
+     * @return string
+     */
+    public static function getConflictMessage(self $conflictingBooking): string
+    {
+        $roomName = $conflictingBooking->room->room_name ?? 'Ruangan';
+        $buildingName = $conflictingBooking->room->building->building_name ?? '';
+        $unitName = $conflictingBooking->room->building->unit->unit_name ?? '';
+        
+        $startDate = $conflictingBooking->start_date->format('d/m/Y');
+        $endDate = $conflictingBooking->end_date->format('d/m/Y');
+        $startTime = substr($conflictingBooking->start_time, 0, 5);
+        $endTime = substr($conflictingBooking->end_time, 0, 5);
+        
+        $dateDisplay = $startDate === $endDate 
+            ? $startDate 
+            : "{$startDate} - {$endDate}";
+        
+        $location = $buildingName;
+        if ($unitName) {
+            $location = "{$unitName} - {$buildingName}";
+        }
+
+        return "Ruangan {$roomName} ({$location}) sudah dibooking pada tanggal {$dateDisplay} pukul {$startTime} - {$endTime}. Silakan pilih waktu atau ruangan lain.";
+    }
 }

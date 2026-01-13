@@ -341,6 +341,29 @@ class UserController extends Controller
             ], 422);
         }
 
+        // Check for conflicting approved bookings
+        $conflict = Booking::findConflict(
+            $validated['room_id'],
+            $validated['start_date'],
+            $validated['end_date'],
+            $validated['start_time'],
+            $validated['end_time']
+        );
+
+        if ($conflict) {
+            return response()->json([
+                'success' => false,
+                'message' => Booking::getConflictMessage($conflict),
+                'error_type' => 'booking_conflict',
+                'conflict_data' => [
+                    'room' => $conflict->room->room_name ?? '-',
+                    'building' => $conflict->room->building->building_name ?? '-',
+                    'date' => $conflict->start_date->format('d/m/Y'),
+                    'time' => substr($conflict->start_time, 0, 5) . ' - ' . substr($conflict->end_time, 0, 5),
+                ]
+            ], 422);
+        }
+
         $booking = new Booking();
         $booking->user_id = $user->id;
         $booking->room_id = $validated['room_id'];
@@ -392,6 +415,30 @@ class UserController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Jam selesai harus setelah jam mulai untuk peminjaman 1 hari.'
+            ], 422);
+        }
+
+        // Check for conflicting approved bookings (exclude current booking)
+        $conflict = Booking::findConflict(
+            $validated['room_id'],
+            $validated['start_date'],
+            $validated['end_date'],
+            $validated['start_time'],
+            $validated['end_time'],
+            $id // Exclude current booking from conflict check
+        );
+
+        if ($conflict) {
+            return response()->json([
+                'success' => false,
+                'message' => Booking::getConflictMessage($conflict),
+                'error_type' => 'booking_conflict',
+                'conflict_data' => [
+                    'room' => $conflict->room->room_name ?? '-',
+                    'building' => $conflict->room->building->building_name ?? '-',
+                    'date' => $conflict->start_date->format('d/m/Y'),
+                    'time' => substr($conflict->start_time, 0, 5) . ' - ' . substr($conflict->end_time, 0, 5),
+                ]
             ], 422);
         }
 

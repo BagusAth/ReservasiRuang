@@ -275,6 +275,14 @@ async function onBuildingChange() {
 
 async function submitForm(e) {
 	e.preventDefault();
+	
+	const submitBtn = document.getElementById('btnSubmit');
+	const originalText = submitBtn.textContent;
+	
+	// Disable button and show loading state
+	submitBtn.disabled = true;
+	submitBtn.textContent = 'Menyimpan...';
+	
 	const mode = document.getElementById('formMode').value;
 	const payload = {
 		room_id: document.getElementById('roomId').value,
@@ -288,17 +296,34 @@ async function submitForm(e) {
 		pic_phone: document.getElementById('picPhone').value,
 	};
 
-	const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content };
-	const url = mode === 'create' ? window.__USER_API__.create : window.__USER_API__.update(document.getElementById('bookingId').value);
-	const method = mode === 'create' ? 'POST' : 'PUT';
-	const res = await fetch(url, { method, headers, body: JSON.stringify(payload) });
-	const data = await res.json();
-	if (!res.ok || !data.success) {
-		alert(data.message || 'Gagal menyimpan data');
-		return;
+	try {
+		const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content };
+		const url = mode === 'create' ? window.__USER_API__.create : window.__USER_API__.update(document.getElementById('bookingId').value);
+		const method = mode === 'create' ? 'POST' : 'PUT';
+		const res = await fetch(url, { method, headers, body: JSON.stringify(payload) });
+		const data = await res.json();
+		
+		if (!res.ok || !data.success) {
+			// Check if it's a booking conflict error
+			if (data.error_type === 'booking_conflict') {
+				showToast(data.message, 'error', 8000); // Show longer for conflict errors
+			} else {
+				showToast(data.message || 'Gagal menyimpan data', 'error');
+			}
+			return;
+		}
+		
+		closeModal();
+		showToast(mode === 'create' ? 'Pengajuan peminjaman berhasil dibuat' : 'Data berhasil diperbarui', 'success');
+		await tableState.load();
+	} catch (error) {
+		console.error('Submit error:', error);
+		showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
+	} finally {
+		// Re-enable button
+		submitBtn.disabled = false;
+		submitBtn.textContent = originalText;
 	}
-	closeModal();
-	await tableState.load();
 }
 
 async function editBooking(id) {
@@ -310,13 +335,98 @@ async function editBooking(id) {
 
 async function deleteBooking(id) {
 	if (!confirm('Hapus peminjaman ini?')) return;
-	const res = await fetch(window.__USER_API__.delete(id), { method: 'DELETE', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content } });
-	const data = await res.json();
-	if (!res.ok || !data.success) {
-		alert(data.message || 'Gagal menghapus data');
-		return;
+	
+	try {
+		const res = await fetch(window.__USER_API__.delete(id), { 
+			method: 'DELETE', 
+			headers: { 
+				'Accept': 'application/json', 
+				'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content 
+			} 
+		});
+		const data = await res.json();
+		
+		if (!res.ok || !data.success) {
+			showToast(data.message || 'Gagal menghapus data', 'error');
+			return;
+		}
+		
+		showToast('Data berhasil dihapus', 'success');
+		await tableState.load();
+	} catch (error) {
+		console.error('Delete error:', error);
+		showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
 	}
-	await tableState.load();
+}
+
+/* ============================================
+   Toast Notification System
+   ============================================ */
+function showToast(message, type = 'info', duration = 5000) {
+	// Remove existing toast if any
+	const existingToast = document.getElementById('toast-notification');
+	if (existingToast) {
+		existingToast.remove();
+	}
+
+	// Create toast container
+	const toast = document.createElement('div');
+	toast.id = 'toast-notification';
+	toast.className = `fixed top-4 right-4 z-[100] max-w-md p-4 rounded-xl shadow-lg transform transition-all duration-300 translate-x-full`;
+	
+	// Set colors based on type
+	const colors = {
+		success: 'bg-green-50 border border-green-200 text-green-800',
+		error: 'bg-red-50 border border-red-200 text-red-800',
+		warning: 'bg-yellow-50 border border-yellow-200 text-yellow-800',
+		info: 'bg-blue-50 border border-blue-200 text-blue-800'
+	};
+	
+	const icons = {
+		success: `<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+		</svg>`,
+		error: `<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+		</svg>`,
+		warning: `<svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+		</svg>`,
+		info: `<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+		</svg>`
+	};
+	
+	toast.classList.add(...(colors[type] || colors.info).split(' '));
+	
+	toast.innerHTML = `
+		<div class="flex items-start gap-3">
+			<div class="flex-shrink-0 mt-0.5">${icons[type] || icons.info}</div>
+			<div class="flex-1 text-sm font-medium">${escapeHtml(message)}</div>
+			<button type="button" class="flex-shrink-0 ml-2 p-1 rounded-lg hover:bg-black/5 transition-colors" onclick="this.closest('#toast-notification').remove()">
+				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+				</svg>
+			</button>
+		</div>
+	`;
+	
+	document.body.appendChild(toast);
+	
+	// Trigger animation
+	requestAnimationFrame(() => {
+		toast.classList.remove('translate-x-full');
+		toast.classList.add('translate-x-0');
+	});
+	
+	// Auto-remove after duration
+	setTimeout(() => {
+		if (toast.parentNode) {
+			toast.classList.add('translate-x-full');
+			toast.classList.remove('translate-x-0');
+			setTimeout(() => toast.remove(), 300);
+		}
+	}, duration);
 }
 
 function escapeHtml(str='') {
