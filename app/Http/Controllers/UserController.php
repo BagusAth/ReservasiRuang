@@ -30,6 +30,16 @@ class UserController extends Controller
     }
 
     /**
+     * Halaman Peminjaman (list milik user + form ajukan).
+     */
+    public function reservationsPage()
+    {
+        $user = Auth::user();
+        $units = Unit::active()->orderBy('unit_name')->get();
+        return view('user.reservasiU', compact('user', 'units'));
+    }
+
+    /**
      * Get user's booking statistics.
      */
     private function getUserBookingStats(int $userId): array
@@ -254,5 +264,159 @@ class UserController extends Controller
                 'created_at' => $booking->created_at->translatedFormat('d F Y, H:i'),
             ]
         ]);
+    }
+
+    /**
+     * API: List bookings milik user login (untuk tabel peminjaman).
+     */
+    public function listMyBookings(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        $bookings = Booking::with(['room.building.unit'])
+            ->where('user_id', $user->id)
+            ->orderByDesc('start_date')
+            ->orderBy('start_time')
+            ->get()
+            ->map(function ($b) {
+                return [
+                    'id' => $b->id,
+                    'start_date' => $b->start_date->format('Y-m-d'),
+                    'end_date' => $b->end_date->format('Y-m-d'),
+                    'is_multi_day' => $b->start_date->ne($b->end_date),
+                    'date_display' => $b->start_date->translatedFormat('j M Y'),
+                    'date_end_display' => $b->end_date->translatedFormat('j M Y'),
+                    'start_time' => substr($b->start_time, 0, 5),
+                    'end_time' => substr($b->end_time, 0, 5),
+                    'agenda_name' => $b->agenda_name,
+                    'agenda_detail' => $b->agenda_detail,
+                    'pic_name' => $b->pic_name,
+                    'pic_phone' => $b->pic_phone,
+                    'status' => $b->status,
+                    'room' => [
+                        'id' => $b->room->id,
+                        'name' => $b->room->room_name,
+                    ],
+                    'building' => [
+                        'id' => $b->room->building->id,
+                        'name' => $b->room->building->building_name,
+                    ],
+                    'unit' => [
+                        'id' => optional($b->room->building->unit)->id,
+                        'name' => optional($b->room->building->unit)->unit_name,
+                    ],
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $bookings,
+        ]);
+    }
+
+    /**
+     * API: Create booking baru milik user login.
+     */
+    public function createBooking(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'room_id' => 'required|exists:rooms,id',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i',
+            'agenda_name' => 'required|string|max:255',
+            'agenda_detail' => 'nullable|string',
+            'pic_name' => 'required|string|max:255',
+            'pic_phone' => 'required|string|max:50',
+        ]);
+
+        // Waktu valid (end_time harus > start_time jika satu hari)
+        if ($validated['start_date'] === $validated['end_date'] && $validated['end_time'] <= $validated['start_time']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jam selesai harus setelah jam mulai untuk peminjaman 1 hari.'
+            ], 422);
+        }
+
+        $booking = new Booking();
+        $booking->user_id = $user->id;
+        $booking->room_id = $validated['room_id'];
+        $booking->start_date = $validated['start_date'];
+        $booking->end_date = $validated['end_date'];
+        $booking->start_time = $validated['start_time'];
+        $booking->end_time = $validated['end_time'];
+        $booking->agenda_name = $validated['agenda_name'];
+        $booking->agenda_detail = $validated['agenda_detail'] ?? '';
+        $booking->pic_name = $validated['pic_name'];
+        $booking->pic_phone = $validated['pic_phone'];
+        $booking->status = Booking::STATUS_PENDING;
+        $booking->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pengajuan peminjaman berhasil dibuat.',
+            'data' => [ 'id' => $booking->id ]
+        ], 201);
+    }
+
+    /**
+     * API: Update booking milik user (hanya jika status Menunggu).
+     */
+    public function updateBooking(int $id, Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        $booking = Booking::where('user_id', $user->id)->find($id);
+        if (!$booking) {
+            return response()->json(['success' => false, 'message' => 'Data tidak ditemukan'], 404);
+        }
+        if ($booking->status !== Booking::STATUS_PENDING) {
+            return response()->json(['success' => false, 'message' => 'Hanya data dengan status Menunggu yang dapat diubah'], 422);
+        }
+
+        $validated = $request->validate([
+            'room_id' => 'required|exists:rooms,id',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i',
+            'agenda_name' => 'required|string|max:255',
+            'agenda_detail' => 'nullable|string',
+            'pic_name' => 'required|string|max:255',
+            'pic_phone' => 'required|string|max:50',
+        ]);
+
+        if ($validated['start_date'] === $validated['end_date'] && $validated['end_time'] <= $validated['start_time']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jam selesai harus setelah jam mulai untuk peminjaman 1 hari.'
+            ], 422);
+        }
+
+        $booking->fill($validated);
+        $booking->agenda_detail = $validated['agenda_detail'] ?? '';
+        $booking->save();
+
+        return response()->json(['success' => true, 'message' => 'Data berhasil diperbarui']);
+    }
+
+    /**
+     * API: Hapus booking milik user (hanya jika status Menunggu).
+     */
+    public function deleteBooking(int $id): JsonResponse
+    {
+        $user = Auth::user();
+        $booking = Booking::where('user_id', $user->id)->find($id);
+        if (!$booking) {
+            return response()->json(['success' => false, 'message' => 'Data tidak ditemukan'], 404);
+        }
+        if ($booking->status !== Booking::STATUS_PENDING) {
+            return response()->json(['success' => false, 'message' => 'Hanya data dengan status Menunggu yang dapat dihapus'], 422);
+        }
+
+        $booking->delete();
+        return response()->json(['success' => true, 'message' => 'Data berhasil dihapus']);
     }
 }

@@ -31,11 +31,18 @@ Route::prefix('api/guest')->name('guest.api.')->group(function () {
 Route::middleware(['role:user'])->group(function () {
     // Dashboard
     Route::get('/user/dashboard', [UserController::class, 'dashboard'])->name('user.dashboard');
+    // Peminjaman Page
+    Route::get('/user/peminjaman', [UserController::class, 'reservationsPage'])->name('user.reservasi');
     
     // API untuk User
     Route::prefix('api/user')->name('user.api.')->group(function () {
         Route::get('/bookings', [UserController::class, 'getBookings'])->name('bookings');
         Route::get('/bookings/{id}', [UserController::class, 'getBookingDetail'])->name('booking.detail');
         Route::get('/stats', [UserController::class, 'getStats'])->name('stats');
+        // Peminjaman table endpoints (only current user's)
+        Route::get('/my-bookings', [UserController::class, 'listMyBookings'])->name('myBookings');
+        Route::post('/bookings', [UserController::class, 'createBooking'])->name('booking.create');
+        Route::put('/bookings/{id}', [UserController::class, 'updateBooking'])->name('booking.update');
+        Route::delete('/bookings/{id}', [UserController::class, 'deleteBooking'])->name('booking.delete');
     });
 });
