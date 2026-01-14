@@ -148,7 +148,7 @@
             <!-- Page Content -->
             <div class="p-4 lg:p-8">
                 <!-- Welcome Banner -->
-                <section class="relative bg-gradient-to-r from-primary to-primary-dark rounded-2xl overflow-hidden mb-6">
+                <section class="relative bg-gradient-to-r from-primary to-primary rounded-2xl overflow-hidden mb-6">
                     <div class="relative z-10 p-6 lg:p-8">
                         <h1 class="text-2xl lg:text-3xl font-bold text-white mb-2">Hello, {{ explode(' ', $user->name ?? 'User')[0] }}!</h1>
                         <p class="text-white/80 text-sm lg:text-base max-w-md">Selamat datang kembali! Berikut ringkasan aktivitas peminjaman anda</p>
@@ -360,7 +360,7 @@
             <!-- Modal Header -->
             <div class="flex items-center justify-between p-5 lg:p-6 border-b border-gray-100 bg-gradient-to-r from-primary/5 to-transparent flex-shrink-0">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg shadow-primary/25">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary flex items-center justify-center shadow-lg shadow-primary/25">
                         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                         </svg>
