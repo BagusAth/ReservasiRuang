@@ -1,5 +1,5 @@
 /**
- * User Dashboard Styles
+ * Admin Dashboard Styles
  * PLN Nusantara Power Services - Reservasi Ruang Rapat
  * 
  * Color Palette:
@@ -200,18 +200,17 @@
     border-left-color: #ED1C24;
 }
 
-.more-bookings {
-    font-size: 11px;
-    font-weight: 600;
-    color: #00A2B9;
-    padding: 4px 8px;
+/* More indicator */
+.booking-more {
+    color: #6b7280;
+    font-size: 10px;
+    padding: 2px 4px;
+    text-align: center;
     cursor: pointer;
-    border-radius: 4px;
-    transition: background-color 0.15s ease;
 }
 
-.more-bookings:hover {
-    background-color: rgba(0, 162, 185, 0.1);
+.booking-more:hover {
+    color: #00A2B9;
 }
 
 /* ============================================
@@ -223,19 +222,15 @@
 
 .stat-card:hover {
     transform: translateY(-2px);
-    border-color: #00A2B9;
 }
 
 /* ============================================
-   Modal Styles - Modern & Professional Design
+   Modal Styles
    ============================================ */
 .modal-overlay {
     opacity: 0;
     visibility: hidden;
-    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
 }
 
 .modal-overlay.active {
@@ -244,47 +239,34 @@
 }
 
 .modal-content {
-    background: linear-gradient(180deg, #FFFFFF 0%, #FAFBFC 100%);
-    border-radius: 24px;
-    width: 90%;
-    max-width: 520px;
-    max-height: 85vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 
-        0 0 0 1px rgba(0, 162, 185, 0.1),
-        0 25px 50px -12px rgba(0, 0, 0, 0.35),
-        0 0 100px rgba(0, 162, 185, 0.15);
-    transform: scale(0.9) translateY(30px);
-    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: scale(0.9) translateY(20px);
+    transition: all 0.3s ease;
 }
 
 .modal-overlay.active .modal-content {
     transform: scale(1) translateY(0);
 }
 
-/* Custom Scrollbar for Modal */
-.custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: #00A2B9 #F0F0F0;
-}
-
+/* Custom scrollbar for modal */
 .custom-scrollbar::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-    background: #F0F0F0;
-    border-radius: 10px;
+    background: #f1f1f1;
+    border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #00A2B9 0%, #0095A8 100%);
-    border-radius: 10px;
-    border: 2px solid #F0F0F0;
+    background: #00A2B9;
+    border-radius: 3px;
 }
 
-/* Modal Info Items - Matching Admin Style */
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #008799;
+}
+
+/* Modal Info Items */
 .modal-info-item {
     display: flex;
     align-items: flex-start;
@@ -351,53 +333,6 @@
     color: #C41E24;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, #0095A8 0%, #008799 100%);
-}
-
-/* ============================================
-   User Dropdown
-   ============================================ */
-.user-dropdown {
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-10px);
-    transition: all 0.2s ease;
-}
-
-.user-dropdown.active {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
-
-/* ============================================
-   Time Picker Button
-   ============================================ */
-.time-picker-btn:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
-    border-radius: 0.5rem;
-}
-
-/* ============================================
-   Loading States
-   ============================================ */
-.skeleton {
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: skeleton-loading 1.5s infinite;
-}
-
-@keyframes skeleton-loading {
-    0% {
-        background-position: 200% 0;
-    }
-    100% {
-        background-position: -200% 0;
-    }
-}
-
 /* ============================================
    Logout Modal Styles
    ============================================ */
@@ -417,39 +352,16 @@
 }
 
 /* ============================================
-   Responsive Adjustments
+   User Dropdown
    ============================================ */
-@media (max-width: 640px) {
-    .calendar-day {
-        min-height: 60px;
-        padding: 4px;
-    }
-    
-    .calendar-day .day-number {
-        font-size: 0.75rem;
-    }
-    
-    .booking-indicator {
-        font-size: 0.5rem;
-        padding: 1px 4px;
-    }
-    
-    .stat-card p:first-child {
-        font-size: 0.75rem;
-    }
-    
-    .stat-card p:last-of-type {
-        font-size: 1.5rem !important;
-    }
+.user-dropdown {
+    animation: dropdownFadeIn 0.2s ease;
 }
 
-/* ============================================
-   Animations
-   ============================================ */
-@keyframes fadeIn {
+@keyframes dropdownFadeIn {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(-10px);
     }
     to {
         opacity: 1;
@@ -457,35 +369,44 @@
     }
 }
 
-.animate-fade-in {
-    animation: fadeIn 0.3s ease forwards;
+/* ============================================
+   Loading States
+   ============================================ */
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #00A2B9;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
 }
 
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.5;
-    }
-}
-
-.animate-pulse {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 /* ============================================
-   Print Styles
+   Responsive Adjustments
    ============================================ */
-@media print {
-    .sidebar,
-    .sidebar-overlay,
-    header,
-    .modal-overlay {
-        display: none !important;
+@media (max-width: 1023px) {
+    .calendar-day {
+        min-height: 60px;
+        padding: 4px;
     }
     
-    main {
-        margin-left: 0 !important;
+    .booking-item {
+        font-size: 9px;
+        padding: 2px 4px;
+    }
+}
+
+@media (max-width: 639px) {
+    .calendar-day {
+        min-height: 50px;
+    }
+    
+    .booking-item {
+        font-size: 8px;
     }
 }

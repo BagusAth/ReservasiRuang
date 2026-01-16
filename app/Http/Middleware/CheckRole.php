@@ -53,9 +53,9 @@ class CheckRole
     private function getRedirectUrl(?string $roleName): string
     {
         return match ($roleName) {
-            'super_admin' => '/admin/dashboard',
-            'admin_unit' => '/unit/dashboard',
-            'admin_gedung' => '/building/dashboard',
+            'super_admin' => '/super/dashboard',
+            'admin_unit' => '/admin/dashboard',
+            'admin_gedung' => '/admin/dashboard',
             'user' => '/user/dashboard',
             default => '/'
         };

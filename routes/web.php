@@ -3,6 +3,7 @@
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -17,6 +18,7 @@ Route::get('/', [GuestController::class, 'index'])->name('guest.index');
 // Authentication Routes
 Route::post('/api/login', [AuthController::class, 'login'])->name('api.login');
 Route::post('/api/logout', [AuthController::class, 'logout'])->name('api.logout');
+Route::post('/logout', [AuthController::class, 'logoutRedirect'])->name('logout');
 
 // API untuk Guest
 Route::prefix('api/guest')->name('guest.api.')->group(function () {
@@ -44,5 +46,20 @@ Route::middleware(['role:user'])->group(function () {
         Route::post('/bookings', [UserController::class, 'createBooking'])->name('booking.create');
         Route::put('/bookings/{id}', [UserController::class, 'updateBooking'])->name('booking.update');
         Route::delete('/bookings/{id}', [UserController::class, 'deleteBooking'])->name('booking.delete');
+    });
+});
+
+// Admin Routes (Role: admin_unit, admin_gedung)
+Route::middleware(['role:admin_unit,admin_gedung'])->group(function () {
+    // Dashboard
+    Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    // Peminjaman Page
+    Route::get('/admin/peminjaman', [AdminController::class, 'reservationsPage'])->name('admin.reservasi');
+    
+    // API untuk Admin
+    Route::prefix('api/admin')->name('admin.api.')->group(function () {
+        Route::get('/bookings', [AdminController::class, 'getBookings'])->name('bookings');
+        Route::get('/bookings/{id}', [AdminController::class, 'getBookingDetail'])->name('booking.detail');
+        Route::get('/stats', [AdminController::class, 'getStats'])->name('stats');
     });
 });

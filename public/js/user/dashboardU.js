@@ -488,151 +488,151 @@ function renderBookingDetail(booking) {
     const modalBody = document.getElementById('modalBody');
     if (!modalBody) return;
 
-    // Determine status class and icon
-    let statusClass = '';
-    let statusIcon = '';
-    
-    if (booking.status === 'Disetujui') {
-        statusClass = 'status-approved';
-        statusIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>`;
-    } else if (booking.status === 'Menunggu') {
-        statusClass = 'status-pending';
-        statusIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>`;
-    } else {
-        statusClass = 'status-rejected';
-        statusIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>`;
+    // Determine status class
+    const statusLabels = {
+        'Disetujui': 'approved',
+        'Menunggu': 'pending',
+        'Ditolak': 'rejected'
+    };
+    const statusClass = statusLabels[booking.status] || 'pending';
+
+    let html = `
+        <div class="space-y-1">
+            <!-- Header with Agenda Name -->
+            <div class="pb-4 border-b border-gray-100">
+                <h2 class="text-xl font-bold text-gray-900 mb-2">${escapeHtml(booking.agenda_name)}</h2>
+                <span class="status-badge ${statusClass}">${booking.status}</span>
+            </div>
+
+            <!-- Info Items -->
+            <div class="modal-info-item">
+                <div class="icon-wrapper bg-primary/10">
+                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <div class="content">
+                    <p class="label">Tanggal</p>
+                    <p class="value">${booking.date_display_formatted}</p>
+                    ${booking.is_multi_day ? `<p class="text-xs text-gray-400">${booking.start_date_formatted} s/d ${booking.end_date_formatted}</p>` : ''}
+                </div>
+            </div>
+
+            <div class="modal-info-item">
+                <div class="icon-wrapper bg-blue-50">
+                    <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="content">
+                    <p class="label">Waktu${booking.is_multi_day ? ' (per hari)' : ''}</p>
+                    <p class="value">${booking.time_display} WIB</p>
+                </div>
+            </div>
+
+            <div class="modal-info-item">
+                <div class="icon-wrapper bg-emerald-50">
+                    <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                </div>
+                <div class="content">
+                    <p class="label">Gedung</p>
+                    <p class="value">${escapeHtml(booking.building?.name || '-')}</p>
+                </div>
+            </div>
+
+            <div class="modal-info-item">
+                <div class="icon-wrapper bg-purple-50">
+                    <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                </div>
+                <div class="content">
+                    <p class="label">Ruangan</p>
+                    <p class="value">${escapeHtml(booking.room?.name || '-')} ${booking.room?.location ? '(' + escapeHtml(booking.room.location) + ')' : ''}</p>
+                </div>
+            </div>
+
+            <div class="modal-info-item">
+                <div class="icon-wrapper bg-amber-50">
+                    <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                </div>
+                <div class="content">
+                    <p class="label">Kapasitas</p>
+                    <p class="value">${booking.room?.capacity || '-'} orang</p>
+                </div>
+            </div>
+
+            <div class="modal-info-item">
+                <div class="icon-wrapper bg-pink-50">
+                    <svg class="w-4 h-4 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                </div>
+                <div class="content">
+                    <p class="label">Penanggung Jawab (PIC)</p>
+                    <p class="value">${escapeHtml(booking.pic_name || '-')}</p>
+                </div>
+            </div>
+
+            <div class="modal-info-item">
+                <div class="icon-wrapper bg-cyan-50">
+                    <svg class="w-4 h-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                    </svg>
+                </div>
+                <div class="content">
+                    <p class="label">No. Telepon PIC</p>
+                    <p class="value">${escapeHtml(booking.pic_phone || '-')}</p>
+                </div>
+            </div>
+    `;
+
+    // Agenda detail if available
+    if (booking.agenda_detail) {
+        html += `
+            <div class="modal-info-item">
+                <div class="icon-wrapper bg-gray-100">
+                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
+                    </svg>
+                </div>
+                <div class="content">
+                    <p class="label">Detail Agenda</p>
+                    <p class="value">${escapeHtml(booking.agenda_detail)}</p>
+                </div>
+            </div>
+        `;
     }
 
-    modalBody.innerHTML = `
-        <div class="booking-detail-card">
-            <!-- Status Badge -->
-            <div class="detail-status-banner ${statusClass}">
-                ${statusIcon}
-                <span>${booking.status}</span>
-            </div>
-            
-            <!-- Agenda Title -->
-            <div class="detail-agenda">
-                <h3 class="detail-agenda-title">${escapeHtml(booking.agenda_name)}</h3>
-                <p class="detail-agenda-desc">${escapeHtml(booking.agenda_detail) || 'Tidak ada detail tambahan'}</p>
-            </div>
-            
-            <!-- Info Grid -->
-            <div class="detail-info-grid">
-                <div class="detail-info-item">
-                    <div class="detail-info-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                    </div>
-                    <div class="detail-info-content">
-                        <span class="detail-info-label">Tanggal</span>
-                        <span class="detail-info-value">${booking.date_display_formatted}</span>
-                        ${booking.is_multi_day ? `<span class="detail-info-sub">${booking.start_date_formatted} s/d ${booking.end_date_formatted}</span>` : ''}
-                    </div>
+    // Rejection reason if rejected
+    if (booking.status === 'Ditolak' && booking.rejection_reason) {
+        html += `
+            <div class="modal-info-item">
+                <div class="icon-wrapper bg-red-50">
+                    <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
                 </div>
-                
-                <div class="detail-info-item">
-                    <div class="detail-info-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 14"></polyline>
-                        </svg>
-                    </div>
-                    <div class="detail-info-content">
-                        <span class="detail-info-label">Waktu ${booking.is_multi_day ? '(per hari)' : ''}</span>
-                        <span class="detail-info-value">${booking.time_display} WIB</span>
-                    </div>
-                </div>
-                
-                <div class="detail-info-item">
-                    <div class="detail-info-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                    </div>
-                    <div class="detail-info-content">
-                        <span class="detail-info-label">Ruangan</span>
-                        <span class="detail-info-value">${escapeHtml(booking.room.name)}</span>
-                        <span class="detail-info-sub">${escapeHtml(booking.room.location || '')}</span>
-                    </div>
-                </div>
-                
-                <div class="detail-info-item">
-                    <div class="detail-info-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                        </svg>
-                    </div>
-                    <div class="detail-info-content">
-                        <span class="detail-info-label">Gedung</span>
-                        <span class="detail-info-value">${escapeHtml(booking.building.name)}</span>
-                    </div>
-                </div>
-                
-                <div class="detail-info-item">
-                    <div class="detail-info-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                    </div>
-                    <div class="detail-info-content">
-                        <span class="detail-info-label">Kapasitas</span>
-                        <span class="detail-info-value">${booking.room.capacity} orang</span>
-                    </div>
-                </div>
-                
-                <div class="detail-info-item">
-                    <div class="detail-info-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                    </div>
-                    <div class="detail-info-content">
-                        <span class="detail-info-label">PIC</span>
-                        <span class="detail-info-value">${escapeHtml(booking.pic_name)}</span>
-                        ${booking.pic_phone ? `<span class="detail-info-sub">${escapeHtml(booking.pic_phone)}</span>` : ''}
-                    </div>
+                <div class="content">
+                    <p class="label">Alasan Penolakan</p>
+                    <p class="value text-red-600">${escapeHtml(booking.rejection_reason)}</p>
                 </div>
             </div>
-            
-            <!-- Unit Info -->
-            ${booking.unit && booking.unit.name ? `
-            <div class="detail-unit-badge">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                </svg>
-                <span>${escapeHtml(booking.unit.name)}</span>
+        `;
+    }
+
+    html += `
+            <div class="pt-4 border-t border-gray-100 mt-4">
+                <p class="text-xs text-gray-400">Dibuat pada: ${booking.created_at || '-'}</p>
             </div>
-            ` : ''}
-            
-            <!-- Rejection Reason -->
-            ${booking.rejection_reason ? `
-            <div class="detail-rejection">
-                <span class="detail-rejection-label">Alasan Penolakan</span>
-                <p class="detail-rejection-value">${escapeHtml(booking.rejection_reason)}</p>
-            </div>
-            ` : ''}
         </div>
     `;
+
+    modalBody.innerHTML = html;
 }
 
 function showDayBookings(dateStr, bookings) {
@@ -679,28 +679,67 @@ function showDayBookings(dateStr, bookings) {
    ============================================ */
 function initLogout() {
     const logoutBtn = document.getElementById('logoutBtn');
-    
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-            try {
-                const response = await fetch('/api/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    }
-                });
+    const logoutModal = document.getElementById('logoutModal');
+    const closeLogoutModalBtn = document.getElementById('closeLogoutModal');
+    const cancelLogoutBtn = document.getElementById('cancelLogout');
+    const confirmLogoutBtn = document.getElementById('confirmLogout');
 
-                const data = await response.json();
-                
-                if (data.success) {
-                    window.location.href = data.redirect || '/';
+    function openLogoutModal() {
+        logoutModal.classList.remove('hidden');
+        logoutModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLogoutModal() {
+        logoutModal.classList.add('hidden');
+        logoutModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    async function handleLogout() {
+        try {
+            const response = await fetch('/api/logout', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 }
-            } catch (error) {
-                console.error('Logout error:', error);
-                window.location.href = '/';
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                window.location.href = data.redirect || '/';
             }
+        } catch (error) {
+            console.error('Logout error:', error);
+            window.location.href = '/';
+        }
+    }
+
+    // Open modal when clicking logout button
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', openLogoutModal);
+    }
+
+    // Close modal handlers
+    if (closeLogoutModalBtn) {
+        closeLogoutModalBtn.addEventListener('click', closeLogoutModal);
+    }
+    if (cancelLogoutBtn) {
+        cancelLogoutBtn.addEventListener('click', closeLogoutModal);
+    }
+
+    // Confirm logout
+    if (confirmLogoutBtn) {
+        confirmLogoutBtn.addEventListener('click', handleLogout);
+    }
+
+    // Close on overlay click
+    if (logoutModal) {
+        logoutModal.addEventListener('click', (e) => {
+            if (e.target === logoutModal) closeLogoutModal();
         });
     }
 }

@@ -109,6 +109,19 @@ class AuthController extends Controller
     }
 
     /**
+     * Handle logout request with redirect (for form-based logout).
+     */
+    public function logoutRedirect(Request $request)
+    {
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('guest.index')->with('message', 'Anda telah logout.');
+    }
+
+    /**
      * Get redirect URL based on user role.
      */
     private function getRedirectUrl($user): string
@@ -116,9 +129,9 @@ class AuthController extends Controller
         $roleName = $user->role->role_name ?? null;
 
         return match ($roleName) {
-            'super_admin' => '/admin/dashboard',
-            'admin_unit' => '/unit/dashboard',
-            'admin_gedung' => '/building/dashboard',
+            'super_admin' => '/super/dashboard',
+            'admin_unit' => '/admin/dashboard',
+            'admin_gedung' => '/admin/dashboard',
             'user' => '/user/dashboard',
             default => '/'
         };

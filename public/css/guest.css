@@ -2463,30 +2463,271 @@ body {
     padding: 28px;
 }
 
+/* Modal Info Items - Matching Admin Style */
+.modal-info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.modal-info-item:last-child {
+    border-bottom: none;
+}
+
+.modal-info-item .icon-wrapper {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Icon wrapper background colors */
+.modal-info-item .icon-wrapper.bg-primary-light {
+    background-color: rgba(0, 162, 185, 0.1);
+}
+
+.modal-info-item .icon-wrapper.bg-blue-light {
+    background-color: #eff6ff;
+}
+
+.modal-info-item .icon-wrapper.bg-emerald-light {
+    background-color: #ecfdf5;
+}
+
+.modal-info-item .icon-wrapper.bg-purple-light {
+    background-color: #faf5ff;
+}
+
+.modal-info-item .icon-wrapper.bg-amber-light {
+    background-color: #fffbeb;
+}
+
+.modal-info-item .icon-wrapper.bg-pink-light {
+    background-color: #fdf2f8;
+}
+
+.modal-info-item .icon-wrapper.bg-cyan-light {
+    background-color: #ecfeff;
+}
+
+.modal-info-item .icon-wrapper.bg-gray-light {
+    background-color: #f3f4f6;
+}
+
+.modal-info-item .icon-wrapper.bg-red-light {
+    background-color: #fef2f2;
+}
+
+/* Icon colors */
+.modal-info-item .icon-wrapper .text-primary {
+    color: #00A2B9;
+}
+
+.modal-info-item .icon-wrapper .text-blue {
+    color: #3b82f6;
+}
+
+.modal-info-item .icon-wrapper .text-emerald {
+    color: #10b981;
+}
+
+.modal-info-item .icon-wrapper .text-purple {
+    color: #a855f7;
+}
+
+.modal-info-item .icon-wrapper .text-amber {
+    color: #f59e0b;
+}
+
+.modal-info-item .icon-wrapper .text-pink {
+    color: #ec4899;
+}
+
+.modal-info-item .icon-wrapper .text-cyan {
+    color: #06b6d4;
+}
+
+.modal-info-item .icon-wrapper .text-gray {
+    color: #6b7280;
+}
+
+.modal-info-item .icon-wrapper .text-red {
+    color: #ef4444;
+}
+
+/* SVG size */
+.modal-info-item .icon-wrapper svg,
+.modal-info-item .icon-wrapper .w-4 {
+    width: 16px;
+    height: 16px;
+}
+
+.modal-info-item .icon-wrapper .h-4 {
+    height: 16px;
+}
+
+.modal-info-item .content {
+    flex: 1;
+    min-width: 0;
+}
+
+.modal-info-item .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #9ca3af;
+    margin-bottom: 2px;
+}
+
+.modal-info-item .value {
+    font-size: 14px;
+    color: #374151;
+    word-break: break-word;
+}
+
+.modal-info-item .value.text-red {
+    color: #dc2626;
+}
+
+.modal-info-item .sub-value {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+
+/* Status badges in modal */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-badge.approved {
+    background: linear-gradient(135deg, rgba(0, 174, 239, 0.15) 0%, rgba(0, 162, 185, 0.1) 100%);
+    color: #0077B5;
+}
+
+.status-badge.pending {
+    background: linear-gradient(135deg, rgba(255, 242, 0, 0.25) 0%, rgba(255, 215, 0, 0.18) 100%);
+    color: #9A7B00;
+}
+
+.status-badge.rejected {
+    background: linear-gradient(135deg, rgba(237, 28, 36, 0.12) 0%, rgba(217, 25, 32, 0.08) 100%);
+    color: #C41E24;
+}
+
+/* Utility classes for modal */
+.space-y-1 > * + * {
+    margin-top: 0.25rem;
+}
+
+.pb-4 {
+    padding-bottom: 1rem;
+}
+
+.pt-4 {
+    padding-top: 1rem;
+}
+
+.mt-4 {
+    margin-top: 1rem;
+}
+
+.mb-2 {
+    margin-bottom: 0.5rem;
+}
+
+.border-b {
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+}
+
+.border-t {
+    border-top-width: 1px;
+    border-top-style: solid;
+}
+
+.border-gray-100 {
+    border-color: #f3f4f6;
+}
+
+.text-xl {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+}
+
+.text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+}
+
+.font-bold {
+    font-weight: 700;
+}
+
+.text-gray-900 {
+    color: #111827;
+}
+
+.text-gray-400 {
+    color: #9ca3af;
+}
+
 /* Password Wrapper */
 .password-wrapper {
     position: relative;
+    display: flex;
+    align-items: center;
 }
 
 .password-wrapper .form-input {
+    width: 100%;
     padding-right: 50px;
+}
+
+/* Hide browser's default password reveal button */
+.password-wrapper .form-input::-ms-reveal,
+.password-wrapper .form-input::-ms-clear,
+.password-wrapper .form-input::-webkit-credentials-auto-fill-button,
+.password-wrapper .form-input::-webkit-textfield-decoration-container {
+    display: none !important;
+}
+
+/* For Edge browser */
+input[type="password"]::-ms-reveal {
+    display: none !important;
 }
 
 .toggle-password {
     position: absolute;
-    right: 14px;
+    right: 12px;
     top: 50%;
     transform: translateY(-50%);
     background: none;
     border: none;
     cursor: pointer;
     color: #9CA3AF;
-    padding: 4px;
-    transition: color 0.2s ease;
+    padding: 6px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
 }
 
 .toggle-password:hover {
     color: #00A2B9;
+    background-color: rgba(0, 162, 185, 0.1);
 }
 
 .hidden {
