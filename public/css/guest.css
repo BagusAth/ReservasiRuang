@@ -132,36 +132,6 @@ body {
     flex-shrink: 0;
 }
 
-.notification-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #6B7280;
-    padding: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    border-radius: 50%;
-    transition: all 0.2s ease;
-}
-
-.notification-btn:hover {
-    color: #00A2B9;
-    background-color: rgba(0, 162, 185, 0.08);
-}
-
-.notification-badge {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    width: 8px;
-    height: 8px;
-    background: linear-gradient(135deg, #00AEEF 0%, #00A2B9 100%);
-    border-radius: 50%;
-    border: 2px solid #FFFFFF;
-}
-
 .login-btn {
     display: flex;
     align-items: center;
@@ -2164,10 +2134,6 @@ body {
 
     .header-logo img {
         height: 32px;
-    }
-
-    .notification-btn {
-        padding: 8px;
     }
 
     .login-btn {
