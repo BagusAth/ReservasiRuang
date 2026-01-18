@@ -240,4 +240,16 @@ class NotificationController extends Controller
 
         Notification::createStatusChangeNotification($booking, $oldStatus);
     }
+
+    /**
+     * Create notification for user when booking is submitted successfully.
+     * Called from Booking creation logic.
+     */
+    public static function notifyUserOfBookingSubmitted(Booking $booking): void
+    {
+        // Load necessary relationships
+        $booking->load(['user', 'room.building']);
+        
+        Notification::createBookingSubmittedNotification($booking);
+    }
 }

@@ -15,6 +15,9 @@ class BookingObserver
     {
         // Kirim notifikasi ke admin terkait
         NotificationController::notifyAdminsOfNewBooking($booking);
+        
+        // Kirim notifikasi konfirmasi ke user yang mengajukan
+        NotificationController::notifyUserOfBookingSubmitted($booking);
     }
 
     /**

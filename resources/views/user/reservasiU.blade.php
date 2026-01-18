@@ -25,6 +25,7 @@
 		}
 	</script>
 	<link rel="stylesheet" href="{{ asset('css/user/reservasiU.css') }}">
+	<link rel="stylesheet" href="{{ asset('css/user/notification.css') }}">
 </head>
 <body class="bg-background font-helvetica min-h-screen">
 	<div class="flex min-h-screen">
@@ -80,13 +81,8 @@
 
 					<!-- Right Actions -->
 					<div class="flex items-center gap-3">
-						<!-- Notification Bell -->
-						<button type="button" class="relative p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors">
-							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-							</svg>
-							<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-						</button>
+						<!-- Notification Component -->
+						@include('user.partials.notification-dropdown')
 
 						<!-- User Profile -->
 						<div class="relative" id="userDropdownContainer">
@@ -128,6 +124,9 @@
 
 			<!-- Page Content -->
 			<section class="p-4 lg:p-8">
+				<!-- Alert Container for Page Notifications -->
+				<div id="notificationAlertContainer" class="mb-4"></div>
+				
 				<!-- Page Title + Action -->
 				<div class="flex items-center justify-between mb-6">
 					<h1 class="text-xl lg:text-2xl font-bold text-gray-900">Peminjaman</h1>
@@ -272,6 +271,7 @@
 			guestRooms: '{{ route('guest.api.rooms') }}',
 		};
 	</script>
+	<script src="{{ asset('js/user/notification.js') }}"></script>
 	<script src="{{ asset('js/user/reservasiU.js') }}"></script>
 </body>
 </html>

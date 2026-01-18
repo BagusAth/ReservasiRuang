@@ -300,6 +300,11 @@ async function submitForm(e) {
 		closeModal();
 		showToast(mode === 'create' ? 'Pengajuan peminjaman berhasil dibuat' : 'Data berhasil diperbarui', 'success');
 		await tableState.load();
+		
+		// Refresh notifications after successful booking
+		if (typeof refreshUserNotifications === 'function') {
+			refreshUserNotifications();
+		}
 	} catch (error) {
 		console.error('Submit error:', error);
 		showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');

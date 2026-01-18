@@ -34,6 +34,7 @@ class Notification extends Model
     const TYPE_BOOKING_REJECTED = 'booking_rejected';
     const TYPE_BOOKING_CANCELLED = 'booking_cancelled';
     const TYPE_BOOKING_UPDATED = 'booking_updated';
+    const TYPE_BOOKING_SUBMITTED = 'booking_submitted'; // For user confirmation
 
     /**
      * Get the user that owns the notification.
@@ -111,6 +112,7 @@ class Notification extends Model
             self::TYPE_BOOKING_REJECTED => 'x-circle',
             self::TYPE_BOOKING_CANCELLED => 'ban',
             self::TYPE_BOOKING_UPDATED => 'edit',
+            self::TYPE_BOOKING_SUBMITTED => 'check-circle',
             default => 'bell',
         };
     }
@@ -122,6 +124,7 @@ class Notification extends Model
     {
         return match($this->type) {
             self::TYPE_NEW_BOOKING => 'primary',
+            self::TYPE_BOOKING_SUBMITTED => 'info',
             self::TYPE_BOOKING_APPROVED => 'success',
             self::TYPE_BOOKING_REJECTED => 'danger',
             self::TYPE_BOOKING_CANCELLED => 'warning',
@@ -205,6 +208,35 @@ class Notification extends Model
                 'old_status' => $oldStatus,
                 'new_status' => $booking->status,
                 'rejection_reason' => $booking->rejection_reason,
+            ],
+        ]);
+    }
+
+    /**
+     * Create a notification for user when booking is submitted successfully.
+     */
+    public static function createBookingSubmittedNotification(Booking $booking): self
+    {
+        $user = $booking->user;
+        $room = $booking->room;
+        $building = $room->building;
+
+        return self::create([
+            'user_id' => $user->id,
+            'booking_id' => $booking->id,
+            'type' => self::TYPE_BOOKING_SUBMITTED,
+            'title' => 'Pengajuan Reservasi Berhasil',
+            'message' => "Reservasi Anda untuk ruangan {$room->room_name} di {$building->building_name} telah berhasil diajukan dan sedang menunggu persetujuan admin.",
+            'data' => [
+                'booking_id' => $booking->id,
+                'room_name' => $room->room_name,
+                'building_name' => $building->building_name,
+                'start_date' => $booking->start_date->format('Y-m-d'),
+                'end_date' => $booking->end_date->format('Y-m-d'),
+                'start_time' => $booking->start_time,
+                'end_time' => $booking->end_time,
+                'agenda_name' => $booking->agenda_name,
+                'new_status' => $booking->status,
             ],
         ]);
     }
