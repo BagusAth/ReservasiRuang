@@ -1,0 +1,541 @@
+/**
+ * Admin Reservasi (Peminjaman) Page Styles
+ * PLN Nusantara Power Services - Reservasi Ruang Rapat
+ * 
+ * Color Palette:
+ * - Background: #F5F8F8
+ * - Primary: #00A2B9
+ * - Approved: #00AEEF / Green
+ * - Rejected: #ED1C24
+ * - Pending: #FFF200 / Amber
+ */
+
+/* ============================================
+   CSS Variables
+   ============================================ */
+:root {
+    --primary: #00A2B9;
+    --primary-dark: #008799;
+    --primary-light: #00C4D9;
+    --bg: #F5F8F8;
+    --status-approved-text: #478A51;
+    --status-approved-bg: #D3F0DD;
+    --status-rejected-text: #DE3326;
+    --status-rejected-bg: #FED5CF;
+    --status-pending-text: #B17610;
+    --status-pending-bg: #FFE6B7;
+}
+
+/* ============================================
+   Base Styles & Font Face
+   ============================================ */
+@font-face {
+    font-family: 'Helvetica';
+    src: local('Helvetica');
+    font-weight: normal;
+}
+
+@font-face {
+    font-family: 'Helvetica Light';
+    src: local('Helvetica Light'), local('Helvetica-Light');
+    font-weight: 300;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #00A2B9 #F5F8F8;
+}
+
+*::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+    background: #F5F8F8;
+    border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: #00A2B9;
+    border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: #008799;
+}
+
+body {
+    background: var(--bg);
+}
+
+/* ============================================
+   Sidebar Styles - Modern Professional Design
+   ============================================ */
+.sidebar {
+    background: linear-gradient(180deg, #00A2B9 0%, #0090A5 50%, #007A8C 100%);
+    box-shadow: 
+        4px 0 20px rgba(0, 0, 0, 0.15),
+        inset -1px 0 0 rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(0, 0, 0, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.nav-link.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-left: 4px solid #FFFFFF;
+    margin-left: -4px;
+    box-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+}
+
+.nav-link:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateX(4px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mobile sidebar animation */
+@media (max-width: 1023px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.open {
+        transform: translateX(0);
+    }
+}
+
+.sidebar-overlay.active {
+    display: block !important;
+}
+
+/* ============================================
+   User Dropdown Styles
+   ============================================ */
+.user-dropdown {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+}
+
+.user-dropdown.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* ============================================
+   Table Styles
+   ============================================ */
+.peminjaman-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.peminjaman-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--primary);
+    color: #fff;
+    text-align: center;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 14px 16px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.peminjaman-table thead tr th:first-child {
+    border-top-left-radius: 16px;
+}
+
+.peminjaman-table thead tr th:last-child {
+    border-top-right-radius: 16px;
+}
+
+.peminjaman-table tbody td {
+    padding: 16px;
+    font-size: 14px;
+    text-align: center;
+    border-bottom: 1px solid #EEF2F4;
+    color: #1f2937;
+    vertical-align: middle;
+}
+
+.peminjaman-table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.peminjaman-table tbody tr:hover {
+    background: #f8fafb;
+}
+
+.peminjaman-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* PIC Cell */
+.pic-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.pic-cell .pic-name {
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.pic-cell .pic-phone {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* Agenda Cell */
+.agenda-cell {
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+}
+
+/* ============================================
+   Status Badge
+   ============================================ */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+}
+
+.status-approved,
+.status-disetujui {
+    color: var(--status-approved-text);
+    background: var(--status-approved-bg);
+}
+
+.status-rejected,
+.status-ditolak {
+    color: var(--status-rejected-text);
+    background: var(--status-rejected-bg);
+}
+
+.status-pending,
+.status-menunggu {
+    color: var(--status-pending-text);
+    background: var(--status-pending-bg);
+}
+
+/* ============================================
+   Action Buttons
+   ============================================ */
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.action-btn.approve {
+    color: #10b981;
+}
+
+.action-btn.approve:hover:not(:disabled) {
+    background: rgba(16, 185, 129, 0.1);
+    transform: translateY(-1px);
+}
+
+.action-btn.reject {
+    color: #ef4444;
+}
+
+.action-btn.reject:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.1);
+    transform: translateY(-1px);
+}
+
+.action-btn.edit {
+    color: var(--primary);
+}
+
+.action-btn.edit:hover:not(:disabled) {
+    background: rgba(0, 162, 185, 0.1);
+    transform: translateY(-1px);
+}
+
+.action-btn.delete {
+    color: #ED1C24;
+}
+
+.action-btn.delete:hover:not(:disabled) {
+    background: rgba(237, 28, 36, 0.1);
+    transform: translateY(-1px);
+}
+
+.action-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* Action buttons group for pending status */
+.action-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+/* ============================================
+   Modal Styles
+   ============================================ */
+.modal-overlay {
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-overlay.active .modal-content {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+.modal-content {
+    transform: scale(0.95) translateY(20px);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 2px;
+}
+
+/* Modal Info Items */
+.modal-info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.modal-info-item:last-child {
+    border-bottom: none;
+}
+
+.modal-info-item .icon-wrapper {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.modal-info-item .content {
+    flex: 1;
+    min-width: 0;
+}
+
+.modal-info-item .content .label {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.modal-info-item .content .value {
+    font-size: 14px;
+    color: #1f2937;
+    font-weight: 500;
+}
+
+/* ============================================
+   Loading Spinner
+   ============================================ */
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.loading-spinner-sm {
+    width: 20px;
+    height: 20px;
+    border-width: 2px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ============================================
+   Toast Notification
+   ============================================ */
+#toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+#toast .toast-success {
+    background: #d1fae5;
+}
+
+#toast .toast-success svg {
+    color: #10b981;
+}
+
+#toast .toast-error {
+    background: #fee2e2;
+}
+
+#toast .toast-error svg {
+    color: #ef4444;
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+@media (max-width: 768px) {
+    .peminjaman-table thead th,
+    .peminjaman-table tbody td {
+        padding: 12px 10px;
+        font-size: 12px;
+    }
+    
+    .status-badge {
+        padding: 4px 10px;
+        font-size: 11px;
+    }
+    
+    .action-btn {
+        width: 28px;
+        height: 28px;
+    }
+}
+
+/* ============================================
+   Filter Panel Animation
+   ============================================ */
+#filterPanel {
+    transition: all 0.3s ease;
+}
+
+#filterPanel.show {
+    display: block !important;
+}
+
+/* ============================================
+   Status Radio Options (Edit Status Modal)
+   ============================================ */
+.status-radio-option input[type="radio"]:checked + div {
+    border-color: transparent;
+}
+
+.status-radio-option:has(input[value="Menunggu"]:checked) div {
+    border-color: #f59e0b;
+    background-color: #fffbeb;
+}
+
+.status-radio-option:has(input[value="Disetujui"]:checked) div {
+    border-color: #10b981;
+    background-color: #ecfdf5;
+}
+
+.status-radio-option:has(input[value="Ditolak"]:checked) div {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+}
+
+/* ============================================
+   Enhanced Button Styles
+   ============================================ */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+/* ============================================
+   Confirmation Modal Icon Animation
+   ============================================ */
+@keyframes pulse-scale {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.modal-content .w-16.h-16 {
+    animation: pulse-scale 2s ease-in-out infinite;
+}

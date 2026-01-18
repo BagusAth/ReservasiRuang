@@ -29,7 +29,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const bookingModal = document.getElementById('bookingModal');
     const modalBody = document.getElementById('modalBody');
     const closeModalBtn = document.getElementById('closeModal');
-    const searchInput = document.getElementById('searchInput');
 
     // Sidebar elements
     const sidebar = document.getElementById('sidebar');

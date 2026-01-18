@@ -96,26 +96,13 @@ const tableState = {
 			const data = await res.json();
 			if (data.success) {
 				this.raw = data.data || [];
-				this.applyFilter();
+				this.filtered = this.raw;
+				this.page = 1;
+				renderTable();
 			}
 		} catch (e) {
 			console.error(e);
 		}
-	},
-	applyFilter(keyword = document.getElementById('searchInput')?.value || '') {
-		const q = keyword.toLowerCase().trim();
-		this.filtered = this.raw.filter(r => {
-			if (!q) return true;
-			return (
-				r.agenda_name?.toLowerCase().includes(q) ||
-				r.room?.name?.toLowerCase().includes(q) ||
-				r.building?.name?.toLowerCase().includes(q) ||
-				r.unit?.name?.toLowerCase().includes(q) ||
-				r.status?.toLowerCase().includes(q)
-			);
-		});
-		this.page = 1;
-		renderTable();
 	},
 	get paged() {
 		const start = (this.page - 1) * this.pageSize;
@@ -124,9 +111,6 @@ const tableState = {
 };
 
 function bindUI() {
-	const search = document.getElementById('searchInput');
-	if (search) search.addEventListener('input', () => tableState.applyFilter(search.value));
-
 	document.getElementById('pagPrev')?.addEventListener('click', () => {
 		if (tableState.page > 1) { tableState.page--; renderTable(); }
 	});

@@ -477,7 +477,7 @@ class AdminController extends Controller
         $query = $this->getAdminBookingsQuery($user);
         
         $query->with(['room.building'])
-            ->whereIn('status', [Booking::STATUS_APPROVED, Booking::STATUS_PENDING])
+            ->whereIn('status', [Booking::STATUS_APPROVED, Booking::STATUS_PENDING, Booking::STATUS_REJECTED])
             ->where('start_date', '<=', $endDate)
             ->where('end_date', '>=', $startDate);
 
@@ -615,6 +615,323 @@ class AdminController extends Controller
                 ],
                 'created_at' => $booking->created_at->translatedFormat('d F Y, H:i'),
             ]
+        ]);
+    }
+
+    /**
+     * List all bookings for the reservations table (with pagination).
+     * Data filtered based on admin scope.
+     */
+    public function listBookings(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        
+        $request->validate([
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1|max:100',
+            'status' => 'nullable|string|in:all,Menunggu,Disetujui,Ditolak',
+            'building_id' => 'nullable|integer',
+        ]);
+
+        $perPage = $request->input('per_page', 10);
+        $statusFilter = $request->input('status', 'all');
+        $buildingIdFilter = $request->input('building_id');
+
+        // Base query with admin scope
+        $query = $this->getAdminBookingsQuery($user);
+        $query->with(['room.building.unit', 'user']);
+
+        // Filter by status
+        if ($statusFilter && $statusFilter !== 'all') {
+            $query->where('status', $statusFilter);
+        }
+
+        // Filter by building (for admin_unit only)
+        if ($buildingIdFilter && $user->isAdminUnit()) {
+            $query->whereHas('room', function ($q) use ($buildingIdFilter) {
+                $q->where('building_id', $buildingIdFilter);
+            });
+        }
+
+        // Order by newest reservation first (created_at desc)
+        $query->orderBy('created_at', 'desc');
+
+        // Paginate
+        $bookings = $query->paginate($perPage);
+
+        // Transform data
+        $transformedData = $bookings->getCollection()->map(function ($booking) {
+            $startTime = substr($booking->start_time, 0, 5);
+            $endTime = substr($booking->end_time, 0, 5);
+            $isMultiDay = $booking->start_date->ne($booking->end_date);
+
+            return [
+                'id' => $booking->id,
+                'date_display' => $booking->start_date->translatedFormat('j M Y'),
+                'date_end_display' => $booking->end_date->translatedFormat('j M Y'),
+                'start_date' => $booking->start_date->format('Y-m-d'),
+                'end_date' => $booking->end_date->format('Y-m-d'),
+                'is_multi_day' => $isMultiDay,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'time_display' => $startTime . '-' . $endTime,
+                'agenda_name' => $booking->agenda_name,
+                'pic_name' => $booking->pic_name,
+                'pic_phone' => $booking->pic_phone,
+                'status' => $booking->status,
+                'room' => [
+                    'id' => $booking->room->id,
+                    'name' => $booking->room->room_name,
+                ],
+                'building' => [
+                    'id' => $booking->room->building->id,
+                    'name' => $booking->room->building->building_name,
+                ],
+                'unit' => [
+                    'id' => $booking->room->building->unit->id ?? null,
+                    'name' => $booking->room->building->unit->unit_name ?? null,
+                ],
+                'requester' => [
+                    'name' => $booking->user->name ?? '-',
+                ],
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $transformedData,
+            'meta' => [
+                'current_page' => $bookings->currentPage(),
+                'last_page' => $bookings->lastPage(),
+                'per_page' => $bookings->perPage(),
+                'total' => $bookings->total(),
+            ]
+        ]);
+    }
+
+    /**
+     * Get buildings list for filter dropdown (based on admin scope).
+     */
+    public function getBuildings(): JsonResponse
+    {
+        $user = Auth::user();
+        
+        if ($user->isAdminUnit()) {
+            // Admin Unit: Get all buildings in their unit
+            $buildings = Building::where('unit_id', $user->unit_id)
+                ->orderBy('building_name')
+                ->get(['id', 'building_name']);
+        } else {
+            // Admin Gedung: Only their building
+            $buildings = Building::where('id', $user->building_id)
+                ->get(['id', 'building_name']);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $buildings
+        ]);
+    }
+
+    /**
+     * Update booking status (Admin can change status to any value).
+     */
+    public function updateBookingStatus(Request $request, int $id): JsonResponse
+    {
+        $user = Auth::user();
+        
+        $request->validate([
+            'status' => 'required|string|in:Menunggu,Disetujui,Ditolak',
+            'rejection_reason' => 'nullable|string|max:500',
+        ]);
+
+        // Build query with admin scope
+        $query = $this->getAdminBookingsQuery($user);
+        $booking = $query->find($id);
+
+        if (!$booking) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Reservasi tidak ditemukan atau tidak dalam cakupan Anda'
+            ], 404);
+        }
+
+        $newStatus = $request->status;
+        $rejectionReason = $request->rejection_reason;
+
+        // If changing to approved, check for conflicts
+        if ($newStatus === Booking::STATUS_APPROVED) {
+            $conflict = Booking::findConflict(
+                $booking->room_id,
+                $booking->start_date->format('Y-m-d'),
+                $booking->end_date->format('Y-m-d'),
+                $booking->start_time,
+                $booking->end_time,
+                $booking->id
+            );
+
+            if ($conflict) {
+                return response()->json([
+                    'success' => false,
+                    'message' => Booking::getConflictMessage($conflict)
+                ], 422);
+            }
+
+            $booking->update([
+                'status' => Booking::STATUS_APPROVED,
+                'approved_by' => $user->id,
+                'approved_at' => now(),
+                'rejection_reason' => null,
+            ]);
+        } elseif ($newStatus === Booking::STATUS_REJECTED) {
+            if (empty($rejectionReason)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Alasan penolakan harus diisi'
+                ], 422);
+            }
+
+            $booking->update([
+                'status' => Booking::STATUS_REJECTED,
+                'approved_by' => $user->id,
+                'approved_at' => now(),
+                'rejection_reason' => $rejectionReason,
+            ]);
+        } else {
+            // Status Menunggu
+            $booking->update([
+                'status' => Booking::STATUS_PENDING,
+                'approved_by' => null,
+                'approved_at' => null,
+                'rejection_reason' => null,
+            ]);
+        }
+
+        $statusMessages = [
+            'Disetujui' => 'Reservasi berhasil disetujui',
+            'Ditolak' => 'Reservasi berhasil ditolak',
+            'Menunggu' => 'Status reservasi berhasil diubah menjadi Menunggu',
+        ];
+
+        return response()->json([
+            'success' => true,
+            'message' => $statusMessages[$newStatus],
+            'data' => [
+                'id' => $booking->id,
+                'status' => $booking->status,
+                'rejection_reason' => $booking->rejection_reason,
+            ]
+        ]);
+    }
+
+    /**
+     * Approve a booking.
+     */
+    public function approveBooking(int $id): JsonResponse
+    {
+        $user = Auth::user();
+        
+        // Build query with admin scope
+        $query = $this->getAdminBookingsQuery($user);
+        $booking = $query->find($id);
+
+        if (!$booking) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Reservasi tidak ditemukan atau tidak dalam cakupan Anda'
+            ], 404);
+        }
+
+        // Check for conflicts with other approved bookings
+        $conflict = Booking::findConflict(
+            $booking->room_id,
+            $booking->start_date->format('Y-m-d'),
+            $booking->end_date->format('Y-m-d'),
+            $booking->start_time,
+            $booking->end_time,
+            $booking->id
+        );
+
+        if ($conflict) {
+            return response()->json([
+                'success' => false,
+                'message' => Booking::getConflictMessage($conflict)
+            ], 422);
+        }
+
+        // Approve the booking
+        $booking->approve($user);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Reservasi berhasil disetujui',
+            'data' => [
+                'id' => $booking->id,
+                'status' => $booking->status,
+            ]
+        ]);
+    }
+
+    /**
+     * Reject a booking with reason.
+     */
+    public function rejectBooking(Request $request, int $id): JsonResponse
+    {
+        $user = Auth::user();
+        
+        $request->validate([
+            'rejection_reason' => 'required|string|max:500',
+        ]);
+
+        // Build query with admin scope
+        $query = $this->getAdminBookingsQuery($user);
+        $booking = $query->find($id);
+
+        if (!$booking) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Reservasi tidak ditemukan atau tidak dalam cakupan Anda'
+            ], 404);
+        }
+
+        // Reject the booking
+        $booking->reject($user, $request->rejection_reason);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Reservasi berhasil ditolak',
+            'data' => [
+                'id' => $booking->id,
+                'status' => $booking->status,
+                'rejection_reason' => $booking->rejection_reason,
+            ]
+        ]);
+    }
+
+    /**
+     * Delete a booking.
+     */
+    public function deleteBooking(int $id): JsonResponse
+    {
+        $user = Auth::user();
+        
+        // Build query with admin scope
+        $query = $this->getAdminBookingsQuery($user);
+        $booking = $query->find($id);
+
+        if (!$booking) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Reservasi tidak ditemukan atau tidak dalam cakupan Anda'
+            ], 404);
+        }
+
+        // Delete the booking
+        $booking->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Reservasi berhasil dihapus'
         ]);
     }
 }

@@ -4,6 +4,7 @@ use App\Http\Controllers\GuestController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -61,5 +62,22 @@ Route::middleware(['role:admin_unit,admin_gedung'])->group(function () {
         Route::get('/bookings', [AdminController::class, 'getBookings'])->name('bookings');
         Route::get('/bookings/{id}', [AdminController::class, 'getBookingDetail'])->name('booking.detail');
         Route::get('/stats', [AdminController::class, 'getStats'])->name('stats');
+        
+        // Peminjaman table endpoints
+        Route::get('/list-bookings', [AdminController::class, 'listBookings'])->name('listBookings');
+        Route::get('/buildings', [AdminController::class, 'getBuildings'])->name('buildings');
+        Route::post('/bookings/{id}/approve', [AdminController::class, 'approveBooking'])->name('booking.approve');
+        Route::post('/bookings/{id}/reject', [AdminController::class, 'rejectBooking'])->name('booking.reject');
+        Route::put('/bookings/{id}/status', [AdminController::class, 'updateBookingStatus'])->name('booking.updateStatus');
+        Route::delete('/bookings/{id}', [AdminController::class, 'deleteBooking'])->name('booking.delete');
+
+        // Notification endpoints
+        Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
+        Route::get('/notifications/recent', [NotificationController::class, 'recent'])->name('notifications.recent');
+        Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unreadCount');
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+        Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+        Route::delete('/notifications', [NotificationController::class, 'clearAll'])->name('notifications.clearAll');
     });
 });

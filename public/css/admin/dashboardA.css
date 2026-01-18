@@ -178,6 +178,7 @@
 
 /* Approved - Blue (#00AEEF) */
 .booking-item.status-approved,
+.booking-item.status-disetujui,
 .booking-item.approved {
     background: linear-gradient(135deg, rgba(0, 174, 239, 0.15) 0%, rgba(0, 162, 185, 0.1) 100%);
     color: #0077B5;
@@ -186,6 +187,7 @@
 
 /* Pending - Yellow (#FFF200) */
 .booking-item.status-pending,
+.booking-item.status-menunggu,
 .booking-item.pending {
     background: linear-gradient(135deg, rgba(255, 242, 0, 0.25) 0%, rgba(255, 215, 0, 0.18) 100%);
     color: #9A7B00;
@@ -194,6 +196,7 @@
 
 /* Rejected - Red (#ED1C24) */
 .booking-item.status-rejected,
+.booking-item.status-ditolak,
 .booking-item.rejected {
     background: linear-gradient(135deg, rgba(237, 28, 36, 0.12) 0%, rgba(217, 25, 32, 0.08) 100%);
     color: #C41E24;
