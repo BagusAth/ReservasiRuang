@@ -266,8 +266,7 @@ class AdminController extends Controller
     /**
      * Get dashboard statistics (API endpoint).
      */
-    public function getStats(): JsonResponse
-    {
+    public function getStats(): JsonResponse{
         $user = Auth::user();
         $stats = $this->getAdminBookingStats($user);
         $upcomingBooking = $this->getUpcomingBooking($user);

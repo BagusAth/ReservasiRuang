@@ -11,13 +11,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
-class UserController extends Controller
-{
+class UserController extends Controller{
     /**
      * Menampilkan halaman dashboard user.
      */
-    public function dashboard()
-    {
+    public function dashboard(){
         $user = Auth::user();
         
         // Get user's booking statistics
@@ -32,8 +30,7 @@ class UserController extends Controller
     /**
      * Halaman Peminjaman (list milik user + form ajukan).
      */
-    public function reservationsPage()
-    {
+    public function reservationsPage(){
         $user = Auth::user();
         $units = Unit::active()->orderBy('unit_name')->get();
         return view('user.reservasiU', compact('user', 'units'));
@@ -42,8 +39,7 @@ class UserController extends Controller
     /**
      * Get user's booking statistics.
      */
-    private function getUserBookingStats(int $userId): array
-    {
+    private function getUserBookingStats(int $userId): array{
         $today = Carbon::today();
         
         // Total peminjaman user

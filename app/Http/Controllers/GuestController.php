@@ -8,6 +8,7 @@ use App\Models\Room;
 use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class GuestController extends Controller
 {
@@ -19,7 +20,34 @@ class GuestController extends Controller
         $units = Unit::active()->orderBy('unit_name')->get();
         $buildings = Building::with('unit')->orderBy('building_name')->get();
         
-        return view('guest', compact('units', 'buildings'));
+        // Check if user is authenticated (via session or remember me cookie)
+        $isAuthenticated = Auth::check();
+        $dashboardUrl = null;
+        $userName = null;
+        
+        if ($isAuthenticated) {
+            $user = Auth::user();
+            $userName = $user->name;
+            $dashboardUrl = $this->getDashboardUrl($user);
+        }
+        
+        return view('guest', compact('units', 'buildings', 'isAuthenticated', 'dashboardUrl', 'userName'));
+    }
+    
+    /**
+     * Get dashboard URL based on user role.
+     */
+    private function getDashboardUrl($user): string
+    {
+        $roleName = $user->role->role_name ?? null;
+        
+        return match ($roleName) {
+            'super_admin' => '/super/dashboard',
+            'admin_unit' => '/admin/dashboard',
+            'admin_gedung' => '/admin/dashboard',
+            'user' => '/user/dashboard',
+            default => '/'
+        };
     }
 
     /**

@@ -63,6 +63,7 @@
         filterRoom: document.getElementById('filterRoom'),
         filterStartTime: document.getElementById('filterStartTime'),
         filterEndTime: document.getElementById('filterEndTime'),
+        resetFilterBtn: document.getElementById('resetFilterBtn'),
         // Calendar elements
         calendarTitle: document.getElementById('calendarTitle'),
         calendarMonth: document.getElementById('calendarMonth'),
@@ -95,7 +96,12 @@
         openLoginModal: document.getElementById('openLoginModal'),
         closeLoginModal: document.getElementById('closeLoginModal'),
         loginForm: document.getElementById('loginForm'),
-        togglePassword: document.getElementById('togglePassword')
+        togglePassword: document.getElementById('togglePassword'),
+        // Day bookings modal elements
+        dayBookingsModal: document.getElementById('dayBookingsModal'),
+        dayBookingsTitleText: document.getElementById('dayBookingsTitleText'),
+        dayBookingsBody: document.getElementById('dayBookingsBody'),
+        closeDayBookingsModal: document.getElementById('closeDayBookingsModal')
     };
 
     // ============================================
@@ -460,9 +466,27 @@
     // ============================================
 
     /**
+     * Reset calendar container to clean state
+     * Ensures consistent layout when switching between views
+     */
+    function resetCalendarContainer() {
+        // Reset weekdays header - remove all extra classes and restore base class
+        elements.calendarWeekdays.className = 'calendar-weekdays';
+        elements.calendarWeekdays.style.display = 'grid';
+        elements.calendarWeekdays.innerHTML = '';
+        
+        // Reset calendar grid - remove all extra classes
+        elements.calendarGrid.className = 'calendar-grid';
+        elements.calendarGrid.innerHTML = '';
+    }
+
+    /**
      * Render calendar based on current view
      */
     function renderCalendar() {
+        // Always reset container before rendering to ensure clean state
+        resetCalendarContainer();
+        
         switch (state.currentView) {
             case 'week':
                 renderWeekView();
@@ -479,19 +503,25 @@
         document.querySelectorAll('.booking-item').forEach(item => {
             item.addEventListener('click', handleEventClick);
         });
+        
+        // Add event listeners to "more bookings" items
+        document.querySelectorAll('.more-bookings').forEach(item => {
+            item.addEventListener('click', handleMoreBookingsClick);
+        });
     }
 
     /**
      * Render month view (original calendar grid)
      */
     function renderMonthView() {
-        // Show weekdays header
+        // Ensure base classes for month view
+        elements.calendarWeekdays.className = 'calendar-weekdays';
         elements.calendarWeekdays.style.display = 'grid';
         elements.calendarWeekdays.innerHTML = CONFIG.DAYS_ID.map(day => 
             `<div class="weekday">${day}</div>`
         ).join('');
         
-        // Reset grid class
+        // Ensure correct grid class for month view
         elements.calendarGrid.className = 'calendar-grid';
 
         const daysInMonth = getDaysInMonth(state.currentYear, state.currentMonth);
@@ -756,6 +786,7 @@
 
     /**
      * Create day cell HTML (for month view)
+     * Shows up to MAX_EVENTS_DISPLAY bookings and "+X lainnya" for remaining
      */
     function createDayCell(year, month, day, isOtherMonth, isCurrentDay = false) {
         const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -768,24 +799,32 @@
         let eventsHtml = '';
         if (dayBookings.length > 0 && !isOtherMonth) {
             const displayBookings = dayBookings.slice(0, CONFIG.MAX_EVENTS_DISPLAY);
-            eventsHtml = '<div class="day-events">';
+            const remainingCount = dayBookings.length - CONFIG.MAX_EVENTS_DISPLAY;
+            
+            eventsHtml = `<div class="day-events" id="events-${dateStr}">`;
             
             displayBookings.forEach(booking => {
                 const statusClass = getStatusClass(booking.status);
                 eventsHtml += `
                     <div class="booking-item ${statusClass}" 
                          data-booking-id="${booking.id}" 
-                         title="${booking.agenda_name}">
-                        ${booking.start_time} ${booking.agenda_name}
+                         title="${escapeHtml(booking.agenda_name)}">
+                        ${booking.start_time} ${escapeHtml(booking.agenda_name)}
                     </div>
                 `;
             });
-
-            if (dayBookings.length > CONFIG.MAX_EVENTS_DISPLAY) {
-                const remaining = dayBookings.length - CONFIG.MAX_EVENTS_DISPLAY;
-                eventsHtml += `<div class="more-bookings">+${remaining} lainnya</div>`;
+            
+            // Add "+X lainnya" button if there are more bookings
+            if (remainingCount > 0) {
+                eventsHtml += `
+                    <div class="more-bookings" 
+                         data-date="${dateStr}"
+                         title="Lihat ${remainingCount} reservasi lainnya">
+                        +${remainingCount} lainnya
+                    </div>
+                `;
             }
-
+            
             eventsHtml += '</div>';
         }
 
@@ -964,6 +1003,145 @@
     function closeModal() {
         elements.bookingModal.classList.remove('active');
         document.body.style.overflow = '';
+    }
+
+    // ============================================
+    // Day Bookings Modal Functions
+    // ============================================
+
+    /**
+     * Handle click on "+X lainnya" button
+     * Opens modal showing all bookings for that day
+     */
+    function handleMoreBookingsClick(e) {
+        e.stopPropagation();
+        
+        const dateStr = e.target.dataset.date;
+        if (!dateStr) return;
+        
+        const dayBookings = state.bookings.filter(b => isDateInBookingRange(dateStr, b));
+        if (dayBookings.length === 0) return;
+        
+        showDayBookingsModal(dateStr, dayBookings);
+    }
+
+    /**
+     * Show modal with all bookings for a specific day
+     * @param {string} dateStr - Date in YYYY-MM-DD format
+     * @param {Array} bookings - Array of booking objects
+     */
+    function showDayBookingsModal(dateStr, bookings) {
+        if (!elements.dayBookingsModal) return;
+        
+        // Format date for display
+        const date = new Date(dateStr);
+        const formattedDate = `${CONFIG.DAYS_ID[date.getDay()]}, ${date.getDate()} ${CONFIG.MONTHS_ID[date.getMonth()]} ${date.getFullYear()}`;
+        
+        // Update modal title
+        if (elements.dayBookingsTitleText) {
+            elements.dayBookingsTitleText.textContent = formattedDate;
+        }
+        
+        // Sort bookings by start_time
+        const sortedBookings = [...bookings].sort((a, b) => {
+            return a.start_time.localeCompare(b.start_time);
+        });
+        
+        // Build bookings list HTML
+        let html = `
+            <div class="day-bookings-info">
+                <span class="day-bookings-count">${sortedBookings.length} Reservasi</span>
+            </div>
+            <div class="day-bookings-list">
+        `;
+        
+        sortedBookings.forEach(booking => {
+            const statusClass = getStatusClass(booking.status);
+            const statusBadgeClass = getBadgeClass(booking.status);
+            
+            html += `
+                <div class="day-booking-item ${statusClass}" data-booking-id="${booking.id}">
+                    <div class="day-booking-header">
+                        <h4 class="day-booking-title">${escapeHtml(booking.agenda_name)}</h4>
+                        <span class="day-booking-badge ${statusBadgeClass}">${booking.status}</span>
+                    </div>
+                    <div class="day-booking-details">
+                        <div class="day-booking-detail">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <span>${booking.start_time} - ${booking.end_time}</span>
+                        </div>
+                        <div class="day-booking-detail">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            <span>${escapeHtml(booking.room?.name || '-')} - ${escapeHtml(booking.building?.name || '-')}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        
+        // Update modal body
+        if (elements.dayBookingsBody) {
+            elements.dayBookingsBody.innerHTML = html;
+        }
+        
+        // Add click handlers for booking items
+        const bookingItems = elements.dayBookingsBody.querySelectorAll('.day-booking-item');
+        bookingItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                const bookingId = item.dataset.bookingId;
+                if (bookingId) {
+                    closeDayBookingsModal();
+                    // Show booking detail modal
+                    elements.modalBody.innerHTML = `
+                        <div class="loading-spinner">
+                            <div class="spinner"></div>
+                        </div>
+                    `;
+                    openModal();
+                    fetchBookingDetail(bookingId);
+                }
+            });
+        });
+        
+        // Open modal
+        openDayBookingsModal();
+    }
+
+    /**
+     * Open day bookings modal
+     */
+    function openDayBookingsModal() {
+        if (elements.dayBookingsModal) {
+            elements.dayBookingsModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    /**
+     * Close day bookings modal
+     */
+    function closeDayBookingsModal() {
+        if (elements.dayBookingsModal) {
+            elements.dayBookingsModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    /**
+     * Handle day bookings modal close click
+     */
+    function handleDayBookingsModalClose(e) {
+        if (e.target === elements.dayBookingsModal || e.target.closest('.modal-close')) {
+            closeDayBookingsModal();
+        }
     }
 
     // ============================================
@@ -1254,6 +1432,105 @@
     }
 
     // ============================================
+    // Reset Filter Functions
+    // ============================================
+
+    /**
+     * Check if any filter is currently active
+     * @returns {boolean} True if any filter is set
+     */
+    function hasActiveFilters() {
+        return !!(
+            state.selectedUnit ||
+            state.selectedBuilding ||
+            state.selectedRoom ||
+            state.startTime ||
+            state.endTime
+        );
+    }
+
+    /**
+     * Update reset filter button state
+     * Enables/disables button based on active filters
+     */
+    function updateResetFilterButton() {
+        if (elements.resetFilterBtn) {
+            const hasFilters = hasActiveFilters();
+            elements.resetFilterBtn.disabled = !hasFilters;
+            
+            // Add/remove visual indicator for active filters
+            if (hasFilters) {
+                elements.resetFilterBtn.classList.add('has-filters');
+            } else {
+                elements.resetFilterBtn.classList.remove('has-filters');
+            }
+        }
+    }
+
+    /**
+     * Reset all filters to default state
+     * Clears filter selections and resets calendar to initial view
+     */
+    function resetAllFilters() {
+        // Reset state
+        state.selectedUnit = null;
+        state.selectedBuilding = null;
+        state.selectedRoom = null;
+        state.startTime = null;
+        state.endTime = null;
+        state.buildings = [];
+        state.rooms = [];
+
+        // Reset UI elements
+        if (elements.filterUnit) {
+            elements.filterUnit.value = '';
+        }
+        if (elements.filterBuilding) {
+            elements.filterBuilding.value = '';
+            elements.filterBuilding.disabled = true;
+            elements.filterBuilding.innerHTML = '<option value="">Pilih gedung</option>';
+        }
+        if (elements.filterRoom) {
+            elements.filterRoom.value = '';
+            elements.filterRoom.disabled = true;
+            elements.filterRoom.innerHTML = '<option value="">Pilih ruangan</option>';
+        }
+        if (elements.filterStartTime) {
+            elements.filterStartTime.value = '';
+        }
+        if (elements.filterEndTime) {
+            elements.filterEndTime.value = '';
+        }
+
+        // Reset calendar to today's date
+        const today = new Date();
+        state.currentYear = today.getFullYear();
+        state.currentMonth = today.getMonth() + 1;
+        state.currentDay = today.getDate();
+        state.currentWeekStart = getWeekStart(today);
+
+        // Reset view to month (default view)
+        state.currentView = 'month';
+        if (elements.viewSelect) {
+            elements.viewSelect.value = 'month';
+        }
+
+        // Update UI
+        updateCalendarTitle();
+        updateResetFilterButton();
+        
+        // Fetch fresh data
+        fetchBookings();
+    }
+
+    /**
+     * Handle reset filter button click
+     */
+    function handleResetFilter() {
+        resetAllFilters();
+    }
+
+    // ============================================
     // Event Handlers
     // ============================================
 
@@ -1281,6 +1558,7 @@
         }
 
         updateCalendarTitle();
+        updateResetFilterButton();
         fetchBookings();
     }
 
@@ -1303,6 +1581,7 @@
         }
 
         updateCalendarTitle();
+        updateResetFilterButton();
         fetchBookings();
     }
 
@@ -1312,6 +1591,7 @@
     function handleRoomChange(e) {
         state.selectedRoom = e.target.value || null;
         updateCalendarTitle();
+        updateResetFilterButton();
         fetchBookings();
     }
 
@@ -1321,6 +1601,7 @@
     const handleTimeChange = debounce(function() {
         state.startTime = elements.filterStartTime.value || null;
         state.endTime = elements.filterEndTime.value || null;
+        updateResetFilterButton();
         fetchBookings();
     }, 500);
 
@@ -1453,21 +1734,44 @@
 
     /**
      * Handle view change from dropdown
+     * Ensures proper synchronization between view state and calendar rendering
      */
     function handleViewChange(e) {
         const view = e.target.value;
         if (state.currentView === view) return;
         
+        const previousView = state.currentView;
         state.currentView = view;
         
-        // Initialize week start if switching to week view
-        if (view === 'week' && !state.currentWeekStart) {
-            state.currentWeekStart = getWeekStart(new Date(state.currentYear, state.currentMonth - 1, state.currentDay || 1));
-        }
-        
-        // Ensure day is set if switching to day view
-        if (view === 'day' && !state.currentDay) {
-            state.currentDay = new Date().getDate();
+        // Synchronize date state when switching views
+        if (view === 'week') {
+            // When switching to week view, calculate week start based on current date context
+            if (previousView === 'day') {
+                // Use current day to determine week
+                state.currentWeekStart = getWeekStart(new Date(state.currentYear, state.currentMonth - 1, state.currentDay));
+            } else if (previousView === 'month' || !state.currentWeekStart) {
+                // Use first day of current month or current day
+                const referenceDate = new Date(state.currentYear, state.currentMonth - 1, state.currentDay || 1);
+                state.currentWeekStart = getWeekStart(referenceDate);
+            }
+        } else if (view === 'day') {
+            // When switching to day view, ensure day is set
+            if (!state.currentDay) {
+                state.currentDay = new Date().getDate();
+            }
+            // If coming from week view, use the first day of the current week
+            if (previousView === 'week' && state.currentWeekStart) {
+                state.currentDay = state.currentWeekStart.getDate();
+                state.currentMonth = state.currentWeekStart.getMonth() + 1;
+                state.currentYear = state.currentWeekStart.getFullYear();
+            }
+        } else if (view === 'month') {
+            // When switching to month view, sync month/year from week or day view
+            if (previousView === 'week' && state.currentWeekStart) {
+                state.currentMonth = state.currentWeekStart.getMonth() + 1;
+                state.currentYear = state.currentWeekStart.getFullYear();
+            }
+            // Day view already has correct month/year
         }
         
         fetchBookings();
@@ -1514,6 +1818,10 @@
         if (e.key === 'Escape') {
             if (elements.searchModal && elements.searchModal.classList.contains('active')) {
                 closeSearchModal();
+                return;
+            }
+            if (elements.dayBookingsModal && elements.dayBookingsModal.classList.contains('active')) {
+                closeDayBookingsModal();
                 return;
             }
             if (elements.bookingModal.classList.contains('active')) {
@@ -1734,6 +2042,11 @@
         elements.filterRoom.addEventListener('change', handleRoomChange);
         elements.filterStartTime.addEventListener('change', handleTimeChange);
         elements.filterEndTime.addEventListener('change', handleTimeChange);
+        
+        // Reset filter button
+        if (elements.resetFilterBtn) {
+            elements.resetFilterBtn.addEventListener('click', handleResetFilter);
+        }
 
         // Calendar navigation
         elements.prevMonth.addEventListener('click', handlePrevMonth);
@@ -1788,6 +2101,14 @@
             elements.loginForm.addEventListener('submit', handleLoginSubmit);
         }
 
+        // Day bookings modal events
+        if (elements.closeDayBookingsModal) {
+            elements.closeDayBookingsModal.addEventListener('click', closeDayBookingsModal);
+        }
+        if (elements.dayBookingsModal) {
+            elements.dayBookingsModal.addEventListener('click', handleDayBookingsModalClose);
+        }
+
         // Keyboard events
         document.addEventListener('keydown', handleKeydown);
     }
@@ -1801,6 +2122,7 @@
         
         initEventListeners();
         updateCalendarMonth();
+        updateResetFilterButton(); // Set initial state of reset button
         fetchBookings();
     }
 

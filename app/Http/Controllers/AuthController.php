@@ -7,13 +7,14 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
     /**
-     * Session lifetime when "remember me" is checked (1 day in minutes).
+     * Remember cookie lifetime in minutes (1 day = 1440 minutes).
      */
-    private const REMEMBER_SESSION_LIFETIME = 1440; // 1 day = 24 hours * 60 minutes
+    private const REMEMBER_COOKIE_MINUTES = 1440;
 
     /**
      * Handle login request via AJAX.
@@ -46,30 +47,16 @@ class AuthController extends Controller
             // Clear rate limiter on successful login
             RateLimiter::clear($throttleKey);
             
-            // Regenerate session
+            // Regenerate session for security
             $request->session()->regenerate();
-
-            // If "remember me" is checked, extend session lifetime to 1 day
-            if ($remember) {
-                $request->session()->put('remember_session', true);
-                
-                // Set session lifetime to 1 day
-                config(['session.lifetime' => self::REMEMBER_SESSION_LIFETIME]);
-                
-                // Regenerate session with new lifetime
-                $sessionId = $request->session()->getId();
-                $request->session()->getHandler()->write(
-                    $sessionId,
-                    serialize($request->session()->all())
-                );
-            }
 
             $user = Auth::user();
             
             // Determine redirect based on user role
             $redirect = $this->getRedirectUrl($user);
 
-            return response()->json([
+            // Build response
+            $response = response()->json([
                 'success' => true,
                 'message' => 'Login berhasil!',
                 'user' => [
@@ -80,6 +67,13 @@ class AuthController extends Controller
                 ],
                 'redirect' => $redirect
             ]);
+
+            // If remember me is checked, set a longer-lived session cookie
+            if ($remember) {
+                // Set remember flag in session for middleware to extend cookie
+                $request->session()->put('remember_me', true);
+            }
+            return $response;
         }
 
         // Increment rate limiter on failed attempt
@@ -96,16 +90,31 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
+        // Get current user before logout
+        $user = Auth::user();
+        
+        // Clear remember token if exists
+        if ($user) {
+            $user->setRememberToken(null);
+            $user->save();
+        }
+
         Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return response()->json([
+        // Clear all auth-related cookies
+        $response = response()->json([
             'success' => true,
             'message' => 'Logout berhasil!',
             'redirect' => route('guest.index')
         ]);
+
+        // Forget the remember cookie
+        $response->withCookie(Cookie::forget(Auth::getRecallerName()));
+
+        return $response;
     }
 
     /**
@@ -113,12 +122,25 @@ class AuthController extends Controller
      */
     public function logoutRedirect(Request $request)
     {
+        // Get current user before logout
+        $user = Auth::user();
+        
+        // Clear remember token if exists
+        if ($user) {
+            $user->setRememberToken(null);
+            $user->save();
+        }
+
         Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('guest.index')->with('message', 'Anda telah logout.');
+        // Redirect and forget remember cookie
+        return redirect()
+            ->route('guest.index')
+            ->withCookie(Cookie::forget(Auth::getRecallerName()))
+            ->with('message', 'Anda telah logout.');
     }
 
     /**

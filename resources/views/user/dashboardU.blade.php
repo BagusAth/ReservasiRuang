@@ -6,6 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Dashboard - PLN Nusantara Power Services</title>
     
+    <link rel="icon" type="image/png" href="{{ asset('assets/favicon-32x32.png') }}">
+    
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -40,7 +42,7 @@
             <!-- Logo -->
             <div class="p-5 border-b border-white/10">
                 <a href="{{ route('user.dashboard') }}" class="flex items-center justify-center">
-                    <img src="{{ asset('assets/logo-nps-transp-jpg 345 x 84.png') }}" alt="PLN Nusantara Power Services" class="h-16 w-auto drop-shadow-lg">
+                    <img src="{{ asset('assets/logo-nps-transp-jpg 345 x 84.png') }}" alt="PLN Nusantara Power Services" class="h-auto w-auto drop-shadow-lg">
                 </a>
             </div>
             
@@ -246,7 +248,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                     </svg>
                                 </div>
-                                <h3 class="text-base font-semibold text-gray-900">Reservasi berikutnya</h3>
+                                <h3 class="text-base font-bold text-gray-900">Reservasi berikutnya</h3>
                             </div>
                             
                             @if($upcomingBooking)

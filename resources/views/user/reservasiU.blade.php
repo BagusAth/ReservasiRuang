@@ -6,6 +6,8 @@
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 	<title>Peminjaman - PLN Nusantara Power Services</title>
 
+	<link rel="icon" type="image/png" href="{{ asset('assets/favicon-32x32.png') }}">
+	
 	<script src="https://cdn.tailwindcss.com"></script>
 	<script>
 		tailwind.config = {
@@ -33,7 +35,7 @@
 		<aside class="sidebar fixed left-0 top-0 h-screen w-64 text-white flex flex-col z-50 transition-transform duration-300 lg:translate-x-0" id="sidebar">
 			<div class="p-5 border-b border-white/10">
 				<a href="{{ route('user.dashboard') }}" class="flex items-center justify-center">
-					<img src="{{ asset('assets/logo-nps-transp-jpg 345 x 84.png') }}" alt="PLN Nusantara Power Services" class="h-16 w-auto drop-shadow-lg">
+					<img src="{{ asset('assets/logo-nps-transp-jpg 345 x 84.png') }}" alt="PLN Nusantara Power Services" class="h-auto w-auto drop-shadow-lg">
 				</a>
 			</div>
 			<nav class="flex-1 py-6 px-3">

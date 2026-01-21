@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Models\Booking;
 use App\Observers\BookingObserver;
@@ -28,5 +29,10 @@ class AppServiceProvider extends ServiceProvider
 
         // Register Booking Observer for notifications
         Booking::observe(BookingObserver::class);
+
+        // Configure remember me cookie lifetime (1 day = 1440 minutes)
+        // Used by Laravel's Auth guard when "remember me" is checked
+        $rememberLifetime = config('auth.remember', 2 * 1440);
+        Auth::setRememberDuration($rememberLifetime);
     }
 }

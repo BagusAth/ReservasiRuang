@@ -1,0 +1,215 @@
+/**
+ * Super Dashboard Styles
+ * PLN Nusantara Power Services - Reservasi Ruang Rapat
+ * 
+ * Color Palette:
+ * - Background: #F5F8F8
+ * - Primary: #00A2B9
+ * - Approved: #00AEEF
+ * - Rejected: #ED1C24
+ * - Pending: #FFF200
+ */
+
+/* ============================================
+   Base Styles & Font Face
+   ============================================ */
+@font-face {
+    font-family: 'Helvetica';
+    src: local('Helvetica');
+    font-weight: normal;
+}
+
+@font-face {
+    font-family: 'Helvetica Light';
+    src: local('Helvetica Light'), local('Helvetica-Light');
+    font-weight: 300;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #00A2B9 #F5F8F8;
+}
+
+*::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+    background: #F5F8F8;
+    border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: #00A2B9;
+    border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: #008799;
+}
+
+/* ============================================
+   Sidebar Styles - Modern Professional Design
+   ============================================ */
+.sidebar {
+    background: linear-gradient(180deg, #00A2B9 0%, #0090A5 50%, #007A8C 100%);
+    box-shadow: 
+        4px 0 20px rgba(0, 0, 0, 0.15),
+        inset -1px 0 0 rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(0, 0, 0, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.nav-link.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-left: 4px solid #FFFFFF;
+    margin-left: -4px;
+    box-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+}
+
+.nav-link:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateX(4px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mobile sidebar animation */
+@media (max-width: 1023px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    
+    .sidebar-overlay.active {
+        display: block;
+    }
+}
+
+/* ============================================
+   Calendar Styles
+   ============================================ */
+.calendar-day {
+    min-height: 80px;
+    border: 1px solid #e5e7eb;
+    margin: -0.5px;
+    padding: 8px;
+    background: white;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.calendar-day:hover {
+    background: #f0fafa;
+    z-index: 1;
+}
+
+.calendar-day.other-month {
+    background: #f9fafb;
+    color: #9ca3af;
+}
+
+.calendar-day.today {
+    background: linear-gradient(135deg, #e0f7fa 0%, #f0fafa 100%);
+    border-color: #00A2B9;
+    box-shadow: inset 0 0 0 1px #00A2B9;
+}
+
+.calendar-day.has-booking {
+    position: relative;
+}
+
+.calendar-day .day-number {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+.calendar-day.other-month .day-number {
+    color: #9ca3af;
+}
+
+.calendar-day.today .day-number {
+    color: #00A2B9;
+    font-weight: 700;
+}
+
+/* Booking Items - Matching Guest Page Style */
+.booking-item {
+    padding: 3px 6px;
+    margin-bottom: 2px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-left: 3px solid;
+    line-height: 1.2;
+}
+
+.booking-item:hover {
+    transform: translateX(1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Approved - Blue (#00AEEF) */
+.booking-item.status-approved,
+.booking-item.approved {
+    background: linear-gradient(135deg, rgba(0, 174, 239, 0.15) 0%, rgba(0, 162, 185, 0.1) 100%);
+    color: #0077B5;
+    border-left-color: #00AEEF;
+}
+
+/* Pending - Yellow (#FFF200) */
+.booking-item.status-pending,
+.booking-item.pending {
+    background: linear-gradient(135deg, rgba(255, 242, 0, 0.25) 0%, rgba(255, 215, 0, 0.18) 100%);
+    color: #9A7B00;
+    border-left-color: #FFF200;
+}
+
+/* Rejected - Red (#ED1C24) */
+.booking-item.status-rejected,
+.booking-item.rejected {
+    background: linear-gradient(135deg, rgba(237, 28, 36, 0.12) 0%, rgba(217, 25, 32, 0.08) 100%);
+    color: #C41E24;
+    border-left-color: #ED1C24;
+}
+
+.more-bookings {
+    font-size: 11px;
+    font-weight: 600;
+    color: #00A2B9;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+}
+
+.more-bookings:hover {
+    background-color: rgba(0, 162, 185, 0.1);
+}

@@ -89,3 +89,15 @@ Route::middleware(['role:admin_unit,admin_gedung'])->group(function () {
         Route::delete('/notifications', [NotificationController::class, 'clearAll'])->name('notifications.clearAll');
     });
 });
+
+// Super Admin Routes (Role: Super Admin)
+Route::middleware(['role:super_admin'])->group(function () {
+    // Dashboard
+    Route::get('/super/dashboard', [SuperController::class, 'dashboard'])->name('super.dashboard');
+    
+    // API untuk Super Admin
+    Route::prefix('api/super')->name('super.api.')->group(function () {
+
+    });
+});
+

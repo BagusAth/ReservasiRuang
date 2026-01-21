@@ -213,6 +213,17 @@ class DatabaseSeeder extends Seeder
             'is_active' => true,
         ]);
 
+        // Super Admin
+        User::create([
+            'name' => 'Super Admin1',
+            'email' => 'superadmin1@gmail.com',
+            'password' => Hash::make('super123'),
+            'role_id' => 1,
+            'unit_id' => null,
+            'building_id' => null,
+            'is_active' => true,
+        ]);
+
         // Admin Unit
         User::create([
             'name' => 'Admin Unit Pusat',

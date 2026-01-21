@@ -6,6 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Reservasi Ruang Rapat - PLN Nusantara Power Services</title>
     
+    <link rel="icon" type="image/png" href="{{ asset('assets/favicon-32x32.png') }}">
+    
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,13 +38,25 @@
             
             <!-- Header Actions -->
             <div class="header-actions">
-                <button type="button" class="login-btn" id="openLoginModal">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="8" r="4"></circle>
-                        <path d="M20 21a8 8 0 0 0-16 0"></path>
-                    </svg>
-                    <span>Masuk</span>
-                </button>
+                @if($isAuthenticated && $dashboardUrl)
+                    <a href="{{ $dashboardUrl }}" class="dashboard-btn" title="Buka Dashboard">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                            <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                            <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                            <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                @else
+                    <button type="button" class="login-btn" id="openLoginModal">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="8" r="4"></circle>
+                            <path d="M20 21a8 8 0 0 0-16 0"></path>
+                        </svg>
+                        <span>Masuk</span>
+                    </button>
+                @endif
             </div>
         </div>
     </header>
@@ -130,6 +144,17 @@
                         </div>
                     </div>
 
+                    <!-- Reset Filter Button -->
+                    <div class="filter-actions">
+                        <button type="button" class="reset-filter-btn" id="resetFilterBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                <path d="M3 3v5h5"></path>
+                            </svg>
+                            <span>Reset Filter</span>
+                        </button>
+                    </div>
+
                     <!-- Legend -->
                     <div class="filter-legend">
                         <h3 class="legend-title">Keterangan Status</h3>
@@ -141,10 +166,6 @@
                             <div class="legend-item">
                                 <span class="legend-dot legend-pending"></span>
                                 <span class="legend-text">Menunggu</span>
-                            </div>
-                            <div class="legend-item">
-                                <span class="legend-dot legend-rejected"></span>
-                                <span class="legend-text">Ditolak</span>
                             </div>
                         </div>
                     </div>
@@ -258,7 +279,7 @@
                         <label class="checkbox-wrapper">
                             <input type="checkbox" id="rememberMe" name="remember">
                             <span class="checkmark"></span>
-                            <span class="checkbox-label">Ingat Saya (1 hari)</span>
+                            <span class="checkbox-label">Ingat Saya</span>
                         </label>
                     </div>
                     <div class="form-error-general" id="loginError"></div>
@@ -351,6 +372,32 @@
                     <p class="search-no-results-title">Tidak Ditemukan</p>
                     <p class="search-no-results-text" id="searchNoResultsText">Tidak ada reservasi yang cocok dengan pencarian Anda</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Day Bookings List -->
+    <div class="modal-overlay" id="dayBookingsModal">
+        <div class="modal-content modal-day-bookings">
+            <div class="modal-header">
+                <h3 class="modal-title" id="dayBookingsTitle">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span id="dayBookingsTitleText">Reservasi</span>
+                </h3>
+                <button type="button" class="modal-close" id="closeDayBookingsModal">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" id="dayBookingsBody">
+                <!-- Day bookings list will be loaded dynamically -->
             </div>
         </div>
     </div>

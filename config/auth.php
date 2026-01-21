@@ -104,12 +104,23 @@ return [
     | Password Confirmation Timeout
     |--------------------------------------------------------------------------
     |
-    | Here you may define the number of seconds before a password confirmation
-    | window expires and users are asked to re-enter their password via the
-    | confirmation screen. By default, the timeout lasts for three hours.
-    |
+    | The number of seconds before a password confirmation window expires 
+    | and users are asked to re-enter their password via the confirmation 
+    | screen. By default, the timeout lasts for three hours.
     */
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Remember Me Cookie Lifetime
+    |--------------------------------------------------------------------------
+    |
+    | The default is 1 day (1440 minutes) as per the
+    | application requirements for the "Ingat Saya" feature.
+    |
+    */
+
+    'remember' => env('AUTH_REMEMBER_LIFETIME', 1440),
 
 ];
