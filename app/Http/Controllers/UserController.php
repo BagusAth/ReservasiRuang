@@ -111,6 +111,7 @@ class UserController extends Controller{
     /**
      * Get bookings for calendar (API endpoint).
      * Shows ALL bookings (Disetujui and Menunggu) like guest page.
+     * Supports filtering by unit, building, room, and time.
      */
     public function getBookings(Request $request): JsonResponse
     {
@@ -119,6 +120,9 @@ class UserController extends Controller{
             'year' => 'nullable|integer|min:2020|max:2100',
             'start_time' => 'nullable|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i',
+            'unit_id' => 'nullable|integer|exists:units,id',
+            'building_id' => 'nullable|integer|exists:buildings,id',
+            'room_id' => 'nullable|integer|exists:rooms,id',
         ]);
 
         $month = $request->input('month', now()->month);
@@ -128,10 +132,29 @@ class UserController extends Controller{
         $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
 
         // Query ALL bookings (not just user's), same as guest page
-        $query = Booking::with(['room.building'])
+        $query = Booking::with(['room.building.unit'])
             ->whereIn('status', [Booking::STATUS_APPROVED, Booking::STATUS_PENDING])
             ->where('start_date', '<=', $endDate)
             ->where('end_date', '>=', $startDate);
+
+        // Filter berdasarkan unit
+        if ($request->filled('unit_id')) {
+            $query->whereHas('room.building', function ($q) use ($request) {
+                $q->where('unit_id', $request->unit_id);
+            });
+        }
+
+        // Filter berdasarkan gedung
+        if ($request->filled('building_id')) {
+            $query->whereHas('room', function ($q) use ($request) {
+                $q->where('building_id', $request->building_id);
+            });
+        }
+
+        // Filter berdasarkan ruangan
+        if ($request->filled('room_id')) {
+            $query->where('room_id', $request->room_id);
+        }
 
         // Filter berdasarkan rentang waktu (only if both are provided)
         if ($request->filled('start_time') && $request->filled('end_time')) {
@@ -161,6 +184,7 @@ class UserController extends Controller{
                     'status' => $booking->status,
                     'room_name' => $booking->room->room_name ?? '-',
                     'building_name' => $booking->room->building->building_name ?? '-',
+                    'unit_name' => $booking->room->building->unit->unit_name ?? '-',
                 ];
             });
 
@@ -195,12 +219,23 @@ class UserController extends Controller{
 
     /**
      * Get booking detail.
-     * Shows details for any booking (Disetujui or Menunggu).
+     * Shows details for any booking (Disetujui, Menunggu, or Ditolak).
+     * Users can only see their own rejected bookings.
      */
     public function getBookingDetail(int $id): JsonResponse
     {
+        $user = Auth::user();
+        
         $booking = Booking::with(['room.building.unit'])
-            ->whereIn('status', [Booking::STATUS_APPROVED, Booking::STATUS_PENDING])
+            ->where(function ($query) use ($user) {
+                // Show approved and pending bookings to everyone
+                $query->whereIn('status', [Booking::STATUS_APPROVED, Booking::STATUS_PENDING])
+                    // Or show rejected bookings only to the owner
+                    ->orWhere(function ($q) use ($user) {
+                        $q->where('status', Booking::STATUS_REJECTED)
+                          ->where('user_id', $user->id);
+                    });
+            })
             ->find($id);
 
         if (!$booking) {
@@ -264,6 +299,7 @@ class UserController extends Controller{
 
     /**
      * API: List bookings milik user login (untuk tabel peminjaman).
+     * Sorted by created_at descending (newest first).
      */
     public function listMyBookings(Request $request): JsonResponse
     {
@@ -271,8 +307,7 @@ class UserController extends Controller{
 
         $bookings = Booking::with(['room.building.unit'])
             ->where('user_id', $user->id)
-            ->orderByDesc('start_date')
-            ->orderBy('start_time')
+            ->orderByDesc('created_at')  // Sort by newest created first
             ->get()
             ->map(function ($b) {
                 return [
@@ -289,6 +324,7 @@ class UserController extends Controller{
                     'pic_name' => $b->pic_name,
                     'pic_phone' => $b->pic_phone,
                     'status' => $b->status,
+                    'rejection_reason' => $b->rejection_reason,  // Include rejection reason
                     'room' => [
                         'id' => $b->room->id,
                         'name' => $b->room->room_name,
@@ -301,6 +337,7 @@ class UserController extends Controller{
                         'id' => optional($b->room->building->unit)->id,
                         'name' => optional($b->room->building->unit)->unit_name,
                     ],
+                    'created_at' => $b->created_at->translatedFormat('d M Y, H:i'),
                 ];
             });
 
@@ -325,8 +362,13 @@ class UserController extends Controller{
             'end_time' => 'required|date_format:H:i',
             'agenda_name' => 'required|string|max:255',
             'agenda_detail' => 'nullable|string',
-            'pic_name' => 'required|string|max:255',
-            'pic_phone' => 'required|string|max:50',
+            'pic_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z\s]+$/', 'min:2'],
+            'pic_phone' => ['required', 'string', 'max:50', 'regex:/^[0-9]+$/', 'min:6'],
+        ], [
+            'pic_name.regex' => 'Nama PIC hanya boleh berisi huruf.',
+            'pic_name.min' => 'Nama PIC minimal 2 karakter.',
+            'pic_phone.regex' => 'Nomor telepon hanya boleh berisi angka.',
+            'pic_phone.min' => 'Nomor telepon minimal 6 digit.',
         ]);
 
         // Waktu valid (end_time harus > start_time jika satu hari)
@@ -403,8 +445,13 @@ class UserController extends Controller{
             'end_time' => 'required|date_format:H:i',
             'agenda_name' => 'required|string|max:255',
             'agenda_detail' => 'nullable|string',
-            'pic_name' => 'required|string|max:255',
-            'pic_phone' => 'required|string|max:50',
+            'pic_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z\s]+$/', 'min:2'],
+            'pic_phone' => ['required', 'string', 'max:50', 'regex:/^[0-9]+$/', 'min:6'],
+        ], [
+            'pic_name.regex' => 'Nama PIC hanya boleh berisi huruf.',
+            'pic_name.min' => 'Nama PIC minimal 2 karakter.',
+            'pic_phone.regex' => 'Nomor telepon hanya boleh berisi angka.',
+            'pic_phone.min' => 'Nomor telepon minimal 6 digit.',
         ]);
 
         if ($validated['start_date'] === $validated['end_date'] && $validated['end_time'] <= $validated['start_time']) {

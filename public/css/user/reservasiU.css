@@ -249,7 +249,8 @@ body {
 /* ============================================
    Modal Styles
    ============================================ */
-#bookingModal .relative {
+#bookingModal .relative,
+#rejectionModal .relative {
 	animation: modalSlideIn 0.3s ease;
 }
 
@@ -262,6 +263,39 @@ body {
 		opacity: 1;
 		transform: scale(1) translateY(0);
 	}
+}
+
+/* ============================================
+   Rejection Reason Button
+   ============================================ */
+.rejection-reason-btn {
+	transition: all 0.2s ease;
+}
+
+.rejection-reason-btn:hover {
+	text-decoration: underline;
+}
+
+/* ============================================
+   Form Validation Styles
+   ============================================ */
+.form-input.border-red-500 {
+	border-color: #ef4444 !important;
+}
+
+.form-input.border-red-500:focus {
+	--tw-ring-color: rgba(239, 68, 68, 0.2);
+	border-color: #ef4444;
+}
+
+.validation-error {
+	animation: shakeError 0.3s ease;
+}
+
+@keyframes shakeError {
+	0%, 100% { transform: translateX(0); }
+	25% { transform: translateX(-5px); }
+	75% { transform: translateX(5px); }
 }
 
 /* ============================================

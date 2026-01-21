@@ -46,6 +46,8 @@ class UserNotificationManager {
         this.headerBadge = document.getElementById('notificationHeaderBadge');
         this.listContainer = document.getElementById('notificationList');
         this.markAllReadBtn = document.getElementById('markAllReadBtn');
+        this.clearAllBtn = document.getElementById('clearAllNotificationsBtn');
+        this.clearAllModal = document.getElementById('clearNotificationsModal');
         this.toastContainer = document.getElementById('notificationToastContainer');
         this.alertContainer = document.getElementById('notificationAlertContainer');
     }
@@ -73,6 +75,14 @@ class UserNotificationManager {
         if (this.markAllReadBtn) {
             this.markAllReadBtn.addEventListener('click', () => this.markAllAsRead());
         }
+
+        // Clear all notifications
+        if (this.clearAllBtn) {
+            this.clearAllBtn.addEventListener('click', () => this.showClearAllModal());
+        }
+
+        // Clear all modal handlers
+        this.bindClearAllModalEvents();
 
         // Handle escape key
         document.addEventListener('keydown', (e) => {
@@ -507,6 +517,126 @@ class UserNotificationManager {
             this.renderNotifications();
         } catch (error) {
             console.error('Error deleting notification:', error);
+        }
+    }
+
+    /**
+     * Show clear all confirmation modal
+     */
+    showClearAllModal() {
+        if (this.clearAllModal) {
+            this.clearAllModal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    /**
+     * Close clear all confirmation modal
+     */
+    closeClearAllModal() {
+        if (this.clearAllModal) {
+            this.clearAllModal.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+    }
+
+    /**
+     * Bind clear all modal events
+     */
+    bindClearAllModalEvents() {
+        const confirmBtn = document.getElementById('confirmClearNotifications');
+        const cancelBtn = document.getElementById('cancelClearNotifications');
+        const closeBtn = document.getElementById('closeClearNotificationsModal');
+
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', () => this.clearAllNotifications());
+        }
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => this.closeClearAllModal());
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.closeClearAllModal());
+        }
+
+        // Close modal when clicking on overlay (outside the modal content)
+        if (this.clearAllModal) {
+            this.clearAllModal.addEventListener('click', (e) => {
+                // Only close if clicking directly on the overlay, not the modal content
+                if (e.target === this.clearAllModal) {
+                    this.closeClearAllModal();
+                }
+            });
+        }
+
+        // Close modal on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.clearAllModal && this.clearAllModal.classList.contains('show')) {
+                this.closeClearAllModal();
+            }
+        });
+    }
+
+    /**
+     * Clear all notifications
+     */
+    async clearAllNotifications() {
+        const confirmBtn = document.getElementById('confirmClearNotifications');
+        const originalText = confirmBtn?.textContent;
+        
+        try {
+            // Show loading state
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = `
+                    <span class="spinner"></span>
+                    Menghapus...
+                `;
+            }
+            
+            const response = await fetch(`${this.apiBaseUrl}/notifications`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': this.csrfToken
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to clear all notifications');
+
+            // Update local state
+            this.notifications = [];
+            this.unreadCount = 0;
+            this.updateBadge();
+            this.renderNotifications();
+            this.closeClearAllModal();
+
+            // Show success toast
+            this.showToast({
+                type: 'success',
+                title: 'Berhasil',
+                message: 'Semua notifikasi berhasil dihapus',
+                color: 'success'
+            });
+        } catch (error) {
+            console.error('Error clearing all notifications:', error);
+            this.closeClearAllModal();
+            
+            // Show error toast
+            this.showToast({
+                type: 'error',
+                title: 'Gagal',
+                message: 'Gagal menghapus notifikasi',
+                color: 'danger'
+            });
+        } finally {
+            // Restore button
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = originalText || 'Ya, Hapus';
+            }
         }
     }
 

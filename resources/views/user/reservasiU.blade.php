@@ -217,6 +217,24 @@
 					<select id="roomId" class="form-input" required>
 						<option value="">Pilih Ruangan</option>
 					</select>
+					<!-- Room Info Display -->
+					<div id="roomInfoPanel" class="hidden mt-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+						<div class="flex items-start gap-2">
+							<svg class="w-4 h-4 text-primary mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+							</svg>
+							<div class="text-sm space-y-1">
+								<div class="flex items-center gap-2">
+									<span class="text-gray-500">Kapasitas:</span>
+									<span class="font-medium text-gray-800" id="roomCapacity">-</span>
+								</div>
+								<div class="flex items-center gap-2">
+									<span class="text-gray-500">Lokasi:</span>
+									<span class="font-medium text-gray-800" id="roomLocation">-</span>
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
 				<div class="grid grid-cols-2 gap-2">
 					<div>
@@ -260,6 +278,73 @@
 					<button type="submit" class="btn-primary" id="btnSubmit">Simpan</button>
 				</div>
 			</form>
+		</div>
+	</div>
+
+	<!-- Modal: Delete Confirmation -->
+	<div id="deleteModal" class="fixed inset-0 hidden items-center justify-center p-4 z-50">
+		<div class="absolute inset-0 bg-black/60 backdrop-blur-sm" data-close-delete></div>
+		<div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+			<div class="flex items-center justify-between p-4 border-b bg-gradient-to-r from-red-50 to-transparent">
+				<div class="flex items-center gap-3">
+					<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/25">
+						<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+						</svg>
+					</div>
+					<h3 class="font-bold text-gray-900">Hapus Peminjaman</h3>
+				</div>
+				<button class="p-2 rounded-lg hover:bg-gray-100 transition-colors" data-close-delete>
+					<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+					</svg>
+				</button>
+			</div>
+			<div class="p-5">
+				<p class="text-gray-600 text-center">Apakah Anda yakin ingin menghapus peminjaman ini?</p>
+				<p class="text-sm text-gray-500 text-center mt-2">Tindakan ini tidak dapat dibatalkan.</p>
+			</div>
+			<div class="flex gap-3 p-4 border-t bg-gray-50">
+				<button type="button" class="flex-1 px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-colors" data-close-delete>
+					Batal
+				</button>
+				<button type="button" class="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors" id="confirmDeleteBtn">
+					Ya, Hapus
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal: Logout Confirmation -->
+	<div id="logoutModal" class="fixed inset-0 hidden items-center justify-center p-4 z-50">
+		<div class="absolute inset-0 bg-black/60 backdrop-blur-sm" data-close-logout></div>
+		<div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+			<div class="flex items-center justify-between p-4 border-b bg-gradient-to-r from-orange-50 to-transparent">
+				<div class="flex items-center gap-3">
+					<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/25">
+						<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+						</svg>
+					</div>
+					<h3 class="font-bold text-gray-900">Konfirmasi Keluar</h3>
+				</div>
+				<button class="p-2 rounded-lg hover:bg-gray-100 transition-colors" data-close-logout>
+					<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+					</svg>
+				</button>
+			</div>
+			<div class="p-5">
+				<p class="text-gray-600 text-center">Apakah Anda yakin ingin keluar dari sistem?</p>
+			</div>
+			<div class="flex gap-3 p-4 border-t bg-gray-50">
+				<button type="button" class="flex-1 px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-colors" data-close-logout>
+					Batal
+				</button>
+				<button type="button" class="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors" id="confirmLogoutBtn">
+					Ya, Keluar
+				</button>
+			</div>
 		</div>
 	</div>
 

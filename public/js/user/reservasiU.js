@@ -6,8 +6,11 @@
 document.addEventListener('DOMContentLoaded', () => {
 	initSidebar();
 	initUserDropdown();
+	initDeleteModal();
+	initLogoutModal();
 	tableState.load();
 	bindUI();
+	initFormValidation();
 });
 
 /* ============================================
@@ -61,25 +64,10 @@ function initUserDropdown() {
 		});
 	}
 
-	// Logout functionality
+	// Logout functionality - Show confirmation modal
 	if (logoutBtn) {
 		logoutBtn.addEventListener('click', () => {
-			if (confirm('Apakah Anda yakin ingin keluar?')) {
-				// Create and submit logout form
-				const form = document.createElement('form');
-				form.method = 'POST';
-				form.action = '/logout';
-				
-				const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-				const csrfInput = document.createElement('input');
-				csrfInput.type = 'hidden';
-				csrfInput.name = '_token';
-				csrfInput.value = csrfToken;
-				
-				form.appendChild(csrfInput);
-				document.body.appendChild(form);
-				form.submit();
-			}
+			showLogoutModal();
 		});
 	}
 }
@@ -158,6 +146,23 @@ function renderTable() {
 
 	rows.forEach(r => {
 		const tr = document.createElement('tr');
+		
+		// Build status badge with rejection reason button if rejected
+		let statusHtml = statusBadge(r.status);
+		if (r.status === 'Ditolak' && r.rejection_reason) {
+			statusHtml = `
+				<div class="flex flex-col items-center gap-1">
+					${statusBadge(r.status)}
+					<button type="button" class="rejection-reason-btn text-xs text-red-600 hover:text-red-700 hover:underline flex items-center gap-1" onclick="showRejectionReason('${escapeHtml(r.rejection_reason).replace(/'/g, "\\'")}', '${escapeHtml(r.agenda_name).replace(/'/g, "\\'")}')">
+						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+						</svg>
+						Lihat Alasan
+					</button>
+				</div>
+			`;
+		}
+		
 		tr.innerHTML = `
 			<td>
 				<div class="text-sm font-medium">${escapeHtml(r.date_display)}</div>
@@ -168,7 +173,7 @@ function renderTable() {
 			<td>${escapeHtml(r.room?.name || '-')}</td>
 			<td><span class="text-sm">${r.start_time} - ${r.end_time}</span></td>
 			<td><div class="truncate-2">${escapeHtml(r.agenda_name)}</div></td>
-			<td>${statusBadge(r.status)}</td>
+			<td>${statusHtml}</td>
 			<td class="text-center">
 				${r.status === 'Menunggu' ? `<button class=\"action-btn edit\" title=\"Edit\" onclick=\"editBooking(${r.id})\">` : `<button class=\"action-btn edit opacity-40 cursor-not-allowed\" title=\"Edit nonaktif\" disabled>`}
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
@@ -182,6 +187,71 @@ function renderTable() {
 
 	const maxPage = Math.max(1, Math.ceil(tableState.filtered.length / tableState.pageSize));
 	if (pagInfo) pagInfo.textContent = `${tableState.page} / ${maxPage}`;
+}
+
+/* ============================================
+   Rejection Reason Modal
+   ============================================ */
+function showRejectionReason(reason, agendaName) {
+	// Create modal if it doesn't exist
+	let modal = document.getElementById('rejectionModal');
+	if (!modal) {
+		modal = document.createElement('div');
+		modal.id = 'rejectionModal';
+		modal.className = 'fixed inset-0 hidden items-center justify-center p-4 z-50';
+		modal.innerHTML = `
+			<div class="absolute inset-0 bg-black/60 backdrop-blur-sm" data-close-rejection></div>
+			<div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+				<div class="flex items-center justify-between p-4 border-b bg-gradient-to-r from-red-50 to-transparent">
+					<div class="flex items-center gap-3">
+						<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/25">
+							<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+							</svg>
+						</div>
+						<h3 class="font-bold text-gray-900">Alasan Penolakan</h3>
+					</div>
+					<button class="p-2 rounded-lg hover:bg-gray-100 transition-colors" data-close-rejection>
+						<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+						</svg>
+					</button>
+				</div>
+				<div class="p-5">
+					<div class="mb-3">
+						<p class="text-xs text-gray-500 mb-1">Agenda</p>
+						<p class="font-medium text-gray-900" id="rejectionAgendaName"></p>
+					</div>
+					<div class="bg-red-50 border border-red-100 rounded-xl p-4">
+						<p class="text-xs text-red-500 font-medium mb-2">Alasan Penolakan:</p>
+						<p class="text-red-700" id="rejectionReasonText"></p>
+					</div>
+				</div>
+				<div class="p-4 border-t bg-gray-50">
+					<button type="button" class="w-full px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-colors" data-close-rejection>
+						Tutup
+					</button>
+				</div>
+			</div>
+		`;
+		document.body.appendChild(modal);
+		
+		// Add close handlers
+		modal.querySelectorAll('[data-close-rejection]').forEach(el => {
+			el.addEventListener('click', () => {
+				modal.classList.add('hidden');
+				modal.classList.remove('flex');
+			});
+		});
+	}
+	
+	// Set content
+	document.getElementById('rejectionAgendaName').textContent = agendaName;
+	document.getElementById('rejectionReasonText').textContent = reason;
+	
+	// Show modal
+	modal.classList.remove('hidden');
+	modal.classList.add('flex');
 }
 
 function statusBadge(status) {
@@ -213,6 +283,9 @@ function resetForm() {
 	// reset dependent dropdowns
 	document.getElementById('buildingId').innerHTML = '<option value="">Pilih Gedung</option>';
 	document.getElementById('roomId').innerHTML = '<option value="">Pilih Ruangan</option>';
+	// hide room info
+	hideRoomInfo();
+	roomsData = [];
 }
 function fillForm(r) {
 	document.getElementById('bookingId').value = r.id;
@@ -225,6 +298,13 @@ function fillForm(r) {
 		document.getElementById('buildingId').value = buildingId;
 		onBuildingChange().then(() => {
 			document.getElementById('roomId').value = roomId;
+			// Show room info if available
+			if (r.room) {
+				showRoomInfo({
+					capacity: r.room.capacity,
+					room_location: r.room.room_location
+				});
+			}
 		})
 	});
 	document.getElementById('startDate').value = r.start_date;
@@ -242,19 +322,71 @@ async function onUnitChange() {
 	const buildingSel = document.getElementById('buildingId');
 	buildingSel.innerHTML = '<option value="">Memuat...</option>';
 	document.getElementById('roomId').innerHTML = '<option value="">Pilih Ruangan</option>';
+	hideRoomInfo();
 	if (!unitId) { buildingSel.innerHTML = '<option value="">Pilih Gedung</option>'; return; }
 	const res = await fetch(`${window.__USER_API__.guestBuildings}?unit_id=${unitId}`);
 	const data = await res.json();
 	buildingSel.innerHTML = '<option value="">Pilih Gedung</option>' + (data.data||[]).map(b => `<option value="${b.id}">${escapeHtml(b.building_name)}</option>`).join('');
 }
+
+// Store room data for info display
+let roomsData = [];
+
 async function onBuildingChange() {
 	const buildingId = document.getElementById('buildingId').value;
 	const roomSel = document.getElementById('roomId');
 	roomSel.innerHTML = '<option value="">Memuat...</option>';
-	if (!buildingId) { roomSel.innerHTML = '<option value="">Pilih Ruangan</option>'; return; }
+	hideRoomInfo();
+	roomsData = [];
+	
+	if (!buildingId) { 
+		roomSel.innerHTML = '<option value="">Pilih Ruangan</option>'; 
+		return; 
+	}
+	
 	const res = await fetch(`${window.__USER_API__.guestRooms}?building_id=${buildingId}`);
 	const data = await res.json();
-	roomSel.innerHTML = '<option value="">Pilih Ruangan</option>' + (data.data||[]).map(r => `<option value="${r.id}">${escapeHtml(r.room_name)}</option>`).join('');
+	roomsData = data.data || [];
+	
+	roomSel.innerHTML = '<option value="">Pilih Ruangan</option>' + roomsData.map(r => `<option value="${r.id}">${escapeHtml(r.room_name)}</option>`).join('');
+	
+	// Add room change listener
+	roomSel.removeEventListener('change', onRoomChange);
+	roomSel.addEventListener('change', onRoomChange);
+}
+
+function onRoomChange() {
+	const roomId = document.getElementById('roomId').value;
+	if (!roomId) {
+		hideRoomInfo();
+		return;
+	}
+	
+	const selectedRoom = roomsData.find(r => r.id == roomId);
+	if (selectedRoom) {
+		showRoomInfo(selectedRoom);
+	} else {
+		hideRoomInfo();
+	}
+}
+
+function showRoomInfo(room) {
+	const panel = document.getElementById('roomInfoPanel');
+	const capacityEl = document.getElementById('roomCapacity');
+	const locationEl = document.getElementById('roomLocation');
+	
+	if (panel && capacityEl && locationEl) {
+		capacityEl.textContent = room.capacity ? `${room.capacity} orang` : '-';
+		locationEl.textContent = room.room_location || '-';
+		panel.classList.remove('hidden');
+	}
+}
+
+function hideRoomInfo() {
+	const panel = document.getElementById('roomInfoPanel');
+	if (panel) {
+		panel.classList.add('hidden');
+	}
 }
 
 async function submitForm(e) {
@@ -262,6 +394,21 @@ async function submitForm(e) {
 	
 	const submitBtn = document.getElementById('btnSubmit');
 	const originalText = submitBtn.textContent;
+	
+	// Clear previous validation errors
+	clearValidationErrors();
+	
+	// Get form values
+	const picName = document.getElementById('picName').value.trim();
+	const picPhone = document.getElementById('picPhone').value.trim();
+	
+	// Validate form
+	const validationErrors = validateForm(picName, picPhone);
+	
+	if (validationErrors.length > 0) {
+		displayValidationErrors(validationErrors);
+		return;
+	}
 	
 	// Disable button and show loading state
 	submitBtn.disabled = true;
@@ -276,8 +423,8 @@ async function submitForm(e) {
 		end_time: document.getElementById('endTime').value,
 		agenda_name: document.getElementById('agendaName').value,
 		agenda_detail: document.getElementById('agendaDetail').value,
-		pic_name: document.getElementById('picName').value,
-		pic_phone: document.getElementById('picPhone').value,
+		pic_name: picName,
+		pic_phone: picPhone,
 	};
 
 	try {
@@ -315,6 +462,118 @@ async function submitForm(e) {
 	}
 }
 
+/* ============================================
+   Form Validation Functions
+   ============================================ */
+function validateForm(picName, picPhone) {
+	const errors = [];
+	
+	// Validate PIC Name - only letters and spaces allowed
+	const nameRegex = /^[a-zA-Z\s]+$/;
+	if (!picName) {
+		errors.push({ field: 'picName', message: 'Nama PIC wajib diisi' });
+	} else if (!nameRegex.test(picName)) {
+		errors.push({ field: 'picName', message: 'Nama PIC hanya boleh berisi huruf' });
+	} else if (picName.length < 2) {
+		errors.push({ field: 'picName', message: 'Nama PIC minimal 2 karakter' });
+	}
+	
+	// Validate Phone Number - only numbers, minimum 6 digits
+	const phoneRegex = /^[0-9]+$/;
+	if (!picPhone) {
+		errors.push({ field: 'picPhone', message: 'Nomor telepon PIC wajib diisi' });
+	} else if (!phoneRegex.test(picPhone)) {
+		errors.push({ field: 'picPhone', message: 'Nomor telepon hanya boleh berisi angka' });
+	} else if (picPhone.length < 6) {
+		errors.push({ field: 'picPhone', message: 'Nomor telepon minimal 6 digit' });
+	}
+	
+	return errors;
+}
+
+function displayValidationErrors(errors) {
+	errors.forEach(error => {
+		const field = document.getElementById(error.field);
+		if (field) {
+			// Add error class to field
+			field.classList.add('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+			field.classList.remove('focus:ring-primary', 'focus:border-primary');
+			
+			// Create and insert error message
+			const errorDiv = document.createElement('div');
+			errorDiv.className = 'validation-error text-xs text-red-600 mt-1 flex items-center gap-1';
+			errorDiv.innerHTML = `
+				<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+				</svg>
+				${escapeHtml(error.message)}
+			`;
+			
+			// Insert after the field
+			field.parentNode.appendChild(errorDiv);
+		}
+	});
+	
+	// Show toast with first error
+	if (errors.length > 0) {
+		showToast(errors[0].message, 'error');
+	}
+	
+	// Focus on first error field
+	const firstErrorField = document.getElementById(errors[0]?.field);
+	if (firstErrorField) {
+		firstErrorField.focus();
+	}
+}
+
+function clearValidationErrors() {
+	// Remove all validation error messages
+	document.querySelectorAll('.validation-error').forEach(el => el.remove());
+	
+	// Remove error classes from fields
+	const fields = ['picName', 'picPhone'];
+	fields.forEach(fieldId => {
+		const field = document.getElementById(fieldId);
+		if (field) {
+			field.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+		}
+	});
+}
+
+// Add real-time validation on input
+function initFormValidation() {
+	const picNameField = document.getElementById('picName');
+	const picPhoneField = document.getElementById('picPhone');
+	
+	if (picNameField) {
+		picNameField.addEventListener('input', function() {
+			// Remove non-letter characters except spaces
+			const cleaned = this.value.replace(/[^a-zA-Z\s]/g, '');
+			if (cleaned !== this.value) {
+				this.value = cleaned;
+			}
+			// Clear error state on input
+			this.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+			const errorDiv = this.parentNode.querySelector('.validation-error');
+			if (errorDiv) errorDiv.remove();
+		});
+	}
+	
+	if (picPhoneField) {
+		picPhoneField.addEventListener('input', function() {
+			// Remove non-numeric characters
+			const cleaned = this.value.replace(/[^0-9]/g, '');
+			if (cleaned !== this.value) {
+				this.value = cleaned;
+			}
+			// Clear error state on input
+			this.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+			const errorDiv = this.parentNode.querySelector('.validation-error');
+			if (errorDiv) errorDiv.remove();
+		});
+	}
+}
+
 async function editBooking(id) {
 	// Cari data di cache
 	const r = tableState.raw.find(x => x.id === id);
@@ -322,10 +581,61 @@ async function editBooking(id) {
 	openModal('edit', r);
 }
 
+/* ============================================
+   Delete Booking with Modal Confirmation
+   ============================================ */
+let pendingDeleteId = null;
+
+function initDeleteModal() {
+	const modal = document.getElementById('deleteModal');
+	const confirmBtn = document.getElementById('confirmDeleteBtn');
+	
+	// Close handlers
+	modal?.querySelectorAll('[data-close-delete]').forEach(el => {
+		el.addEventListener('click', closeDeleteModal);
+	});
+	
+	// Confirm delete handler
+	confirmBtn?.addEventListener('click', async () => {
+		if (pendingDeleteId) {
+			await confirmDeleteBooking(pendingDeleteId);
+		}
+	});
+}
+
+function showDeleteModal(id) {
+	pendingDeleteId = id;
+	const modal = document.getElementById('deleteModal');
+	if (modal) {
+		modal.classList.remove('hidden');
+		modal.classList.add('flex');
+	}
+}
+
+function closeDeleteModal() {
+	pendingDeleteId = null;
+	const modal = document.getElementById('deleteModal');
+	if (modal) {
+		modal.classList.add('hidden');
+		modal.classList.remove('flex');
+	}
+}
+
 async function deleteBooking(id) {
-	if (!confirm('Hapus peminjaman ini?')) return;
+	showDeleteModal(id);
+}
+
+async function confirmDeleteBooking(id) {
+	const confirmBtn = document.getElementById('confirmDeleteBtn');
+	const originalText = confirmBtn?.textContent;
 	
 	try {
+		// Show loading state
+		if (confirmBtn) {
+			confirmBtn.disabled = true;
+			confirmBtn.textContent = 'Menghapus...';
+		}
+		
 		const res = await fetch(window.__USER_API__.delete(id), { 
 			method: 'DELETE', 
 			headers: { 
@@ -334,6 +644,8 @@ async function deleteBooking(id) {
 			} 
 		});
 		const data = await res.json();
+		
+		closeDeleteModal();
 		
 		if (!res.ok || !data.success) {
 			showToast(data.message || 'Gagal menghapus data', 'error');
@@ -344,8 +656,64 @@ async function deleteBooking(id) {
 		await tableState.load();
 	} catch (error) {
 		console.error('Delete error:', error);
+		closeDeleteModal();
 		showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
+	} finally {
+		// Re-enable button
+		if (confirmBtn) {
+			confirmBtn.disabled = false;
+			confirmBtn.textContent = originalText || 'Ya, Hapus';
+		}
 	}
+}
+
+/* ============================================
+   Logout Modal Confirmation
+   ============================================ */
+function initLogoutModal() {
+	const modal = document.getElementById('logoutModal');
+	const confirmBtn = document.getElementById('confirmLogoutBtn');
+	
+	// Close handlers
+	modal?.querySelectorAll('[data-close-logout]').forEach(el => {
+		el.addEventListener('click', closeLogoutModal);
+	});
+	
+	// Confirm logout handler
+	confirmBtn?.addEventListener('click', performLogout);
+}
+
+function showLogoutModal() {
+	const modal = document.getElementById('logoutModal');
+	if (modal) {
+		modal.classList.remove('hidden');
+		modal.classList.add('flex');
+	}
+}
+
+function closeLogoutModal() {
+	const modal = document.getElementById('logoutModal');
+	if (modal) {
+		modal.classList.add('hidden');
+		modal.classList.remove('flex');
+	}
+}
+
+function performLogout() {
+	// Create and submit logout form
+	const form = document.createElement('form');
+	form.method = 'POST';
+	form.action = '/logout';
+	
+	const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+	const csrfInput = document.createElement('input');
+	csrfInput.type = 'hidden';
+	csrfInput.name = '_token';
+	csrfInput.value = csrfToken;
+	
+	form.appendChild(csrfInput);
+	document.body.appendChild(form);
+	form.submit();
 }
 
 /* ============================================

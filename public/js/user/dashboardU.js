@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initUserDropdown();
     initCalendar();
     initTimePickers();
+    initLocationFilters();
     initModal();
     initLogout();
 });
@@ -28,6 +29,13 @@ const MAX_EVENTS_DISPLAY = 3;
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
 let bookingsCache = [];
+
+// Filter state
+let currentFilters = {
+    unit_id: '',
+    building_id: '',
+    room_id: ''
+};
 
 /* ============================================
    Sidebar Functions
@@ -211,6 +219,17 @@ async function loadBookings() {
         if (startTimeInput && endTimeInput && startTimeInput.value && endTimeInput.value) {
             url += `&start_time=${startTimeInput.value}&end_time=${endTimeInput.value}`;
         }
+
+        // Add location filters
+        if (currentFilters.unit_id) {
+            url += `&unit_id=${currentFilters.unit_id}`;
+        }
+        if (currentFilters.building_id) {
+            url += `&building_id=${currentFilters.building_id}`;
+        }
+        if (currentFilters.room_id) {
+            url += `&room_id=${currentFilters.room_id}`;
+        }
         
         const response = await fetch(url, {
             headers: {
@@ -231,6 +250,119 @@ async function loadBookings() {
         }
     } catch (error) {
         console.error('Error loading bookings:', error);
+    }
+}
+
+/* ============================================
+   Location Filter Functions
+   ============================================ */
+function initLocationFilters() {
+    const unitSelect = document.getElementById('filterUnit');
+    const buildingSelect = document.getElementById('filterBuilding');
+    const roomSelect = document.getElementById('filterRoom');
+
+    if (unitSelect) {
+        unitSelect.addEventListener('change', async () => {
+            currentFilters.unit_id = unitSelect.value;
+            currentFilters.building_id = '';
+            currentFilters.room_id = '';
+            
+            // Reset and disable building & room selects
+            buildingSelect.innerHTML = '<option value="">Semua Gedung</option>';
+            buildingSelect.disabled = !unitSelect.value;
+            roomSelect.innerHTML = '<option value="">Semua Ruangan</option>';
+            roomSelect.disabled = true;
+            
+            if (unitSelect.value) {
+                await loadBuildings(unitSelect.value);
+            }
+            
+            loadBookings();
+        });
+    }
+
+    if (buildingSelect) {
+        buildingSelect.addEventListener('change', async () => {
+            currentFilters.building_id = buildingSelect.value;
+            currentFilters.room_id = '';
+            
+            // Reset and disable room select
+            roomSelect.innerHTML = '<option value="">Semua Ruangan</option>';
+            roomSelect.disabled = !buildingSelect.value;
+            
+            if (buildingSelect.value) {
+                await loadRooms(buildingSelect.value);
+            }
+            
+            loadBookings();
+        });
+    }
+
+    if (roomSelect) {
+        roomSelect.addEventListener('change', () => {
+            currentFilters.room_id = roomSelect.value;
+            loadBookings();
+        });
+    }
+}
+
+async function loadBuildings(unitId) {
+    const buildingSelect = document.getElementById('filterBuilding');
+    if (!buildingSelect) return;
+    
+    try {
+        buildingSelect.innerHTML = '<option value="">Memuat...</option>';
+        
+        const url = window.__DASHBOARD_API__?.buildings || '/api/guest/buildings';
+        const response = await fetch(`${url}?unit_id=${unitId}`, {
+            headers: { 'Accept': 'application/json' }
+        });
+        
+        const data = await response.json();
+        
+        let options = '<option value="">Semua Gedung</option>';
+        if (data.success && data.data) {
+            data.data.forEach(building => {
+                options += `<option value="${building.id}">${escapeHtml(building.building_name)}</option>`;
+            });
+        }
+        
+        buildingSelect.innerHTML = options;
+        buildingSelect.disabled = false;
+    } catch (error) {
+        console.error('Error loading buildings:', error);
+        buildingSelect.innerHTML = '<option value="">Semua Gedung</option>';
+        buildingSelect.disabled = false;
+    }
+}
+
+async function loadRooms(buildingId) {
+    const roomSelect = document.getElementById('filterRoom');
+    if (!roomSelect) return;
+    
+    try {
+        roomSelect.innerHTML = '<option value="">Memuat...</option>';
+        
+        const url = window.__DASHBOARD_API__?.rooms || '/api/guest/rooms';
+        const response = await fetch(`${url}?building_id=${buildingId}`, {
+            headers: { 'Accept': 'application/json' }
+        });
+        
+        const data = await response.json();
+        
+        let options = '<option value="">Semua Ruangan</option>';
+        if (data.success && data.data) {
+            data.data.forEach(room => {
+                options += `<option value="${room.id}">${escapeHtml(room.room_name)}</option>`;
+            });
+        }
+        
+        roomSelect.innerHTML = options;
+        roomSelect.disabled = false;
+    } catch (error) {
+        console.error('Error loading rooms:', error);
+        roomSelect.innerHTML = '<option value="">Semua Ruangan</option>';
+        roomSelect.disabled = false;
     }
 }
 
