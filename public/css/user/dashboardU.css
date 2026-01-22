@@ -529,3 +529,219 @@
         margin-left: 0 !important;
     }
 }
+
+/* ============================================
+   Day Bookings Modal Styles (matching Guest)
+   ============================================ */
+.modal-day-bookings {
+    max-width: 520px;
+    width: 95%;
+}
+
+.modal-day-bookings .modal-header {
+    border-bottom: 1px solid #E5E7EB;
+    padding-bottom: 16px;
+}
+
+.modal-day-bookings .modal-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a2e;
+}
+
+.modal-day-bookings .modal-title svg {
+    color: #00A2B9;
+    flex-shrink: 0;
+}
+
+.day-bookings-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #F3F4F6;
+}
+
+.day-bookings-count {
+    font-size: 13px;
+    font-weight: 500;
+    color: #6B7280;
+    background: #F3F4F6;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+.day-bookings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+/* Custom scrollbar for day bookings list */
+.day-bookings-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.day-bookings-list::-webkit-scrollbar-track {
+    background: #F3F4F6;
+    border-radius: 3px;
+}
+
+.day-bookings-list::-webkit-scrollbar-thumb {
+    background: #D1D5DB;
+    border-radius: 3px;
+}
+
+.day-bookings-list::-webkit-scrollbar-thumb:hover {
+    background: #9CA3AF;
+}
+
+/* Day booking item */
+.day-booking-item {
+    padding: 14px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-left: 4px solid transparent;
+}
+
+.day-booking-item:hover {
+    transform: translateX(2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Status colors for day booking items */
+.day-booking-item.status-approved {
+    background: linear-gradient(135deg, #EBF8FA 0%, #E0F4F6 100%);
+    border-left-color: #00AEEF;
+}
+
+.day-booking-item.status-approved:hover {
+    background: linear-gradient(135deg, #D9F2F6 0%, #C8EEF2 100%);
+}
+
+.day-booking-item.status-pending {
+    background: linear-gradient(135deg, #FEFCE8 0%, #FEF9C3 100%);
+    border-left-color: #FFF200;
+}
+
+.day-booking-item.status-pending:hover {
+    background: linear-gradient(135deg, #FEF08A 0%, #FDE047 100%);
+}
+
+.day-booking-item.status-rejected {
+    background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+    border-left-color: #ED1C24;
+}
+
+.day-booking-item.status-rejected:hover {
+    background: linear-gradient(135deg, #FECACA 0%, #FCA5A5 100%);
+}
+
+.day-booking-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.day-booking-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a2e;
+    line-height: 1.4;
+    flex: 1;
+    word-break: break-word;
+}
+
+.day-booking-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.day-booking-badge.badge-approved {
+    background-color: #DBEAFE;
+    color: #1E40AF;
+}
+
+.day-booking-badge.badge-pending {
+    background-color: #FEF3C7;
+    color: #92400E;
+}
+
+.day-booking-badge.badge-rejected {
+    background-color: #FEE2E2;
+    color: #991B1B;
+}
+
+.day-booking-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.day-booking-detail {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #6B7280;
+}
+
+.day-booking-detail svg {
+    color: #9CA3AF;
+    flex-shrink: 0;
+}
+
+/* Responsive adjustments for day bookings modal */
+@media (max-width: 640px) {
+    .modal-day-bookings {
+        max-width: 100%;
+        width: 100%;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
+    }
+    
+    .day-bookings-list {
+        max-height: calc(100vh - 200px);
+    }
+    
+    .day-booking-header {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .day-booking-badge {
+        align-self: flex-start;
+    }
+}
+
+/* More bookings button styling */
+.more-bookings {
+    font-size: 11px;
+    font-weight: 600;
+    color: #00A2B9;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+}
+
+.more-bookings:hover {
+    background-color: rgba(0, 162, 185, 0.1);
+}

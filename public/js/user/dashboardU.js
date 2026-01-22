@@ -529,6 +529,8 @@ function formatTimeDisplay(time) {
 function initModal() {
     const modal = document.getElementById('bookingModal');
     const closeBtn = document.getElementById('closeModal');
+    const dayBookingsModal = document.getElementById('dayBookingsModal');
+    const closeDayBookingsBtn = document.getElementById('closeDayBookingsModal');
 
     if (closeBtn) {
         closeBtn.addEventListener('click', closeModal);
@@ -542,10 +544,24 @@ function initModal() {
         });
     }
 
-    // Close modal on escape key
+    // Day bookings modal handlers
+    if (closeDayBookingsBtn) {
+        closeDayBookingsBtn.addEventListener('click', closeDayBookingsModal);
+    }
+
+    if (dayBookingsModal) {
+        dayBookingsModal.addEventListener('click', (e) => {
+            if (e.target === dayBookingsModal) {
+                closeDayBookingsModal();
+            }
+        });
+    }
+
+    // Close modals on escape key
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeModal();
+            closeDayBookingsModal();
         }
     });
 }
@@ -768,42 +784,103 @@ function renderBookingDetail(booking) {
 }
 
 function showDayBookings(dateStr, bookings) {
-    const modalBody = document.getElementById('modalBody');
-    if (!modalBody) return;
+    const dayBookingsModal = document.getElementById('dayBookingsModal');
+    const dayBookingsTitleText = document.getElementById('dayBookingsTitleText');
+    const dayBookingsBody = document.getElementById('dayBookingsBody');
+    
+    if (!dayBookingsModal || !dayBookingsBody) return;
 
-    const date = new Date(dateStr);
-    const formattedDate = `${DAYS[date.getDay()]}, ${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
-
+    // Format date for display
+    const date = new Date(dateStr + 'T00:00:00');
+    const dayName = DAYS[date.getDay()];
+    const day = date.getDate();
+    const monthName = MONTHS[date.getMonth()];
+    const year = date.getFullYear();
+    const formattedDate = `${dayName}, ${day} ${monthName} ${year}`;
+    
+    // Update modal title
+    if (dayBookingsTitleText) {
+        dayBookingsTitleText.textContent = formattedDate;
+    }
+    
+    // Sort bookings by start_time
+    const sortedBookings = [...bookings].sort((a, b) => {
+        return a.start_time.localeCompare(b.start_time);
+    });
+    
+    // Build bookings list HTML
     let html = `
-        <div class="mb-4">
-            <h4 class="text-sm font-medium text-gray-500">${formattedDate}</h4>
+        <div class="day-bookings-info">
+            <span class="day-bookings-count">${sortedBookings.length} Reservasi</span>
         </div>
-        <div class="space-y-3">
+        <div class="day-bookings-list">
     `;
-
-    bookings.forEach(booking => {
+    
+    sortedBookings.forEach(booking => {
         const statusClass = getStatusClass(booking.status);
+        const statusBadgeClass = getBadgeClass(booking.status);
         
         html += `
-            <div class="p-3 rounded-lg cursor-pointer hover:opacity-90 transition-colors booking-item ${statusClass}" 
-                 style="border-left-width: 4px;"
-                 onclick="showBookingDetail(${booking.id})">
-                <div class="flex items-start justify-between gap-2 mb-2">
-                    <h5 class="font-medium text-sm" style="color: inherit;">${escapeHtml(booking.agenda_name)}</h5>
-                    <span class="detail-status-banner ${statusClass}" style="padding: 2px 8px; font-size: 10px; margin: 0;">${booking.status}</span>
+            <div class="day-booking-item ${statusClass}" onclick="showBookingDetail(${booking.id}); closeDayBookingsModal();">
+                <div class="day-booking-header">
+                    <h4 class="day-booking-title">${escapeHtml(booking.agenda_name)}</h4>
+                    <span class="day-booking-badge ${statusBadgeClass}">${booking.status}</span>
                 </div>
-                <div class="flex items-center gap-4 text-xs" style="opacity: 0.8;">
-                    <span>${booking.start_time} - ${booking.end_time}</span>
-                    <span>${escapeHtml(booking.room_name)}</span>
+                <div class="day-booking-details">
+                    <div class="day-booking-detail">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        <span>${booking.start_time} - ${booking.end_time}</span>
+                    </div>
+                    <div class="day-booking-detail">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        <span>${escapeHtml(booking.room_name || '-')} - ${escapeHtml(booking.building_name || '-')}</span>
+                    </div>
                 </div>
             </div>
         `;
     });
-
+    
     html += '</div>';
     
-    modalBody.innerHTML = html;
-    openModal();
+    dayBookingsBody.innerHTML = html;
+    openDayBookingsModal();
+}
+
+function getBadgeClass(status) {
+    switch (status) {
+        case 'Disetujui':
+            return 'badge-approved';
+        case 'Ditolak':
+            return 'badge-rejected';
+        case 'Menunggu':
+            return 'badge-pending';
+        default:
+            return 'badge-pending';
+    }
+}
+
+function openDayBookingsModal() {
+    const dayBookingsModal = document.getElementById('dayBookingsModal');
+    if (dayBookingsModal) {
+        dayBookingsModal.classList.remove('hidden');
+        dayBookingsModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeDayBookingsModal() {
+    const dayBookingsModal = document.getElementById('dayBookingsModal');
+    if (dayBookingsModal) {
+        dayBookingsModal.classList.add('hidden');
+        dayBookingsModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
 }
 
 /* ============================================

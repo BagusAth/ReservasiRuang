@@ -340,7 +340,16 @@ async function onBuildingChange() {
 	const data = await res.json();
 	roomsData = data.data || [];
 	
-	roomSel.innerHTML = '<option value="">Pilih Ruangan</option>' + roomsData.map(r => `<option value="${r.id}">${escapeHtml(r.room_name)}</option>`).join('');
+	// Build room options with capacity and location info
+	let optionsHtml = '<option value="">Pilih Ruangan</option>';
+	roomsData.forEach(r => {
+		const capacityText = r.capacity ? `${r.capacity} orang` : 'Kapasitas tidak tersedia';
+		const locationText = r.location || 'Lokasi tidak tersedia';
+		const displayText = `${escapeHtml(r.room_name)} — ${capacityText} • ${locationText}`;
+		optionsHtml += `<option value="${r.id}" data-capacity="${r.capacity || ''}" data-location="${escapeHtml(r.location || '')}">${displayText}</option>`;
+	});
+	
+	roomSel.innerHTML = optionsHtml;
 	
 	// Add room change listener
 	roomSel.removeEventListener('change', onRoomChange);

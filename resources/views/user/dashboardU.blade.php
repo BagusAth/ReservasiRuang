@@ -432,6 +432,34 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Day Bookings List -->
+    <div class="modal-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" id="dayBookingsModal">
+        <div class="modal-content modal-day-bookings bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-5 lg:p-6 border-b border-gray-100 bg-gradient-to-r from-primary/5 to-transparent flex-shrink-0">
+                <h3 class="modal-title" id="dayBookingsTitle">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span id="dayBookingsTitleText">Reservasi</span>
+                </h3>
+                <button type="button" class="p-2.5 hover:bg-gray-100 rounded-xl transition-all duration-200 hover:rotate-90" id="closeDayBookingsModal">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <!-- Modal Body - Scrollable -->
+            <div class="p-5 lg:p-6 overflow-y-auto flex-1 custom-scrollbar" id="dayBookingsBody">
+                <!-- Day bookings list will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
     
     <!-- API URLs -->
     <script>
