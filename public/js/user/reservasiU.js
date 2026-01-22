@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	initSidebar();
 	initUserDropdown();
 	initDeleteModal();
-	initLogoutModal();
+	initLogout();
 	tableState.load();
 	bindUI();
 	initFormValidation();
@@ -46,7 +46,6 @@ function initSidebar() {
 function initUserDropdown() {
 	const btn = document.getElementById('userDropdownBtn');
 	const dropdown = document.getElementById('userDropdown');
-	const logoutBtn = document.getElementById('logoutBtn');
 
 	if (btn && dropdown) {
 		btn.addEventListener('click', (e) => {
@@ -61,13 +60,6 @@ function initUserDropdown() {
 				dropdown.classList.add('hidden');
 				dropdown.classList.remove('active');
 			}
-		});
-	}
-
-	// Logout functionality - Show confirmation modal
-	if (logoutBtn) {
-		logoutBtn.addEventListener('click', () => {
-			showLogoutModal();
 		});
 	}
 }
@@ -668,52 +660,73 @@ async function confirmDeleteBooking(id) {
 }
 
 /* ============================================
-   Logout Modal Confirmation
+   Logout Function
    ============================================ */
-function initLogoutModal() {
-	const modal = document.getElementById('logoutModal');
-	const confirmBtn = document.getElementById('confirmLogoutBtn');
+function initLogout() {
+    const logoutBtn = document.getElementById('logoutBtn');
+    const logoutModal = document.getElementById('logoutModal');
+    const closeLogoutModalBtn = document.getElementById('closeLogoutModal');
+    const cancelLogoutBtn = document.getElementById('cancelLogout');
+    const confirmLogoutBtn = document.getElementById('confirmLogout');
 	
-	// Close handlers
-	modal?.querySelectorAll('[data-close-logout]').forEach(el => {
-		el.addEventListener('click', closeLogoutModal);
-	});
-	
-	// Confirm logout handler
-	confirmBtn?.addEventListener('click', performLogout);
-}
+	function openLogoutModal() {
+        logoutModal.classList.remove('hidden');
+        logoutModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
 
-function showLogoutModal() {
-	const modal = document.getElementById('logoutModal');
-	if (modal) {
-		modal.classList.remove('hidden');
-		modal.classList.add('flex');
-	}
-}
+    function closeLogoutModal() {
+        logoutModal.classList.add('hidden');
+        logoutModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
 
-function closeLogoutModal() {
-	const modal = document.getElementById('logoutModal');
-	if (modal) {
-		modal.classList.add('hidden');
-		modal.classList.remove('flex');
-	}
-}
+    async function handleLogout() {
+        try {
+            const response = await fetch('/api/logout', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
 
-function performLogout() {
-	// Create and submit logout form
-	const form = document.createElement('form');
-	form.method = 'POST';
-	form.action = '/logout';
-	
-	const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-	const csrfInput = document.createElement('input');
-	csrfInput.type = 'hidden';
-	csrfInput.name = '_token';
-	csrfInput.value = csrfToken;
-	
-	form.appendChild(csrfInput);
-	document.body.appendChild(form);
-	form.submit();
+            const data = await response.json();
+            
+            if (data.success) {
+                window.location.href = data.redirect || '/';
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+            window.location.href = '/';
+        }
+    }
+
+    // Open modal when clicking logout button
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', openLogoutModal);
+    }
+
+    // Close modal handlers
+    if (closeLogoutModalBtn) {
+        closeLogoutModalBtn.addEventListener('click', closeLogoutModal);
+    }
+    if (cancelLogoutBtn) {
+        cancelLogoutBtn.addEventListener('click', closeLogoutModal);
+    }
+
+    // Confirm logout
+    if (confirmLogoutBtn) {
+        confirmLogoutBtn.addEventListener('click', handleLogout);
+    }
+
+    // Close on overlay click
+    if (logoutModal) {
+        logoutModal.addEventListener('click', (e) => {
+            if (e.target === logoutModal) closeLogoutModal();
+        });
+    }
 }
 
 /* ============================================
