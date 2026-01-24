@@ -182,6 +182,11 @@ body {
     vertical-align: middle;
 }
 
+/* First column (Tanggal) - prevent wrapping */
+.peminjaman-table tbody tr td:first-child {
+    white-space: nowrap;
+}
+
 .peminjaman-table tbody tr {
     transition: background-color 0.15s ease;
 }

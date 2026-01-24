@@ -272,6 +272,7 @@ function renderTable() {
         tr.innerHTML = `
             <td>
                 <div class="text-sm font-medium">${escapeHtml(booking.date_display)}</div>
+                ${booking.is_multi_day ? `<div class="text-xs text-gray-500">s/d ${escapeHtml(booking.date_end_display)}</div>` : ''}
             </td>
             <td>${escapeHtml(booking.building?.name || '-')}</td>
             <td>${escapeHtml(booking.room?.name || '-')}</td>
@@ -904,20 +905,42 @@ async function openEditStatusModal(bookingId) {
         if (result.success) {
             const data = result.data;
             
-            // Populate modal
+            // Populate modal dengan detail lengkap (style dashboard)
             document.getElementById('editStatusAgenda').textContent = data.agenda_name;
-            document.getElementById('editStatusDate').innerHTML = `
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
-                ${escapeHtml(data.date_display_formatted)}
-            `;
-            document.getElementById('editStatusRoom').innerHTML = `
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                </svg>
-                ${escapeHtml(data.building?.name || '-')} - ${escapeHtml(data.room?.name || '-')}
-            `;
+            
+            // Date
+            document.getElementById('editStatusDate').textContent = data.date_display_formatted;
+            
+            // Time
+            document.getElementById('editStatusTime').textContent = `${data.start_time} - ${data.end_time} WIB`;
+            
+            // Building
+            document.getElementById('editStatusBuilding').textContent = data.building?.name || '-';
+            
+            // Room
+            document.getElementById('editStatusRoom').textContent = data.room?.name || '-';
+            
+            // Capacity
+            document.getElementById('editStatusCapacity').textContent = `${data.room?.capacity || '-'} orang`;
+            
+            // Participants
+            document.getElementById('editStatusParticipants').textContent = `${data.participant_count || 0} orang`;
+            
+            // PIC
+            document.getElementById('editStatusPIC').textContent = data.pic_name || '-';
+            
+            // PIC Phone
+            document.getElementById('editStatusPICPhone').textContent = data.pic_phone || '-';
+            
+            // Description
+            const descContainer = document.getElementById('editStatusDescriptionContainer');
+            const descElement = document.getElementById('editStatusDescription');
+            if (data.description && data.description.trim() !== '') {
+                descContainer.classList.remove('hidden');
+                descElement.textContent = data.description;
+            } else {
+                descContainer.classList.add('hidden');
+            }
             
             // Set current status badge
             document.getElementById('editStatusCurrentBadge').innerHTML = getStatusBadge(data.status);

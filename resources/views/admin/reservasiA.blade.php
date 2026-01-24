@@ -430,7 +430,7 @@
 
     <!-- Edit Status Modal -->
     <div class="modal-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" id="editStatusModal">
-        <div class="modal-content bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
+        <div class="modal-content bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
             <!-- Modal Header -->
             <div class="flex items-center justify-between p-5 lg:p-6 border-b border-gray-100 bg-gradient-to-r from-primary/5 to-transparent flex-shrink-0">
                 <div class="flex items-center gap-3">
@@ -448,37 +448,145 @@
                 </button>
             </div>
             <!-- Modal Body -->
-            <form id="editStatusForm" class="p-5 lg:p-6">
-                <input type="hidden" id="editStatusBookingId" value="">
+            <div class="overflow-y-auto flex-1 custom-scrollbar">
+                <form id="editStatusForm" class="p-5 lg:p-6">
+                    <input type="hidden" id="editStatusBookingId" value="">
                 
-                <!-- Booking Info Summary -->
-                <div class="bg-gray-50 rounded-xl p-4 mb-5">
-                    <h4 id="editStatusAgenda" class="font-semibold text-gray-900 mb-2">-</h4>
-                    <div class="flex flex-wrap gap-3 text-sm text-gray-600">
-                        <span id="editStatusDate" class="flex items-center gap-1">
-                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    <!-- Detail Reservasi -->
+                    <div class="space-y-4">
+                        <!-- Header with Agenda Name -->
+                        <div class="pb-4 border-b border-gray-100">
+                            <h2 id="editStatusAgenda" class="text-xl font-bold text-gray-900 mb-2">-</h2>
+                            <div id="editStatusCurrentBadge" class="inline-flex"></div>
+                        </div>
+
+                        <!-- Info Grid 2 Columns -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <!-- Tanggal -->
+                            <div class="modal-info-item">
+                                <div class="icon-wrapper bg-primary/10">
+                                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                                <div class="content">
+                                    <p class="label">Tanggal</p>
+                                    <p id="editStatusDate" class="value">-</p>
+                                </div>
+                            </div>
+
+                            <!-- Waktu -->
+                    <div class="modal-info-item">
+                        <div class="icon-wrapper bg-blue-50">
+                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            -
-                        </span>
-                        <span id="editStatusRoom" class="flex items-center gap-1">
-                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        </div>
+                        <div class="content">
+                            <p class="label">Waktu</p>
+                            <p id="editStatusTime" class="value">-</p>
+                        </div>
+                    </div>
+
+                    <!-- Gedung -->
+                    <div class="modal-info-item">
+                        <div class="icon-wrapper bg-emerald-50">
+                            <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                             </svg>
-                            -
-                        </span>
+                        </div>
+                        <div class="content">
+                            <p class="label">Gedung</p>
+                            <p id="editStatusBuilding" class="value">-</p>
+                        </div>
                     </div>
-                </div>
+
+                    <!-- Ruangan -->
+                    <div class="modal-info-item">
+                        <div class="icon-wrapper bg-purple-50">
+                            <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                        </div>
+                        <div class="content">
+                            <p class="label">Ruangan</p>
+                            <p id="editStatusRoom" class="value">-</p>
+                        </div>
+                    </div>
+
+                    <!-- Kapasitas -->
+                    <div class="modal-info-item">
+                        <div class="icon-wrapper bg-amber-50">
+                            <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="content">
+                            <p class="label">Kapasitas</p>
+                            <p id="editStatusCapacity" class="value">-</p>
+                        </div>
+                    </div>
+
+                    <!-- Jumlah Peserta -->
+                    <div class="modal-info-item">
+                        <div class="icon-wrapper bg-orange-50">
+                            <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="content">
+                            <p class="label">Jumlah Peserta</p>
+                            <p id="editStatusParticipants" class="value">-</p>
+                        </div>
+                    </div>
+
+                    <!-- PIC -->
+                    <div class="modal-info-item">
+                        <div class="icon-wrapper bg-pink-50">
+                            <svg class="w-4 h-4 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                        </div>
+                        <div class="content">
+                            <p class="label">Penanggung Jawab (PIC)</p>
+                            <p id="editStatusPIC" class="value">-</p>
+                        </div>
+                    </div>
+
+                    <!-- No. Telepon PIC -->
+                    <div class="modal-info-item">
+                        <div class="icon-wrapper bg-cyan-50">
+                            <svg class="w-4 h-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                            </svg>
+                        </div>
+                        <div class="content">
+                            <p class="label">No. Telepon PIC</p>
+                            <p id="editStatusPICPhone" class="value">-</p>
+                        </div>
+                    </div>
+                        </div>
+
+                        <!-- Deskripsi (if exists) - Full Width -->
+                        <div id="editStatusDescriptionContainer" class="modal-info-item hidden">
+                            <div class="icon-wrapper bg-gray-100">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
+                                </svg>
+                            </div>
+                            <div class="content">
+                                <p class="label">Deskripsi</p>
+                                <p id="editStatusDescription" class="value">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="border-t border-gray-200 my-5"></div>
                 
-                <!-- Current Status -->
-                <div class="mb-4">
-                    <label class="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">Status Saat Ini</label>
-                    <div id="editStatusCurrentBadge" class="inline-flex"></div>
-                </div>
-                
-                <!-- New Status Selection -->
-                <div class="mb-4">
-                    <label class="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">Ubah Status Menjadi</label>
+                    <!-- New Status Selection -->
+                    <div class="mb-4">
+                        <label class="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">Ubah Status Menjadi</label>
                     <div class="grid grid-cols-3 gap-2">
                         <label class="status-radio-option">
                             <input type="radio" name="newStatus" value="Menunggu" class="sr-only peer">
@@ -514,23 +622,24 @@
                             </div>
                         </label>
                     </div>
-                </div>
+                    </div>
                 
-                <!-- Rejection Reason (shown only when Ditolak is selected) -->
-                <div class="mb-4 hidden" id="editStatusReasonContainer">
-                    <label class="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">Alasan Penolakan <span class="text-red-500">*</span></label>
-                    <textarea id="editStatusReason" rows="3" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none" placeholder="Masukkan alasan penolakan..."></textarea>
-                </div>
+                    <!-- Rejection Reason (shown only when Ditolak is selected) -->
+                    <div class="mb-4 hidden" id="editStatusReasonContainer">
+                        <label class="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">Alasan Penolakan <span class="text-red-500">*</span></label>
+                        <textarea id="editStatusReason" rows="3" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none" placeholder="Masukkan alasan penolakan..."></textarea>
+                    </div>
                 
-                <div class="flex gap-3 pt-2">
-                    <button type="button" class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors" id="cancelEditStatus">
-                        Batal
-                    </button>
-                    <button type="submit" class="flex-1 px-4 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-medium hover:from-primary-dark hover:to-primary transition-all shadow-lg shadow-primary/25" id="submitEditStatus">
-                        Simpan Perubahan
-                    </button>
-                </div>
-            </form>
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors" id="cancelEditStatus">
+                            Batal
+                        </button>
+                        <button type="submit" class="flex-1 px-4 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-medium hover:from-primary-dark hover:to-primary transition-all shadow-lg shadow-primary/25" id="submitEditStatus">
+                            Simpan Perubahan
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
