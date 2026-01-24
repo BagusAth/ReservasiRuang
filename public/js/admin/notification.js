@@ -44,7 +44,10 @@ class NotificationManager {
         this.headerBadge = document.getElementById('notificationHeaderBadge');
         this.listContainer = document.getElementById('notificationList');
         this.markAllReadBtn = document.getElementById('markAllReadBtn');
+        this.clearAllBtn = document.getElementById('clearAllNotificationsBtn');
+        this.clearAllModal = document.getElementById('clearNotificationsModal');
         this.toastContainer = document.getElementById('notificationToastContainer');
+        this.alertContainer = document.getElementById('notificationAlertContainer');
     }
 
     /**
@@ -71,6 +74,14 @@ class NotificationManager {
             this.markAllReadBtn.addEventListener('click', () => this.markAllAsRead());
         }
 
+        // Clear all notifications
+        if (this.clearAllBtn) {
+            this.clearAllBtn.addEventListener('click', () => this.showClearAllModal());
+        }
+
+        // Clear all modal handlers
+        this.bindClearAllModalEvents();
+        
         // Handle escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.isDropdownOpen) {
@@ -472,6 +483,126 @@ class NotificationManager {
     }
 
     /**
+     * Show clear all confirmation modal
+     */
+    showClearAllModal() {
+        if (this.clearAllModal) {
+            this.clearAllModal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    /**
+     * Close clear all confirmation modal
+     */
+    closeClearAllModal() {
+        if (this.clearAllModal) {
+            this.clearAllModal.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+    }
+
+    /**
+     * Bind clear all modal events
+     */
+    bindClearAllModalEvents() {
+        const confirmBtn = document.getElementById('confirmClearNotifications');
+        const cancelBtn = document.getElementById('cancelClearNotifications');
+        const closeBtn = document.getElementById('closeClearNotificationsModal');
+
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', () => this.clearAllNotifications());
+        }
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => this.closeClearAllModal());
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.closeClearAllModal());
+        }
+
+        // Close modal when clicking on overlay (outside the modal content)
+        if (this.clearAllModal) {
+            this.clearAllModal.addEventListener('click', (e) => {
+                // Only close if clicking directly on the overlay, not the modal content
+                if (e.target === this.clearAllModal) {
+                    this.closeClearAllModal();
+                }
+            });
+        }
+
+        // Close modal on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.clearAllModal && this.clearAllModal.classList.contains('show')) {
+                this.closeClearAllModal();
+            }
+        });
+    }
+
+    /**
+     * Clear all notifications
+     */
+    async clearAllNotifications() {
+        const confirmBtn = document.getElementById('confirmClearNotifications');
+        const originalText = confirmBtn?.textContent;
+        
+        try {
+            // Show loading state
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = `
+                    <span class="spinner"></span>
+                    Menghapus...
+                `;
+            }
+            
+            const response = await fetch(`${this.apiBaseUrl}/notifications`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': this.csrfToken
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to clear all notifications');
+
+            // Update local state
+            this.notifications = [];
+            this.unreadCount = 0;
+            this.updateBadge();
+            this.renderNotifications();
+            this.closeClearAllModal();
+
+            // Show success toast
+            this.showToast({
+                type: 'success',
+                title: 'Berhasil',
+                message: 'Semua notifikasi berhasil dihapus',
+                color: 'success'
+            });
+        } catch (error) {
+            console.error('Error clearing all notifications:', error);
+            this.closeClearAllModal();
+            
+            // Show error toast
+            this.showToast({
+                type: 'error',
+                title: 'Gagal',
+                message: 'Gagal menghapus notifikasi',
+                color: 'danger'
+            });
+        } finally {
+            // Restore button
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = originalText || 'Ya, Hapus';
+            }
+        }
+    }
+
+    /**
      * Show toast notification
      */
     showToast(notification) {
@@ -538,6 +669,87 @@ class NotificationManager {
     }
 
     /**
+     * Show alert banner on page
+     */
+    showAlert(type, title, message, autoDismiss = true) {
+        if (!this.alertContainer) {
+            this.alertContainer = document.getElementById('notificationAlertContainer');
+        }
+
+        if (!this.alertContainer) return;
+
+        const alertId = 'alert-' + Date.now();
+        const iconSVG = this.getAlertIconSVG(type);
+
+        const alert = document.createElement('div');
+        alert.id = alertId;
+        alert.className = `notification-alert ${type}`;
+        alert.innerHTML = `
+            <div class="notification-alert-icon">
+                ${iconSVG}
+            </div>
+            <div class="notification-alert-content">
+                <h4 class="notification-alert-title">${title}</h4>
+                <p class="notification-alert-message">${message}</p>
+            </div>
+            <button class="notification-alert-close" aria-label="Close">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        `;
+
+        this.alertContainer.appendChild(alert);
+
+        // Close button
+        const closeBtn = alert.querySelector('.notification-alert-close');
+        closeBtn.addEventListener('click', () => this.hideAlert(alert));
+
+        // Auto-dismiss after 5 seconds
+        if (autoDismiss) {
+            setTimeout(() => this.hideAlert(alert), 5000);
+        }
+
+        return alertId;
+    }
+
+    /**
+     * Hide alert banner
+     */
+    hideAlert(alert) {
+        if (typeof alert === 'string') {
+            alert = document.getElementById(alert);
+        }
+        if (alert) {
+            alert.style.opacity = '0';
+            alert.style.transform = 'translateY(-10px)';
+            setTimeout(() => alert.remove(), 300);
+        }
+    }
+
+    /**
+     * Get alert icon SVG
+     */
+    getAlertIconSVG(type) {
+        const icons = {
+            success: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>`,
+            danger: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>`,
+            warning: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>`,
+            info: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>`
+        };
+
+        return icons[type] || icons.info;
+    }
+
+    /**
      * Refresh notifications manually
      */
     refresh() {
@@ -570,5 +782,19 @@ document.addEventListener('DOMContentLoaded', function() {
 function refreshNotifications() {
     if (window.notificationManager) {
         window.notificationManager.refresh();
+    }
+}
+
+// Global function to show alert banner
+function showNotificationAlert(type, title, message, autoDismiss = true) {
+    if (window.NotificationManager) {
+        return window.NotificationManager.showAlert(type, title, message, autoDismiss);
+    }
+}
+
+// Global function to show toast
+function showNotificationToast(notification) {
+    if (window.NotificationManager) {
+        window.NotificationManager.showToast(notification);
     }
 }

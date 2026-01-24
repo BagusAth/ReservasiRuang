@@ -116,11 +116,11 @@ return [
     | Remember Me Cookie Lifetime
     |--------------------------------------------------------------------------
     |
-    | The default is 1 day (1440 minutes) as per the
+    | The default is 2 day (2 * 1440 minutes) as per the
     | application requirements for the "Ingat Saya" feature.
     |
     */
 
-    'remember' => env('AUTH_REMEMBER_LIFETIME', 1440),
+    'remember' => env('AUTH_REMEMBER_LIFETIME', 2 * 1440),
 
 ];

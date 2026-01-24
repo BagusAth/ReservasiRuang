@@ -648,7 +648,7 @@
                     <div class="booking-item week-event ${statusClass}${multiDayClass}" 
                          data-booking-id="${booking.id}" 
                          style="top: ${topPercent}%; height: ${heightPercent}%;"
-                         title="${booking.agenda_name} (${formattedStartTime} - ${formattedEndTime})${booking.is_multi_day ? ' [Multi-hari]' : ''}">
+                         title="${booking.agenda_name} (${formattedStartTime} - ${formattedEndTime})${booking.is_multi_day ? '' : ''}">
                         <span class="event-time">${formattedStartTime}</span>
                         <span class="event-title">${booking.agenda_name}</span>
                     </div>

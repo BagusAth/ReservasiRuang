@@ -153,6 +153,9 @@
             
             <!-- Page Content -->
             <div class="p-4 lg:p-8">
+                <!-- Alert Container for Page Notifications -->
+                <div id="notificationAlertContainer" class="mb-4"></div>
+                
                 <!-- Welcome Banner with Admin Scope Info -->
                 <section class="relative bg-gradient-to-r from-primary to-primary rounded-2xl overflow-hidden mb-6">
                     <div class="relative z-10 p-6 lg:p-8">

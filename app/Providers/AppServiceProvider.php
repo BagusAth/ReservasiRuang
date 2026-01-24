@@ -30,7 +30,7 @@ class AppServiceProvider extends ServiceProvider
         // Register Booking Observer for notifications
         Booking::observe(BookingObserver::class);
 
-        // Configure remember me cookie lifetime (1 day = 1440 minutes)
+        // Configure remember me cookie lifetime (2 day = 2 * 1440 minutes)
         // Used by Laravel's Auth guard when "remember me" is checked
         $rememberLifetime = config('auth.remember', 2 * 1440);
         Auth::setRememberDuration($rememberLifetime);

@@ -1,5 +1,4 @@
 {{-- Notification Component for User --}}
-{{-- Include this in the header section --}}
 
 <!-- Notification Bell with Dropdown -->
 <div class="relative" id="notificationContainer">

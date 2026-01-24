@@ -12,9 +12,9 @@ use Illuminate\Support\Str;
 class AuthController extends Controller
 {
     /**
-     * Remember cookie lifetime in minutes (1 day = 1440 minutes).
+     * Remember cookie lifetime in minutes (2 day = 2 * 1440 minutes).
      */
-    private const REMEMBER_COOKIE_MINUTES = 1440;
+    private const REMEMBER_COOKIE_MINUTES = 2 * 1440;
 
     /**
      * Handle login request via AJAX.

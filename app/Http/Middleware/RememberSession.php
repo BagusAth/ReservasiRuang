@@ -11,9 +11,9 @@ use Symfony\Component\HttpFoundation\Response;
 class RememberSession
 {
     /**
-     * Session lifetime for remembered users (1 day in minutes).
+     * Session lifetime for remembered users (2 day in minutes).
      */
-    private const REMEMBER_SESSION_LIFETIME = 1440;
+    private const REMEMBER_SESSION_LIFETIME = 2 * 1440;
 
     /**
      * Handle an incoming request.

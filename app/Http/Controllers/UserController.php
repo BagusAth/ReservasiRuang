@@ -363,12 +363,12 @@ class UserController extends Controller{
             'agenda_name' => 'required|string|max:255',
             'agenda_detail' => 'nullable|string',
             'pic_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z\s]+$/', 'min:2'],
-            'pic_phone' => ['required', 'string', 'max:50', 'regex:/^[0-9]+$/', 'min:6'],
+            'pic_phone' => ['required', 'string', 'max:20', 'regex:/^[0-9]+$/', 'min:9'],
         ], [
             'pic_name.regex' => 'Nama PIC hanya boleh berisi huruf.',
             'pic_name.min' => 'Nama PIC minimal 2 karakter.',
             'pic_phone.regex' => 'Nomor telepon hanya boleh berisi angka.',
-            'pic_phone.min' => 'Nomor telepon minimal 6 digit.',
+            'pic_phone.min' => 'Nomor telepon minimal 9 digit.',
         ]);
 
         // Waktu valid (end_time harus > start_time jika satu hari)
@@ -446,12 +446,12 @@ class UserController extends Controller{
             'agenda_name' => 'required|string|max:255',
             'agenda_detail' => 'nullable|string',
             'pic_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z\s]+$/', 'min:2'],
-            'pic_phone' => ['required', 'string', 'max:50', 'regex:/^[0-9]+$/', 'min:6'],
+            'pic_phone' => ['required', 'string', 'max:20', 'regex:/^[0-9]+$/', 'min:9'],
         ], [
             'pic_name.regex' => 'Nama PIC hanya boleh berisi huruf.',
             'pic_name.min' => 'Nama PIC minimal 2 karakter.',
             'pic_phone.regex' => 'Nomor telepon hanya boleh berisi angka.',
-            'pic_phone.min' => 'Nomor telepon minimal 6 digit.',
+            'pic_phone.min' => 'Nomor telepon minimal 9 digit.',
         ]);
 
         if ($validated['start_date'] === $validated['end_date'] && $validated['end_time'] <= $validated['start_time']) {

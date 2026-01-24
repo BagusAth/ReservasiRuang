@@ -4,9 +4,9 @@
  * 
  * Color Palette:
  * - Primary: #00A2B9
- * - Success: #10B981
- * - Danger: #EF4444
- * - Warning: #F59E0B
+ * - Success: #10B981 (Disetujui)
+ * - Danger: #EF4444 (Ditolak)
+ * - Warning: #F59E0B (Menunggu)
  * - Info: #3B82F6
  */
 
@@ -120,23 +120,34 @@
 
 .notification-header-actions {
     display: flex;
-    gap: 8px;
+    gap: 4px;
 }
 
 .notification-header-btn {
-    padding: 6px 12px;
-    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 7px;
+    font-size: 11.5px;
     font-weight: 500;
     color: white;
     background: rgba(255, 255, 255, 0.15);
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
 }
 
 .notification-header-btn:hover {
     background: rgba(255, 255, 255, 0.25);
+}
+
+.notification-header-btn.danger {
+    background: rgba(239, 68, 68, 0.25);
+}
+
+.notification-header-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.4);
 }
 
 /* List */
@@ -402,6 +413,35 @@
 }
 
 /* ============================================
+   Status Badge dalam Notifikasi
+   ============================================ */
+.notification-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 12px;
+    margin-top: 6px;
+}
+
+.notification-status-badge.approved {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+}
+
+.notification-status-badge.rejected {
+    background: rgba(239, 68, 68, 0.1);
+    color: #DC2626;
+}
+
+.notification-status-badge.pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: #D97706;
+}
+
+/* ============================================
    Responsive Adjustments
    ============================================ */
 @media (max-width: 480px) {
@@ -413,6 +453,10 @@
 
     .notification-header {
         padding: 14px 16px;
+    }
+
+    .notification-header-btn span {
+        display: none;
     }
 
     .notification-item {
@@ -435,7 +479,7 @@
 }
 
 /* ============================================
-   Notification Toast (Optional)
+   Notification Toast
    ============================================ */
 .notification-toast-container {
     position: fixed;
@@ -476,12 +520,32 @@
     border-left-color: #10B981;
 }
 
-.notification-toast.error {
+.notification-toast.error,
+.notification-toast.danger {
     border-left-color: #EF4444;
 }
 
 .notification-toast.warning {
     border-left-color: #F59E0B;
+}
+
+.notification-toast-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-toast-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 4px 0;
+}
+
+.notification-toast-message {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.4;
 }
 
 .notification-toast-close {
@@ -502,4 +566,285 @@
 .notification-toast-close:hover {
     background: #f3f4f6;
     color: #4b5563;
+}
+
+/* ============================================
+   Alert Banner (untuk halaman)
+   ============================================ */
+.notification-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.notification-alert.success {
+    background: linear-gradient(to right, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.notification-alert.danger {
+    background: linear-gradient(to right, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.notification-alert.warning {
+    background: linear-gradient(to right, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.notification-alert.info {
+    background: linear-gradient(to right, rgba(0, 162, 185, 0.1) 0%, rgba(0, 162, 185, 0.05) 100%);
+    border: 1px solid rgba(0, 162, 185, 0.2);
+}
+
+.notification-alert-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+}
+
+.notification-alert.success .notification-alert-icon {
+    color: #10B981;
+}
+
+.notification-alert.danger .notification-alert-icon {
+    color: #EF4444;
+}
+
+.notification-alert.warning .notification-alert-icon {
+    color: #F59E0B;
+}
+
+.notification-alert.info .notification-alert-icon {
+    color: #00A2B9;
+}
+
+.notification-alert-content {
+    flex: 1;
+}
+
+.notification-alert-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 2px 0;
+}
+
+.notification-alert-message {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.notification-alert-close {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.notification-alert-close:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #4b5563;
+}
+
+/* ============================================
+   Clear All Notifications Modal
+   ============================================ */
+.clear-notifications-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.clear-notifications-modal-overlay.show {
+    display: flex;
+    opacity: 1;
+    visibility: visible;
+}
+
+.clear-notifications-modal {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.2),
+        0 8px 20px rgba(0, 0, 0, 0.1);
+    max-width: 380px;
+    width: 100%;
+    overflow: hidden;
+    transform: scale(0.95) translateY(-20px);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.clear-notifications-modal-overlay.show .clear-notifications-modal {
+    transform: scale(1) translateY(0);
+}
+
+.clear-notifications-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f3f4f6;
+    background: linear-gradient(to right, rgba(239, 68, 68, 0.05), transparent);
+}
+
+.clear-notifications-modal-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.clear-notifications-close-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.clear-notifications-close-btn:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+.clear-notifications-modal-body {
+    padding: 24px 20px;
+    text-align: center;
+}
+
+.clear-notifications-warning-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+}
+
+.clear-notifications-text {
+    font-size: 14px;
+    color: #4b5563;
+    margin: 0 0 4px 0;
+}
+
+.clear-notifications-subtext {
+    font-size: 12px;
+    color: #9ca3af;
+    margin: 0 0 20px 0;
+}
+
+.clear-notifications-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.clear-notifications-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.clear-notifications-btn.cancel {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+.clear-notifications-btn.cancel:hover {
+    background: #e5e7eb;
+}
+
+.clear-notifications-btn.confirm {
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.clear-notifications-btn.confirm:hover {
+    background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+}
+
+.clear-notifications-btn.confirm:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Loading state untuk tombol */
+.clear-notifications-btn .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .clear-notifications-modal {
+        max-width: calc(100vw - 32px);
+    }
+    
+    .clear-notifications-modal-header {
+        padding: 14px 16px;
+    }
+    
+    .clear-notifications-modal-body {
+        padding: 20px 16px;
+    }
 }
