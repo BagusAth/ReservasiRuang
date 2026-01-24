@@ -336,6 +336,16 @@ function getActionButtons(booking) {
         `;
     }
     
+    // Alternative schedule button
+    buttons += `
+        <button type="button" class="action-btn alternative" title="Pindahkan Jadwal" onclick="openRescheduleModal(${booking.id})">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M15 10l-4 4-2-2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+    `;
+    
     // Edit button (change status)
     buttons += `
         <button type="button" class="action-btn edit" title="Ubah Status" onclick="openEditStatusModal(${booking.id})">
@@ -683,7 +693,48 @@ function renderDetailModal(data) {
                 </div>
             </div>
         </div>
+
+        <!-- Action Buttons for Pending Status -->
+        ${data.status === 'Menunggu' ? `
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                <div class="flex flex-col gap-3">
+                    <p class="text-sm font-semibold text-gray-700 mb-2">Tindakan terhadap reservasi ini:</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button type="button" onclick="handleApproveFromDetail(${data.id})" class="w-full px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Setujui Reservasi
+                        </button>
+                        <button type="button" onclick="handleRejectFromDetail(${data.id})" class="w-full px-5 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <line x1="18" y1="6" x2="6" y2="18" stroke-linecap="round" stroke-linejoin="round"/>
+                                <line x1="6" y1="6" x2="18" y2="18" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Tolak Reservasi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        ` : ''}
     `;
+}
+
+// ============================================
+// Handle Actions from Detail Modal
+// ============================================
+function handleApproveFromDetail(bookingId) {
+    closeModal('detailModal');
+    setTimeout(() => {
+        openApproveModal(bookingId);
+    }, 300);
+}
+
+function handleRejectFromDetail(bookingId) {
+    closeModal('detailModal');
+    setTimeout(() => {
+        openRejectModal(bookingId);
+    }, 300);
 }
 
 // ============================================
@@ -965,7 +1016,7 @@ function hideLoadingState() {
 // ============================================
 // Toast Notification
 // ============================================
-function showToast(message, type = 'success') {
+function showToast(message, type = 'success', duration = 4000) {
     const toast = document.getElementById('toast');
     const toastIcon = document.getElementById('toastIcon');
     const toastMessage = document.getElementById('toastMessage');
@@ -989,15 +1040,16 @@ function showToast(message, type = 'success') {
         `;
     }
 
-    toastMessage.textContent = message;
+    // Handle multiline messages by preserving line breaks
+    toastMessage.innerHTML = escapeHtml(message).replace(/\n/g, '<br>');
 
     // Show toast
     toast.classList.add('show');
 
-    // Auto hide after 4 seconds
+    // Auto hide after specified duration
     setTimeout(() => {
         hideToast();
-    }, 4000);
+    }, duration);
 }
 
 function hideToast() {
@@ -1016,3 +1068,227 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// ============================================
+// Manual Reschedule Functions
+// ============================================
+
+/**
+ * Open manual reschedule modal
+ */
+async function openRescheduleModal(bookingId) {
+    openModal('rescheduleModal');
+    
+    // Reset form
+    document.getElementById('rescheduleBookingId').value = bookingId;
+    document.getElementById('rescheduleForm').reset();
+    
+    const currentBookingInfo = document.getElementById('currentBookingInfo');
+    const roomSelect = document.getElementById('newRoomId');
+    
+    // Show loading
+    currentBookingInfo.innerHTML = '<div class="text-center py-4"><div class="loading-spinner loading-spinner-sm mx-auto"></div></div>';
+    roomSelect.innerHTML = '<option value="">Loading...</option>';
+
+    try {
+        const response = await fetch(window.__ADMIN_API__.rescheduleData(bookingId), {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message || 'Gagal memuat data');
+        }
+
+        const data = result.data;
+        const booking = data.booking;
+        const rooms = data.available_rooms;
+
+        // Fill current booking info
+        currentBookingInfo.innerHTML = `
+            <div class="flex items-center gap-2 text-gray-700">
+                <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+                <span class="font-medium">${escapeHtml(booking.room_name)}</span>
+                <span class="text-gray-500">•</span>
+                <span class="text-gray-600">${escapeHtml(booking.building_name)}</span>
+            </div>
+            <div class="flex items-center gap-2 text-gray-700">
+                <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <span>${escapeHtml(booking.date_display)}</span>
+            </div>
+            <div class="flex items-center gap-2 text-gray-700">
+                <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>${booking.start_time} - ${booking.end_time} WIB</span>
+            </div>
+            <div class="flex items-center gap-2 text-gray-700">
+                <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <span>${escapeHtml(booking.user_name)}</span>
+            </div>
+        `;
+
+        // Set default values to current booking
+        document.getElementById('newStartDate').value = booking.start_date;
+        document.getElementById('newEndDate').value = booking.end_date;
+        document.getElementById('newStartTime').value = booking.start_time;
+        document.getElementById('newEndTime').value = booking.end_time;
+
+        // Fill room options
+        let roomOptionsHTML = '<option value="">-- Pilih Ruangan --</option>';
+        
+        // Group rooms by building
+        const roomsByBuilding = {};
+        rooms.forEach(room => {
+            const buildingKey = room.building_name || 'Gedung Tidak Diketahui';
+            if (!roomsByBuilding[buildingKey]) {
+                roomsByBuilding[buildingKey] = [];
+            }
+            roomsByBuilding[buildingKey].push(room);
+        });
+
+        // Create optgroups
+        Object.keys(roomsByBuilding).sort().forEach(buildingName => {
+            roomOptionsHTML += `<optgroup label="${escapeHtml(buildingName)}">`;
+            roomsByBuilding[buildingName].forEach(room => {
+                const isCurrentRoom = room.id === booking.room_id;
+                const roomName = room.name || room.room_name || 'Ruangan Tanpa Nama';
+                const capacityText = room.capacity ? `(Kapasitas: ${room.capacity})` : '';
+                roomOptionsHTML += `<option value="${room.id}" ${isCurrentRoom ? 'selected' : ''}>
+                    ${escapeHtml(roomName)} ${capacityText}
+                </option>`;
+            });
+            roomOptionsHTML += '</optgroup>';
+        });
+
+        roomSelect.innerHTML = roomOptionsHTML;
+
+    } catch (error) {
+        console.error('Error loading reschedule data:', error);
+        currentBookingInfo.innerHTML = `<p class="text-red-600 text-sm">${escapeHtml(error.message)}</p>`;
+        roomSelect.innerHTML = '<option value="">Gagal memuat ruangan</option>';
+        showToast(error.message, 'error');
+    }
+}
+
+/**
+ * Handle reschedule form submit
+ */
+async function handleRescheduleSubmit(e) {
+    e.preventDefault();
+
+    const bookingId = document.getElementById('rescheduleBookingId').value;
+    const startDate = document.getElementById('newStartDate').value;
+    const endDate = document.getElementById('newEndDate').value;
+    const startTime = document.getElementById('newStartTime').value;
+    const endTime = document.getElementById('newEndTime').value;
+    const roomId = document.getElementById('newRoomId').value;
+    const message = document.getElementById('rescheduleMessage').value.trim();
+
+    // Validation
+    if (!startDate || !endDate || !startTime || !endTime || !roomId) {
+        showToast('Mohon lengkapi semua field yang wajib diisi', 'error');
+        return;
+    }
+
+    if (new Date(endDate) < new Date(startDate)) {
+        showToast('Tanggal selesai tidak boleh lebih awal dari tanggal mulai', 'error');
+        return;
+    }
+
+    if (startDate === endDate && endTime <= startTime) {
+        showToast('Waktu selesai harus lebih dari waktu mulai', 'error');
+        return;
+    }
+
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<div class="loading-spinner loading-spinner-sm mx-auto"></div>';
+
+    try {
+        const payload = {
+            new_start_date: startDate,
+            new_end_date: endDate,
+            new_start_time: startTime,
+            new_end_time: endTime,
+            new_room_id: parseInt(roomId),
+            notification_message: message || null,
+        };
+
+        const response = await fetch(window.__ADMIN_API__.reschedule(bookingId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            // Show conflict info if available
+            if (result.conflict) {
+                const conflictMsg = `${result.message}\n\nDetail Konflik:\n• Agenda: ${result.conflict.agenda}\n• PIC: ${result.conflict.pic_name}\n• Tanggal: ${result.conflict.date}\n• Waktu: ${result.conflict.time}`;
+                showToast(conflictMsg, 'error', 8000);
+                throw new Error(conflictMsg);
+            }
+            showToast(result.message || 'Gagal memindahkan jadwal', 'error');
+            throw new Error(result.message || 'Gagal memindahkan jadwal');
+        }
+
+        showToast(result.message || 'Jadwal berhasil dipindahkan', 'success');
+        closeModal('rescheduleModal');
+        tableState.load(); // Reload table
+    } catch (error) {
+        console.error('Error rescheduling:', error);
+        // Don't show toast again if already shown above
+        if (!error.message.includes('Konflik dengan')) {
+            showToast(error.message || 'Terjadi kesalahan', 'error');
+        }
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
+}
+
+// Initialize reschedule modal listeners
+document.addEventListener('DOMContentLoaded', function() {
+    const closeRescheduleModal = document.getElementById('closeRescheduleModal');
+    const cancelReschedule = document.getElementById('cancelReschedule');
+    const rescheduleForm = document.getElementById('rescheduleForm');
+
+    if (closeRescheduleModal) {
+        closeRescheduleModal.addEventListener('click', () => closeModal('rescheduleModal'));
+    }
+
+    if (cancelReschedule) {
+        cancelReschedule.addEventListener('click', () => closeModal('rescheduleModal'));
+    }
+
+    if (rescheduleForm) {
+        rescheduleForm.addEventListener('submit', handleRescheduleSubmit);
+    }
+
+    // Close modal when clicking overlay
+    const rescheduleModalOverlay = document.getElementById('rescheduleModal');
+    if (rescheduleModalOverlay) {
+        rescheduleModalOverlay.addEventListener('click', (e) => {
+            if (e.target === rescheduleModalOverlay) {
+                closeModal('rescheduleModal');
+            }
+        });
+    }
+});

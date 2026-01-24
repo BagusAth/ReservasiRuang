@@ -75,10 +75,15 @@ Route::middleware(['role:admin_unit,admin_gedung'])->group(function () {
         // Peminjaman table endpoints
         Route::get('/list-bookings', [AdminController::class, 'listBookings'])->name('listBookings');
         Route::get('/buildings', [AdminController::class, 'getBuildings'])->name('buildings');
+        Route::get('/rooms', [AdminController::class, 'getRooms'])->name('rooms');
         Route::post('/bookings/{id}/approve', [AdminController::class, 'approveBooking'])->name('booking.approve');
         Route::post('/bookings/{id}/reject', [AdminController::class, 'rejectBooking'])->name('booking.reject');
         Route::put('/bookings/{id}/status', [AdminController::class, 'updateBookingStatus'])->name('booking.updateStatus');
         Route::delete('/bookings/{id}', [AdminController::class, 'deleteBooking'])->name('booking.delete');
+        
+        // Manual reschedule endpoints
+        Route::get('/bookings/{id}/reschedule-data', [AdminController::class, 'getRescheduleData'])->name('booking.rescheduleData');
+        Route::post('/bookings/{id}/reschedule', [AdminController::class, 'rescheduleBooking'])->name('booking.reschedule');
 
         // Notification endpoints
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');

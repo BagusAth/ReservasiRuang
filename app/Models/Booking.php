@@ -275,7 +275,7 @@ class Booking extends Model
     ): ?self {
         $query = self::with(['room.building.unit'])
             ->where('room_id', $roomId)
-            ->where('status', self::STATUS_APPROVED)
+            ->whereIn('status', [self::STATUS_APPROVED, self::STATUS_PENDING])
             // Date range overlap: booking.start_date <= endDate AND booking.end_date >= startDate
             ->where('start_date', '<=', $endDate)
             ->where('end_date', '>=', $startDate)

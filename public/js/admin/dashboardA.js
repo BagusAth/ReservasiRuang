@@ -12,6 +12,10 @@ document.addEventListener('DOMContentLoaded', function() {
     let bookings = [];
     let startTimeFilter = '';
     let endTimeFilter = '';
+    let buildingFilter = '';
+    let roomFilter = '';
+    let buildings = [];
+    let rooms = [];
 
     // ============================================
     // DOM Elements
@@ -26,6 +30,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const displayEndTime = document.getElementById('displayEndTime');
     const clearStartTimeBtn = document.getElementById('clearStartTime');
     const clearEndTimeBtn = document.getElementById('clearEndTime');
+    const buildingFilterSelect = document.getElementById('buildingFilter');
+    const roomFilterSelect = document.getElementById('roomFilter');
+    const clearFiltersBtn = document.getElementById('clearFilters');
     const bookingModal = document.getElementById('bookingModal');
     const modalBody = document.getElementById('modalBody');
     const closeModalBtn = document.getElementById('closeModal');
@@ -59,6 +66,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 url += `&start_time=${startTimeFilter}&end_time=${endTimeFilter}`;
             }
 
+            if (buildingFilter) {
+                url += `&building_id=${buildingFilter}`;
+            }
+
+            if (roomFilter) {
+                url += `&room_id=${roomFilter}`;
+            }
+
             const response = await fetch(url, {
                 headers: {
                     'Accept': 'application/json',
@@ -75,6 +90,91 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error fetching bookings:', error);
+        }
+    }
+
+    async function fetchBuildings() {
+        if (!buildingFilterSelect) return; // Only for Admin Unit
+        
+        try {
+            const response = await fetch('/api/admin/buildings', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch buildings');
+            
+            const result = await response.json();
+            if (result.success) {
+                buildings = result.data;
+                populateBuildingFilter();
+            }
+        } catch (error) {
+            console.error('Error fetching buildings:', error);
+        }
+    }
+
+    async function fetchRooms(buildingId = null) {
+        try {
+            let url = '/api/admin/rooms';
+            if (buildingId) {
+                url += `?building_id=${buildingId}`;
+            }
+
+            const response = await fetch(url, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch rooms');
+            
+            const result = await response.json();
+            if (result.success) {
+                rooms = result.data;
+                populateRoomFilter();
+            }
+        } catch (error) {
+            console.error('Error fetching rooms:', error);
+        }
+    }
+
+    function populateBuildingFilter() {
+        if (!buildingFilterSelect) return;
+        
+        const currentValue = buildingFilterSelect.value;
+        buildingFilterSelect.innerHTML = '<option value="">Semua Gedung</option>';
+        
+        buildings.forEach(building => {
+            const option = document.createElement('option');
+            option.value = building.id;
+            option.textContent = building.building_name;
+            buildingFilterSelect.appendChild(option);
+        });
+        
+        // Restore previous selection if still valid
+        if (currentValue && buildings.find(b => b.id == currentValue)) {
+            buildingFilterSelect.value = currentValue;
+        }
+    }
+
+    function populateRoomFilter() {
+        const currentValue = roomFilterSelect.value;
+        roomFilterSelect.innerHTML = '<option value="">Semua Ruangan</option>';
+        
+        rooms.forEach(room => {
+            const option = document.createElement('option');
+            option.value = room.id;
+            option.textContent = room.display_name;
+            roomFilterSelect.appendChild(option);
+        });
+        
+        // Restore previous selection if still valid
+        if (currentValue && rooms.find(r => r.id == currentValue)) {
+            roomFilterSelect.value = currentValue;
         }
     }
 
@@ -555,6 +655,61 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Building filter
+    if (buildingFilterSelect) {
+        buildingFilterSelect.addEventListener('change', (e) => {
+            buildingFilter = e.target.value;
+            roomFilter = ''; // Reset room filter when building changes
+            
+            // Fetch rooms for the selected building
+            if (buildingFilter) {
+                fetchRooms(buildingFilter);
+            } else {
+                fetchRooms(); // Fetch all rooms in the unit
+            }
+            
+            fetchBookings();
+        });
+    }
+
+    // Room filter
+    if (roomFilterSelect) {
+        roomFilterSelect.addEventListener('change', (e) => {
+            roomFilter = e.target.value;
+            fetchBookings();
+        });
+    }
+
+    // Clear all filters button
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', () => {
+            // Reset time filters
+            startTimeInput.value = '';
+            endTimeInput.value = '';
+            startTimeFilter = '';
+            endTimeFilter = '';
+            updateTimeDisplay();
+            
+            // Reset building filter (Admin Unit only)
+            if (buildingFilterSelect) {
+                buildingFilterSelect.value = '';
+                buildingFilter = '';
+            }
+            
+            // Reset room filter
+            if (roomFilterSelect) {
+                roomFilterSelect.value = '';
+                roomFilter = '';
+            }
+            
+            // Reload all rooms
+            fetchRooms();
+            
+            // Refresh calendar
+            fetchBookings();
+        });
+    }
+
     // Modal
     closeModalBtn.addEventListener('click', closeModal);
     bookingModal.addEventListener('click', (e) => {
@@ -590,5 +745,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // ============================================
     // Initialize
     // ============================================
-    fetchBookings();
+    // Load initial data
+    if (buildingFilterSelect) {
+        fetchBuildings(); // Only for Admin Unit
+    }
+    fetchRooms(); // Load rooms
+    fetchBookings(); // Load calendar
 });

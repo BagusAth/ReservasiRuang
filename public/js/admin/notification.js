@@ -255,10 +255,19 @@ class NotificationManager {
             
             // Click on item to mark as read and view
             item.addEventListener('click', (e) => {
-                if (!e.target.closest('.notification-action-btn')) {
+                if (!e.target.closest('.notification-action-btn') && !e.target.closest('.notification-expand-btn')) {
                     this.handleNotificationClick(notificationId);
                 }
             });
+
+            // Expand/Collapse button
+            const expandBtn = item.querySelector('.notification-expand-btn');
+            if (expandBtn) {
+                expandBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleNotificationExpand(item);
+                });
+            }
 
             // Mark as read button
             const readBtn = item.querySelector('.mark-read-btn');
@@ -287,6 +296,9 @@ class NotificationManager {
         const iconSVG = this.getIconSVG(notification.type);
         const colorClass = notification.color || 'primary';
         const unreadClass = notification.is_read ? '' : 'unread';
+        
+        // Check if message is long enough to need expand button (more than ~80 characters)
+        const needsExpand = notification.message && notification.message.length > 80;
 
         return `
             <div class="notification-item ${unreadClass}" data-id="${notification.id}">
@@ -298,7 +310,15 @@ class NotificationManager {
                         ${notification.title}
                         ${!notification.is_read ? '<span class="unread-dot"></span>' : ''}
                     </h4>
-                    <p class="notification-message">${notification.message}</p>
+                    <p class="notification-message" data-full-text="${this.escapeHtml(notification.message)}">${notification.message}</p>
+                    ${needsExpand ? `
+                        <button class="notification-expand-btn" data-action="expand">
+                            <span class="expand-text">Lihat Selengkapnya</span>
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                    ` : ''}
                     <span class="notification-time">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -322,6 +342,41 @@ class NotificationManager {
                 </div>
             </div>
         `;
+    }
+
+    /**
+     * Toggle notification message expand/collapse
+     */
+    toggleNotificationExpand(item) {
+        const messageEl = item.querySelector('.notification-message');
+        const expandBtn = item.querySelector('.notification-expand-btn');
+        const expandText = expandBtn.querySelector('.expand-text');
+        
+        if (messageEl.classList.contains('expanded')) {
+            // Collapse
+            messageEl.classList.remove('expanded');
+            expandBtn.classList.remove('expanded');
+            expandText.textContent = 'Lihat Selengkapnya';
+        } else {
+            // Expand
+            messageEl.classList.add('expanded');
+            expandBtn.classList.add('expanded');
+            expandText.textContent = 'Sembunyikan';
+        }
+    }
+
+    /**
+     * Escape HTML to prevent XSS
+     */
+    escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
     }
 
     /**
@@ -557,7 +612,7 @@ class NotificationManager {
                 `;
             }
             
-            const response = await fetch(`${this.apiBaseUrl}/notifications`, {
+            const response = await fetch('/api/admin/notifications', {
                 method: 'DELETE',
                 headers: {
                     'Accept': 'application/json',
@@ -566,7 +621,11 @@ class NotificationManager {
                 }
             });
 
-            if (!response.ok) throw new Error('Failed to clear all notifications');
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Failed to clear all notifications');
+            }
 
             // Update local state
             this.notifications = [];
@@ -579,7 +638,7 @@ class NotificationManager {
             this.showToast({
                 type: 'success',
                 title: 'Berhasil',
-                message: 'Semua notifikasi berhasil dihapus',
+                message: result.message || 'Semua notifikasi berhasil dihapus',
                 color: 'success'
             });
         } catch (error) {
@@ -590,7 +649,7 @@ class NotificationManager {
             this.showToast({
                 type: 'error',
                 title: 'Gagal',
-                message: 'Gagal menghapus notifikasi',
+                message: error.message || 'Gagal menghapus notifikasi. Silakan coba lagi.',
                 color: 'danger'
             });
         } finally {

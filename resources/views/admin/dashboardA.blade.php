@@ -186,47 +186,81 @@
                         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                             <!-- Time Filter Header -->
                             <div class="p-4 lg:p-6 border-b border-gray-100">
-                                <div class="flex flex-col sm:flex-row gap-4">
-                                    <!-- Start Time -->
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-3 bg-primary text-white px-4 py-3 rounded-xl">
-                                            <div class="flex-1">
-                                                <p class="text-xs text-white/70 mb-0.5">Jam Mulai</p>
-                                                <p class="text-lg font-semibold" id="displayStartTime">--:--</p>
+                                <div class="flex flex-col gap-4">
+                                    <!-- Time Filters Row -->
+                                    <div class="flex flex-col sm:flex-row gap-4">
+                                        <!-- Start Time -->
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-3 bg-primary text-white px-4 py-3 rounded-xl">
+                                                <div class="flex-1">
+                                                    <p class="text-xs text-white/70 mb-0.5">Jam Mulai</p>
+                                                    <p class="text-lg font-semibold" id="displayStartTime">--:--</p>
+                                                </div>
+                                                <button type="button" class="p-1.5 hover:bg-white/10 rounded-lg transition-colors" id="clearStartTime" title="Reset">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                    </svg>
+                                                </button>
+                                                <button type="button" class="p-2 hover:bg-white/10 rounded-lg transition-colors time-picker-btn" data-target="startTime">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                </button>
                                             </div>
-                                            <button type="button" class="p-1.5 hover:bg-white/10 rounded-lg transition-colors" id="clearStartTime" title="Reset">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                                </svg>
-                                            </button>
-                                            <button type="button" class="p-2 hover:bg-white/10 rounded-lg transition-colors time-picker-btn" data-target="startTime">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                </svg>
-                                            </button>
+                                            <input type="time" id="startTime" class="sr-only" value="">
                                         </div>
-                                        <input type="time" id="startTime" class="sr-only" value="">
+                                        
+                                        <!-- End Time -->
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-3 bg-primary text-white px-4 py-3 rounded-xl">
+                                                <div class="flex-1">
+                                                    <p class="text-xs text-white/70 mb-0.5">Jam Selesai</p>
+                                                    <p class="text-lg font-semibold" id="displayEndTime">--:--</p>
+                                                </div>
+                                                <button type="button" class="p-1.5 hover:bg-white/10 rounded-lg transition-colors" id="clearEndTime" title="Reset">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                    </svg>
+                                                </button>
+                                                <button type="button" class="p-2 hover:bg-white/10 rounded-lg transition-colors time-picker-btn" data-target="endTime">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <input type="time" id="endTime" class="sr-only" value="">
+                                        </div>
                                     </div>
                                     
-                                    <!-- End Time -->
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-3 bg-primary text-white px-4 py-3 rounded-xl">
-                                            <div class="flex-1">
-                                                <p class="text-xs text-white/70 mb-0.5">Jam Selesai</p>
-                                                <p class="text-lg font-semibold" id="displayEndTime">--:--</p>
-                                            </div>
-                                            <button type="button" class="p-1.5 hover:bg-white/10 rounded-lg transition-colors" id="clearEndTime" title="Reset">
+                                    <!-- Building & Room Filters Row -->
+                                    <div class="flex flex-col sm:flex-row gap-4">
+                                        <!-- Building Filter (Admin Unit Only) -->
+                                        @if($adminType === 'admin_unit')
+                                        <div class="flex-1">
+                                            <label for="buildingFilter" class="block text-xs font-medium text-gray-600 mb-2">Filter Gedung</label>
+                                            <select id="buildingFilter" class="calendar-filter-select w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary transition-all">
+                                                <option value="">Semua Gedung</option>
+                                            </select>
+                                        </div>
+                                        @endif
+                                        
+                                        <!-- Room Filter -->
+                                        <div class="flex-1">
+                                            <label for="roomFilter" class="block text-xs font-medium text-gray-600 mb-2">Filter Ruangan</label>
+                                            <select id="roomFilter" class="calendar-filter-select w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary transition-all">
+                                                <option value="">Semua Ruangan</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <!-- Clear Filters Button -->
+                                        <div class="flex items-end">
+                                            <button type="button" id="clearFilters" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-medium transition-all flex items-center gap-2">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                                                 </svg>
-                                            </button>
-                                            <button type="button" class="p-2 hover:bg-white/10 rounded-lg transition-colors time-picker-btn" data-target="endTime">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                </svg>
+                                                Reset Filter
                                             </button>
                                         </div>
-                                        <input type="time" id="endTime" class="sr-only" value="">
                                     </div>
                                 </div>
                             </div>

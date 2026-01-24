@@ -306,6 +306,15 @@ body {
     transform: translateY(-1px);
 }
 
+.action-btn.alternative {
+    color: #f59e0b;
+}
+
+.action-btn.alternative:hover:not(:disabled) {
+    background: rgba(245, 158, 11, 0.1);
+    transform: translateY(-1px);
+}
+
 .action-btn:disabled {
     opacity: 0.35;
     cursor: not-allowed;
@@ -539,3 +548,57 @@ body {
 .modal-content .w-16.h-16 {
     animation: pulse-scale 2s ease-in-out infinite;
 }
+
+/* ============================================
+   Manual Reschedule Form Styles
+   ============================================ */
+#rescheduleForm input[type="date"],
+#rescheduleForm input[type="time"],
+#rescheduleForm select,
+#rescheduleForm textarea {
+    transition: all 0.2s ease;
+}
+
+#rescheduleForm input[type="date"]:focus,
+#rescheduleForm input[type="time"]:focus,
+#rescheduleForm select:focus,
+#rescheduleForm textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 162, 185, 0.1);
+}
+
+#currentBookingInfo {
+    min-height: 100px;
+}
+
+/* Alternative button styling */
+.action-btn.alternative {
+    position: relative;
+    overflow: hidden;
+}
+
+.action-btn.alternative::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(245, 158, 11, 0.15);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+}
+
+.action-btn.alternative:hover::before {
+    width: 100%;
+    height: 100%;
+}
+
+/* Responsive form styling */
+@media (max-width: 768px) {
+    #rescheduleForm .grid {
+        grid-template-columns: 1fr;
+    }
+}
+

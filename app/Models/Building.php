@@ -16,6 +16,14 @@ class Building extends Model
     ];
 
     /**
+     * Accessor for 'name' attribute - alias for 'building_name'
+     */
+    public function getNameAttribute()
+    {
+        return $this->building_name;
+    }
+
+    /**
      * Get the unit that owns this building.
      * Relasi: Gedung → 1 Unit
      */

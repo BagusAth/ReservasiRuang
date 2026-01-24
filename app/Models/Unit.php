@@ -20,6 +20,14 @@ class Unit extends Model
     ];
 
     /**
+     * Accessor for 'name' attribute - alias for 'unit_name'
+     */
+    public function getNameAttribute()
+    {
+        return $this->unit_name;
+    }
+
+    /**
      * Get all buildings in this unit.
      * Relasi: 1 Unit → banyak Gedung
      */

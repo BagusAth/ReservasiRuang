@@ -23,6 +23,14 @@ class Room extends Model
     ];
 
     /**
+     * Accessor for 'name' attribute - alias for 'room_name'
+     */
+    public function getNameAttribute()
+    {
+        return $this->room_name;
+    }
+
+    /**
      * Get the building that owns this room.
      * Relasi: Ruang → 1 Gedung
      */

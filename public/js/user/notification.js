@@ -257,10 +257,19 @@ class UserNotificationManager {
             
             // Click on item to mark as read and view
             item.addEventListener('click', (e) => {
-                if (!e.target.closest('.notification-action-btn')) {
+                if (!e.target.closest('.notification-action-btn') && !e.target.closest('.notification-expand-btn')) {
                     this.handleNotificationClick(notificationId);
                 }
             });
+
+            // Expand/Collapse button
+            const expandBtn = item.querySelector('.notification-expand-btn');
+            if (expandBtn) {
+                expandBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleNotificationExpand(item);
+                });
+            }
 
             // Mark as read button
             const readBtn = item.querySelector('.mark-read-btn');
@@ -290,6 +299,9 @@ class UserNotificationManager {
         const colorClass = notification.color || 'primary';
         const unreadClass = notification.is_read ? '' : 'unread';
         const statusBadge = this.getStatusBadgeHTML(notification);
+        
+        // Check if message is long enough to need expand button (more than ~80 characters)
+        const needsExpand = notification.message && notification.message.length > 80;
 
         return `
             <div class="notification-item ${unreadClass}" data-id="${notification.id}">
@@ -301,7 +313,15 @@ class UserNotificationManager {
                         ${notification.title}
                         ${!notification.is_read ? '<span class="unread-dot"></span>' : ''}
                     </h4>
-                    <p class="notification-message">${notification.message}</p>
+                    <p class="notification-message" data-full-text="${this.escapeHtml(notification.message)}">${notification.message}</p>
+                    ${needsExpand ? `
+                        <button class="notification-expand-btn" data-action="expand">
+                            <span class="expand-text">Lihat Selengkapnya</span>
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                    ` : ''}
                     ${statusBadge}
                     <span class="notification-time">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -358,6 +378,41 @@ class UserNotificationManager {
         }
 
         return `<span class="notification-status-badge ${badgeClass}">${statusText}</span>`;
+    }
+
+    /**
+     * Toggle notification message expand/collapse
+     */
+    toggleNotificationExpand(item) {
+        const messageEl = item.querySelector('.notification-message');
+        const expandBtn = item.querySelector('.notification-expand-btn');
+        const expandText = expandBtn.querySelector('.expand-text');
+        
+        if (messageEl.classList.contains('expanded')) {
+            // Collapse
+            messageEl.classList.remove('expanded');
+            expandBtn.classList.remove('expanded');
+            expandText.textContent = 'Lihat Selengkapnya';
+        } else {
+            // Expand
+            messageEl.classList.add('expanded');
+            expandBtn.classList.add('expanded');
+            expandText.textContent = 'Sembunyikan';
+        }
+    }
+
+    /**
+     * Escape HTML to prevent XSS
+     */
+    escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
     }
 
     /**

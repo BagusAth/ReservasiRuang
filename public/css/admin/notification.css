@@ -272,8 +272,47 @@
     line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    transition: all 0.3s ease;
+    word-wrap: break-word;
+}
+
+.notification-message.expanded {
+    display: block;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    max-height: none;
+}
+
+.notification-expand-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #00A2B9;
+    font-weight: 500;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px 0;
+    margin-top: 4px;
+    transition: all 0.2s;
+}
+
+.notification-expand-btn:hover {
+    color: #008799;
+}
+
+.notification-expand-btn svg {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.3s ease;
+}
+
+.notification-expand-btn.expanded svg {
+    transform: rotate(180deg);
 }
 
 .notification-time {

@@ -534,6 +534,109 @@
         </div>
     </div>
 
+    <!-- Manual Reschedule Modal -->
+    <div class="modal-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" id="rescheduleModal">
+        <div class="modal-content bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-5 lg:p-6 border-b border-gray-100 bg-gradient-to-r from-primary/5 to-transparent flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg shadow-primary/25">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900">Pindahkan Jadwal Reservasi</h3>
+                        <p class="text-xs text-gray-500">Pilih jadwal dan ruangan baru</p>
+                    </div>
+                </div>
+                <button type="button" class="p-2.5 hover:bg-gray-100 rounded-xl transition-all duration-200 hover:rotate-90" id="closeRescheduleModal">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <form id="rescheduleForm" class="p-5 lg:p-6 overflow-y-auto flex-1 custom-scrollbar">
+                <input type="hidden" id="rescheduleBookingId" value="">
+
+                <!-- Current Booking Info -->
+                <div class="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+                    <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Reservasi Saat Ini</h4>
+                    <div id="currentBookingInfo" class="space-y-2 text-sm">
+                        <!-- Will be filled dynamically -->
+                    </div>
+                </div>
+
+                <!-- New Schedule Form -->
+                <div class="space-y-5">
+                    <!-- Date Range -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-2">
+                                Tanggal Mulai <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" id="newStartDate" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-2">
+                                Tanggal Selesai <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" id="newEndDate" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                        </div>
+                    </div>
+
+                    <!-- Time Range -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-2">
+                                Waktu Mulai <span class="text-red-500">*</span>
+                            </label>
+                            <input type="time" id="newStartTime" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-2">
+                                Waktu Selesai <span class="text-red-500">*</span>
+                            </label>
+                            <input type="time" id="newEndTime" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                        </div>
+                    </div>
+
+                    <!-- Room Selection -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-2">
+                            Ruangan <span class="text-red-500">*</span>
+                        </label>
+                        <select id="newRoomId" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                            <option value="">-- Pilih Ruangan --</option>
+                            <!-- Will be filled dynamically -->
+                        </select>
+                    </div>
+
+                    <!-- Custom Message -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-2">
+                            Pesan Notifikasi (Opsional)
+                        </label>
+                        <textarea id="rescheduleMessage" rows="3" class="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none" placeholder="Tambahkan pesan khusus untuk pengguna (opsional)"></textarea>
+                        <p class="text-xs text-gray-500 mt-1">Jika dikosongkan, akan menggunakan pesan default</p>
+                    </div>
+                </div>
+
+                <!-- Submit Buttons -->
+                <div class="flex gap-3 mt-6 pt-6 border-t border-gray-200">
+                    <button type="button" class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors" id="cancelReschedule">
+                        Batal
+                    </button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-medium hover:from-primary-dark hover:to-primary transition-all shadow-lg shadow-primary/25">
+                        Pindahkan Jadwal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-4 right-4 z-[60] transform translate-y-full opacity-0 transition-all duration-300">
         <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-4 flex items-center gap-3 min-w-[300px]">
@@ -557,6 +660,9 @@
             updateStatus: function(id) { return '{{ url('/api/admin/bookings') }}/' + id + '/status'; },
             delete: function(id) { return '{{ url('/api/admin/bookings') }}/' + id; },
             buildings: '{{ route('admin.api.buildings') }}',
+            alternatives: function(id) { return '{{ url('/api/admin/bookings') }}/' + id + '/alternatives'; },
+            rescheduleData: function(id) { return '{{ url('/api/admin/bookings') }}/' + id + '/reschedule-data'; },
+            reschedule: function(id) { return '{{ url('/api/admin/bookings') }}/' + id + '/reschedule'; },
         };
         window.__ADMIN_TYPE__ = '{{ $adminType }}';
     </script>

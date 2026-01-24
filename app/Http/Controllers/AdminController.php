@@ -206,10 +206,14 @@ class AdminController extends Controller
             'year' => 'nullable|integer|min:2020|max:2100',
             'start_time' => 'nullable|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i',
+            'building_id' => 'nullable|integer|exists:buildings,id',
+            'room_id' => 'nullable|integer|exists:rooms,id',
         ]);
 
         $month = $request->input('month', now()->month);
         $year = $request->input('year', now()->year);
+        $buildingId = $request->input('building_id');
+        $roomId = $request->input('room_id');
         
         $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
         $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
@@ -221,6 +225,18 @@ class AdminController extends Controller
             ->whereIn('status', [Booking::STATUS_APPROVED, Booking::STATUS_PENDING, Booking::STATUS_REJECTED])
             ->where('start_date', '<=', $endDate)
             ->where('end_date', '>=', $startDate);
+
+        // Filter berdasarkan gedung (for Admin Unit only)
+        if ($buildingId && $user->isAdminUnit()) {
+            $query->whereHas('room', function ($q) use ($buildingId) {
+                $q->where('building_id', $buildingId);
+            });
+        }
+
+        // Filter berdasarkan ruangan
+        if ($roomId) {
+            $query->where('room_id', $roomId);
+        }
 
         // Filter berdasarkan rentang waktu (only if both are provided)
         if ($request->filled('start_time') && $request->filled('end_time')) {
@@ -474,6 +490,66 @@ class AdminController extends Controller
     }
 
     /**
+     * Get rooms list for filter dropdown (based on admin scope and optional building filter).
+     */
+    public function getRooms(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        
+        $request->validate([
+            'building_id' => 'nullable|integer|exists:buildings,id',
+        ]);
+
+        $buildingId = $request->input('building_id');
+        
+        if ($user->isAdminUnit()) {
+            // Admin Unit: Get rooms from buildings in their unit
+            $query = Room::whereHas('building', function ($q) use ($user) {
+                $q->where('unit_id', $user->unit_id);
+            });
+            
+            // If building filter is provided, filter by that building
+            if ($buildingId) {
+                $query->where('building_id', $buildingId);
+            }
+            
+            $rooms = $query->with('building:id,building_name')
+                ->orderBy('building_id')
+                ->orderBy('room_name')
+                ->get(['id', 'room_name', 'building_id']);
+        } else {
+            // Admin Gedung: Only rooms in their building
+            $rooms = Room::where('building_id', $user->building_id)
+                ->orderBy('room_name')
+                ->get(['id', 'room_name', 'building_id']);
+        }
+
+        // Transform data to include building name for Admin Unit
+        $transformedRooms = $rooms->map(function ($room) use ($user) {
+            if ($user->isAdminUnit() && $room->building) {
+                return [
+                    'id' => $room->id,
+                    'room_name' => $room->room_name,
+                    'building_id' => $room->building_id,
+                    'building_name' => $room->building->building_name,
+                    'display_name' => $room->room_name . ' (' . $room->building->building_name . ')',
+                ];
+            }
+            return [
+                'id' => $room->id,
+                'room_name' => $room->room_name,
+                'building_id' => $room->building_id,
+                'display_name' => $room->room_name,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $transformedRooms
+        ]);
+    }
+
+    /**
      * Update booking status (Admin can change status to any value).
      */
     public function updateBookingStatus(Request $request, int $id): JsonResponse
@@ -672,6 +748,202 @@ class AdminController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Reservasi berhasil dihapus'
+        ]);
+    }
+
+    /**
+     * Get booking info and available rooms for manual rescheduling.
+     */
+    public function getRescheduleData(Request $request, int $id): JsonResponse
+    {
+        $user = Auth::user();
+        
+        // Build query with admin scope
+        $query = $this->getAdminBookingsQuery($user);
+        $booking = $query->with(['room.building.unit', 'user'])->find($id);
+
+        if (!$booking) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Reservasi tidak ditemukan atau tidak dalam cakupan Anda'
+            ], 404);
+        }
+
+        // Get available rooms based on admin scope
+        $roomsQuery = Room::with(['building.unit']);
+        
+        if ($user->isAdminUnit()) {
+            // Admin Unit: all rooms in their unit
+            $roomsQuery->whereHas('building', function($q) use ($user) {
+                $q->where('unit_id', $user->unit_id);
+            });
+        } elseif ($user->isAdminGedung()) {
+            // Admin Gedung: only rooms in their building
+            $roomsQuery->where('building_id', $user->building_id);
+        }
+        
+        $rooms = $roomsQuery->orderBy('building_id')->orderBy('room_name')->get();
+        
+        // Transform rooms data
+        $roomsData = $rooms->map(function($room) {
+            return [
+                'id' => $room->id,
+                'name' => $room->name,
+                'capacity' => $room->capacity,
+                'building_id' => $room->building_id,
+                'building_name' => $room->building->name,
+                'unit_name' => $room->building->unit->name ?? '',
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'booking' => [
+                    'id' => $booking->id,
+                    'room_id' => $booking->room_id,
+                    'room_name' => $booking->room->name,
+                    'building_name' => $booking->room->building->name,
+                    'unit_name' => $booking->room->building->unit->name ?? '',
+                    'start_date' => $booking->start_date->format('Y-m-d'),
+                    'end_date' => $booking->end_date->format('Y-m-d'),
+                    'start_time' => substr($booking->start_time, 0, 5),
+                    'end_time' => substr($booking->end_time, 0, 5),
+                    'date_display' => $booking->start_date->translatedFormat('d F Y'),
+                    'agenda' => $booking->agenda,
+                    'user_name' => $booking->user->name,
+                ],
+                'available_rooms' => $roomsData,
+            ]
+        ]);
+    }
+
+    /**
+     * Reschedule a booking with manual input from admin.
+     */
+    public function rescheduleBooking(Request $request, int $id): JsonResponse
+    {
+        $user = Auth::user();
+        
+        $request->validate([
+            'new_start_date' => 'required|date',
+            'new_end_date' => 'required|date|after_or_equal:new_start_date',
+            'new_start_time' => 'required|date_format:H:i',
+            'new_end_time' => 'required|date_format:H:i|after:new_start_time',
+            'new_room_id' => 'required|integer|exists:rooms,id',
+            'notification_message' => 'nullable|string|max:500',
+        ]);
+
+        // Build query with admin scope
+        $query = $this->getAdminBookingsQuery($user);
+        $booking = $query->with(['room.building', 'user'])->find($id);
+
+        if (!$booking) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Reservasi tidak ditemukan atau tidak dalam cakupan Anda'
+            ], 404);
+        }
+
+        // Verify new room is in admin's scope
+        $newRoom = Room::with('building')->find($request->new_room_id);
+        if (!$newRoom) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ruangan tidak ditemukan'
+            ], 404);
+        }
+
+        if ($user->isAdminUnit() && $newRoom->building->unit_id !== $user->unit_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ruangan tidak dalam cakupan unit Anda'
+            ], 403);
+        }
+
+        if ($user->isAdminGedung() && $newRoom->building_id !== $user->building_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ruangan tidak dalam cakupan gedung Anda'
+            ], 403);
+        }
+
+        // Store old details
+        $oldDetails = [
+            'room' => $booking->room->name,
+            'building' => $booking->room->building->name,
+            'date' => $booking->start_date->translatedFormat('d F Y') . 
+                     ($booking->start_date->ne($booking->end_date) ? ' - ' . $booking->end_date->translatedFormat('d F Y') : ''),
+            'time' => substr($booking->start_time, 0, 5) . ' - ' . substr($booking->end_time, 0, 5),
+        ];
+
+        // Apply new schedule
+        $booking->room_id = $request->new_room_id;
+        $booking->start_date = Carbon::parse($request->new_start_date);
+        $booking->end_date = Carbon::parse($request->new_end_date);
+        $booking->start_time = $request->new_start_time . ':00';
+        $booking->end_time = $request->new_end_time . ':00';
+
+        // Check for conflicts with new schedule
+        $conflict = Booking::findConflict(
+            $booking->room_id,
+            $booking->start_date->format('Y-m-d'),
+            $booking->end_date->format('Y-m-d'),
+            $booking->start_time,
+            $booking->end_time,
+            $booking->id
+        );
+
+        if ($conflict) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jadwal yang dipilih konflik dengan reservasi lain (ID: ' . $conflict->id . '). Silakan pilih jadwal berbeda.',
+                'conflict' => [
+                    'agenda' => $conflict->agenda,
+                    'pic_name' => $conflict->pic_name,
+                    'date' => $conflict->start_date->translatedFormat('d F Y'),
+                    'time' => substr($conflict->start_time, 0, 5) . ' - ' . substr($conflict->end_time, 0, 5),
+                ]
+            ], 422);
+        }
+
+        // Save the changes
+        $booking->save();
+
+        // Prepare new details
+        $newDetails = [
+            'room' => $newRoom->name,
+            'building' => $newRoom->building->name,
+            'date' => $booking->start_date->translatedFormat('d F Y') . 
+                     ($booking->start_date->ne($booking->end_date) ? ' - ' . $booking->end_date->translatedFormat('d F Y') : ''),
+            'time' => substr($booking->start_time, 0, 5) . ' - ' . substr($booking->end_time, 0, 5),
+        ];
+
+        // Send notification to user using custom notification model
+        $notificationMessage = $request->notification_message ?? 
+            'Jadwal reservasi Anda telah diubah oleh admin. Silakan cek detail reservasi untuk informasi lebih lanjut.';
+
+        \App\Models\Notification::create([
+            'user_id' => $booking->user_id,
+            'booking_id' => $booking->id,
+            'type' => 'booking_rescheduled',
+            'title' => 'Jadwal Reservasi Diubah',
+            'message' => $notificationMessage,
+            'data' => [
+                'old_details' => $oldDetails,
+                'new_details' => $newDetails,
+                'action_url' => route('user.reservasi'),
+            ],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Reservasi berhasil dijadwalkan ulang dan notifikasi telah dikirim ke pengguna',
+            'data' => [
+                'booking_id' => $booking->id,
+                'old_details' => $oldDetails,
+                'new_details' => $newDetails,
+            ]
         ]);
     }
 }
