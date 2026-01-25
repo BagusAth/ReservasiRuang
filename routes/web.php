@@ -4,6 +4,7 @@ use App\Http\Controllers\GuestController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\SuperController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
@@ -103,7 +104,32 @@ Route::middleware(['role:super_admin'])->group(function () {
     
     // API untuk Super Admin
     Route::prefix('api/super')->name('super.api.')->group(function () {
-
+        // Statistics
+        Route::get('/stats', [SuperController::class, 'getStats'])->name('stats');
+        
+        // User Management
+        Route::get('/users', [SuperController::class, 'getUsers'])->name('users');
+        Route::get('/users/{id}', [SuperController::class, 'getUserDetail'])->name('users.detail');
+        Route::post('/users', [SuperController::class, 'createUser'])->name('users.create');
+        Route::put('/users/{id}', [SuperController::class, 'updateUser'])->name('users.update');
+        Route::put('/users/{id}/role', [SuperController::class, 'updateRole'])->name('users.updateRole');
+        Route::put('/users/{id}/toggle-status', [SuperController::class, 'toggleStatus'])->name('users.toggleStatus');
+        Route::put('/users/{id}/reset-password', [SuperController::class, 'resetPassword'])->name('users.resetPassword');
+        Route::delete('/users/{id}', [SuperController::class, 'deleteUser'])->name('users.delete');
+        
+        // Dropdown Data
+        Route::get('/roles', [SuperController::class, 'getRoles'])->name('roles');
+        Route::get('/units', [SuperController::class, 'getUnits'])->name('units');
+        Route::get('/buildings', [SuperController::class, 'getBuildings'])->name('buildings');
+        
+        // Notification endpoints
+        Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
+        Route::get('/notifications/recent', [NotificationController::class, 'recent'])->name('notifications.recent');
+        Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unreadCount');
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+        Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+        Route::delete('/notifications', [NotificationController::class, 'clearAll'])->name('notifications.clearAll');
     });
 });
 
