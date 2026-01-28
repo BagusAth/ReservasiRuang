@@ -29,6 +29,25 @@ class CheckRole
         }
 
         $user = Auth::user();
+        
+        // Check if user account is active
+        if (!$user->is_active) {
+            // Logout the inactive user
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akun Anda tidak aktif / telah dinonaktifkan. Silakan hubungi administrator.'
+                ], 403);
+            }
+            
+            return redirect()->route('guest.index')
+                ->with('error', 'Akun Anda tidak aktif / telah dinonaktifkan. Silakan hubungi administrator.');
+        }
+        
         $userRole = $user->role?->role_name;
 
         // Check if user has one of the required roles

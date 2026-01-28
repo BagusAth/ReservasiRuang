@@ -324,7 +324,7 @@ class GuestController extends Controller
                 return [
                     'id' => $booking->id,
                     'agenda_name' => $booking->agenda_name,
-                    'agenda_detail' => \Str::limit($booking->agenda_detail, 100),
+                    'agenda_detail' => \Str::limit($booking->agenda_detail, 9999),
                     'pic_name' => $booking->pic_name,
                     'start_date' => $booking->start_date->format('Y-m-d'),
                     'end_date' => $booking->end_date->format('Y-m-d'),

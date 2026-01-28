@@ -7,6 +7,8 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use App\Models\Booking;
+use App\Models\Notification;
 
 class DatabaseSeeder extends Seeder
 {
@@ -18,7 +20,7 @@ class DatabaseSeeder extends Seeder
      * Struktur Hirarki: Unit → Gedung → Ruang → Reservasi
      * 
      * Roles:
-     * 1. super_admin   - Pengelola sistem (kelola unit, gedung, ruang, user)
+     * 1. Super_admin   - Pengelola sistem (kelola unit, gedung, ruang, user)
      * 2. admin_unit    - Monitoring unit (1 admin = 1 unit, melihat semua gedung di unitnya)
      * 3. admin_gedung  - Operasional gedung (1 admin = 1 gedung, approve/reject booking)
      * 4. user          - Pegawai (mengajukan reservasi)
@@ -33,6 +35,7 @@ class DatabaseSeeder extends Seeder
         $this->seedRooms();
         $this->seedUsers();
         $this->seedBookings();
+        $this->seedNotifications();
     }
 
     /**
@@ -71,15 +74,29 @@ class DatabaseSeeder extends Seeder
     {
         DB::table('units')->insert([
             [
-                'unit_name' => 'Unit Pusat',
+                'unit_name' => 'Unit Pusat', //id : 1
                 'description' => 'Unit pusat layanan utama organisasi',
                 'is_active' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'unit_name' => 'Unit Cabang',
-                'description' => 'Unit cabang layanan regional',
+                'unit_name' => 'Unit Engineering', //id : 2
+                'description' => 'Unit engljfes',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'unit_name' => 'Unit Operasi Sistem', //id : 3
+                'description' => 'Unit skajghpw',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'unit_name' => 'Unit Administrasi & Umum', //id : 4
+                'description' => 'Unit admsufrjn',
                 'is_active' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -95,23 +112,72 @@ class DatabaseSeeder extends Seeder
     {
         DB::table('buildings')->insert([
             [
-                'building_name' => 'Gedung TDC',
+                'building_name' => 'Gedung TDC', //id : 1
                 'unit_id' => 1,
                 'description' => 'Gedung Training & Development Center',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'building_name' => 'Gedung Engineering',
-                'unit_id' => 1,
+                'building_name' => 'Gedung Engineering 1', //id : 2
+                'unit_id' => 2,
                 'description' => 'Gedung divisi teknik dan pengembangan',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'building_name' => 'Gedung Utama Cabang',
+                'building_name' => 'Gedung Engineering 2', //id : 3
                 'unit_id' => 2,
-                'description' => 'Gedung utama unit cabang',
+                'description' => 'Gedung divisi teknik dan pengembangan',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_name' => 'Gedung Engineering Terpadu', //id : 4
+                'unit_id' => 2,
+                'description' => 'Gedung divisi teknik dan pengembangan',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_name' => 'Gedung Operasi Utama', //id : 5
+                'unit_id' => 3,
+                'description' => 'Gedung divisi Operasi',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_name' => 'Gedung Operasi Pendukung', //id : 6
+                'unit_id' => 3,
+                'description' => 'Gedung divisi Operasi',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_name' => 'Gedung Operasi Terpadu', //id : 7
+                'unit_id' => 3,
+                'description' => 'Gedung divisi Operasi',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_name' => 'Gedung Administrasi Utama', //id : 8
+                'unit_id' => 4,
+                'description' => 'Gedung divisi Administrasi',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_name' => 'Gedung SDM & Umum', //id : 9
+                'unit_id' => 4,
+                'description' => 'Gedung divisi Administrasi',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_name' => 'Gedung Manajemen', //id : 10
+                'unit_id' => 4,
+                'description' => 'Gedung divisi Administrasi',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -171,6 +237,33 @@ class DatabaseSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                'building_id' => 2,
+                'room_name' => 'Ruang Diskusi Engineering',
+                'capacity' => 20,
+                'location' => 'Lantai 4',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 2,
+                'room_name' => 'Ruang Review Desain',
+                'capacity' => 10,
+                'location' => 'Lantai 3',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 2,
+                'room_name' => 'Ruang Meeting Tim Teknis',
+                'capacity' => 30,
+                'location' => 'Lantai 5',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
                 'building_id' => 3,
                 'room_name' => 'Ruang Rapat C1',
                 'capacity' => 12,
@@ -188,6 +281,348 @@ class DatabaseSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'building_id' => 3,
+                'room_name' => 'Ruang Rapat Perencanaan 1',
+                'capacity' => 12,
+                'location' => 'Lantai 2',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 3,
+                'room_name' => 'Ruang Rapat Perencanaan 2',
+                'capacity' => 15,
+                'location' => 'Lantai 3',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 3,
+                'room_name' => 'Ruang Evaluasi Proyek',
+                'capacity' => 20,
+                'location' => 'Lantai 4',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 4,
+                'room_name' => 'Ruang Perencanaan',
+                'capacity' => 10,
+                'location' => 'Lantai 1',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 4,
+                'room_name' => 'Ruang Rapat Engineering',
+                'capacity' => 50,
+                'location' => 'Lantai 2',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 4,
+                'room_name' => 'Ruang Presentasi',
+                'capacity' => 20,
+                'location' => 'Lantai 2',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 4,
+                'room_name' => 'Ruang Workshop Teknis',
+                'capacity' => 25,
+                'location' => 'Lantai 3',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 4,
+                'room_name' => 'Ruang Koordinasi Proyek',
+                'capacity' => 30,
+                'location' => 'Lantai 4',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 5,
+                'room_name' => 'Ruang Rapat Operasi 1',
+                'capacity' => 25,
+                'location' => 'Lantai 3',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 5,
+                'room_name' => 'Ruang Rapat Operasi 2',
+                'capacity' => 30,
+                'location' => 'Lantai 3',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 5,
+                'room_name' => 'Ruang Briefing Harian',
+                'capacity' => 20,
+                'location' => 'Lantai 1',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 5,
+                'room_name' => 'Ruang Koordinasi Lapangan',
+                'capacity' => 18,
+                'location' => 'Lantai 2',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 5,
+                'room_name' => 'Ruang Meeting Shift',
+                'capacity' => 10,
+                'location' => 'Lantai 2',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 6,
+                'room_name' => 'Ruang Rapat teknis 1',
+                'capacity' => 25,
+                'location' => 'Lantai 2',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 6,
+                'room_name' => 'Ruang Rapat teknis 2',
+                'capacity' => 30,
+                'location' => 'Lantai 2',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 6,
+                'room_name' => 'Ruang Diskusi Tim',
+                'capacity' => 15,
+                'location' => 'Lantai 1',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 6,
+                'room_name' => 'Ruang Koordinasi Lapangan',
+                'capacity' => 45,
+                'location' => 'Lantai 2',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 6,
+                'room_name' => 'Ruang Evaluasi Operasi',
+                'capacity' => 35,
+                'location' => 'Lantai 2',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 7,
+                'room_name' => 'Ruang Rapat Terpadu 1',
+                'capacity' => 55,
+                'location' => 'Lantai 2',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 7,
+                'room_name' => 'Ruang Rapat Terpadu 2',
+                'capacity' => 60,
+                'location' => 'Lantai 3',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 7,
+                'room_name' => 'Ruang Presentasi Operasi',
+                'capacity' => 30,
+                'location' => 'Lantai 2',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 7,
+                'room_name' => 'Ruang Crisis Meeting',
+                'capacity' => 25,
+                'location' => 'Lantai 3',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 7,
+                'room_name' => 'Ruang Koordinasi',
+                'capacity' => 15,
+                'location' => 'Lantai 1',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 8,
+                'room_name' => 'Ruang Rapat Administrasi 1',
+                'capacity' => 55,
+                'location' => 'Lantai 2',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 8,
+                'room_name' => 'Ruang Rapat Administrasi 2',
+                'capacity' => 50,
+                'location' => 'Lantai 3',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 8,
+                'room_name' => 'Ruang Koordinasi Administrasi',
+                'capacity' => 30,
+                'location' => 'Lantai 4',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 8,
+                'room_name' => 'Ruang Meeting Sekretariat',
+                'capacity' => 20,
+                'location' => 'Lantai 2',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 8,
+                'room_name' => 'Ruang Evaluasi Administrasi',
+                'capacity' => 25,
+                'location' => 'Lantai 3',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 9,
+                'room_name' => 'Ruang Rapat SDM',
+                'capacity' => 30,
+                'location' => 'Lantai 2',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 9,
+                'room_name' => 'Ruang Ruang Interview & Meeting',
+                'capacity' => 20,
+                'location' => 'Lantai 2',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 9,
+                'room_name' => 'Ruang Training Karyawan',
+                'capacity' => 20,
+                'location' => 'Lantai 3',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 9,
+                'room_name' => 'Ruang Workshop SDM',
+                'capacity' => 30,
+                'location' => 'Lantai 4',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 9,
+                'room_name' => 'Ruang Koordinasi Umum',
+                'capacity' => 15,
+                'location' => 'Lantai 1',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 10,
+                'room_name' => 'Ruang Rapat Direksi',
+                'capacity' => 20,
+                'location' => 'Lantai 4',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 10,
+                'room_name' => 'Ruang Rapat Manajemen',
+                'capacity' => 25,
+                'location' => 'Lantai 2',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 10,
+                'room_name' => 'Ruang Board Meeting',
+                'capacity' => 30,
+                'location' => 'Lantai 1',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 10,
+                'room_name' => 'Ruang Strategi Perusahaan',
+                'capacity' => 15,
+                'location' => 'Lantai 3',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'building_id' => 10,
+                'room_name' => 'Ruang Executive Meeting',
+                'capacity' => 15,
+                'location' => 'Lantai 5',
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
     }
 
@@ -195,7 +630,7 @@ class DatabaseSeeder extends Seeder
      * Seed users
      * 
      * Role assignment:
-     * - super_admin: tanpa unit_id dan building_id (kelola semua)
+     * - Super_admin: tanpa unit_id dan building_id (kelola semua)
      * - admin_unit: dengan unit_id (1 admin = 1 unit)
      * - admin_gedung: dengan building_id (1 admin = 1 gedung)
      * - user: tanpa unit_id dan building_id
@@ -237,11 +672,33 @@ class DatabaseSeeder extends Seeder
 
         // Admin Unit
         User::create([
-            'name' => 'Admin Unit Cabang',
-            'email' => 'admin.unitcabang@gmail.com',
+            'name' => 'Admin Unit Engineering',
+            'email' => 'admin.unitengineering@gmail.com',
             'password' => Hash::make('admin123'),
             'role_id' => 2,
             'unit_id' => 2, 
+            'building_id' => null,
+            'is_active' => true,
+        ]);
+
+        // Admin Unit
+        User::create([
+            'name' => 'Admin Unit Operasi',
+            'email' => 'admin.unitoperasi@gmail.com',
+            'password' => Hash::make('admin123'),
+            'role_id' => 2,
+            'unit_id' => 3, 
+            'building_id' => null,
+            'is_active' => true,
+        ]);
+
+        // Admin Unit
+        User::create([
+            'name' => 'Admin Unit Admin',
+            'email' => 'admin.unitadmin@gmail.com',
+            'password' => Hash::make('admin123'),
+            'role_id' => 2,
+            'unit_id' => 4, 
             'building_id' => null,
             'is_active' => true,
         ]);
@@ -259,8 +716,8 @@ class DatabaseSeeder extends Seeder
 
         // Admin Gedung
         User::create([
-            'name' => 'Admin Gedung Engineering',
-            'email' => 'admin.engineering@gmail.com',
+            'name' => 'Admin Gedung Engineering 1',
+            'email' => 'admin.engineering1@gmail.com',
             'password' => Hash::make('admin123'),
             'role_id' => 3, 
             'unit_id' => null,
@@ -270,19 +727,96 @@ class DatabaseSeeder extends Seeder
 
         // Admin Gedung
         User::create([
-            'name' => 'Admin Gedung Cabang',
-            'email' => 'admin.gedungcabang@gmail.com',
+            'name' => 'Admin Gedung Engineering 2',
+            'email' => 'admin.engineering2@gmail.com',
+            'password' => Hash::make('admin123'),
+            'role_id' => 3, 
+            'unit_id' => null,
+            'building_id' => 3, 
+            'is_active' => true,
+        ]);
+
+        // Admin Gedung
+        User::create([
+            'name' => 'Admin Engineering Terpadu',
+            'email' => 'admin.engineeringterpadu@gmail.com',
             'password' => Hash::make('admin123'),
             'role_id' => 3,
             'unit_id' => null,
-            'building_id' => 3,
+            'building_id' => 4,
+            'is_active' => true,
+        ]);
+
+        // Admin Gedung
+        User::create([
+            'name' => 'Admin Operasi Utama',
+            'email' => 'admin.operasiutama@gmail.com',
+            'password' => Hash::make('admin123'),
+            'role_id' => 3,
+            'unit_id' => null,
+            'building_id' => 5,
+            'is_active' => true,
+        ]);
+
+        // Admin Gedung
+        User::create([
+            'name' => 'Admin Operasi Pendukung',
+            'email' => 'admin.operasipendukung@gmail.com',
+            'password' => Hash::make('admin123'),
+            'role_id' => 3,
+            'unit_id' => null,
+            'building_id' => 6,
+            'is_active' => true,
+        ]);
+        
+        // Admin Gedung
+        User::create([
+            'name' => 'Admin Operasi Terpadu',
+            'email' => 'admin.operasiterpadu@gmail.com',
+            'password' => Hash::make('admin123'),
+            'role_id' => 3,
+            'unit_id' => null,
+            'building_id' => 7,
+            'is_active' => true,
+        ]);
+
+        // Admin Gedung
+        User::create([
+            'name' => 'Admin Administrasi Utama',
+            'email' => 'admin.adminutama@gmail.com',
+            'password' => Hash::make('admin123'),
+            'role_id' => 3,
+            'unit_id' => null,
+            'building_id' => 8,
+            'is_active' => true,
+        ]);
+
+        // Admin Gedung
+        User::create([
+            'name' => 'Admin SDM & Umum',
+            'email' => 'admin.sdm@gmail.com',
+            'password' => Hash::make('admin123'),
+            'role_id' => 3,
+            'unit_id' => null,
+            'building_id' => 9,
+            'is_active' => true,
+        ]);
+
+        // Admin Gedung
+        User::create([
+            'name' => 'Admin Manajemen',
+            'email' => 'admin.manajemen@gmail.com',
+            'password' => Hash::make('admin123'),
+            'role_id' => 3,
+            'unit_id' => null,
+            'building_id' => 10,
             'is_active' => true,
         ]);
 
         User::create([
             'name' => 'Budi Santoso',
             'email' => 'budi@gmail.com',
-            'password' => Hash::make('user123'),
+            'password' => Hash::make('user1234'),
             'role_id' => 4,
             'unit_id' => null,
             'building_id' => null,
@@ -292,7 +826,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Siti Aminah',
             'email' => 'siti@gmail.com',
-            'password' => Hash::make('user123'),
+            'password' => Hash::make('user1234'),
             'role_id' => 4, 
             'unit_id' => null,
             'building_id' => null,
@@ -302,7 +836,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Andi Wijaya',
             'email' => 'andi@gmail.com',
-            'password' => Hash::make('user123'),
+            'password' => Hash::make('user1234'),
             'role_id' => 4,
             'unit_id' => null,
             'building_id' => null,
@@ -317,7 +851,7 @@ class DatabaseSeeder extends Seeder
     {
         DB::table('bookings')->insert([
             [
-                'user_id' => 7,
+                'user_id' => 17,
                 'room_id' => 1,
                 'start_date' => '2026-01-15',
                 'end_date' => '2026-01-15',
@@ -335,7 +869,7 @@ class DatabaseSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'user_id' => 8, 
+                'user_id' => 18, 
                 'room_id' => 4, 
                 'start_date' => '2026-01-16',
                 'end_date' => '2026-01-16',
@@ -353,7 +887,7 @@ class DatabaseSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'user_id' => 9, 
+                'user_id' => 19, 
                 'room_id' => 3, 
                 'start_date' => '2026-01-10',
                 'end_date' => '2026-01-10',
@@ -371,7 +905,7 @@ class DatabaseSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'user_id' => 7,
+                'user_id' => 17,
                 'room_id' => 6,
                 'start_date' => '2026-01-20',
                 'end_date' => '2026-01-21',
@@ -389,7 +923,7 @@ class DatabaseSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'user_id' => 8,
+                'user_id' => 18,
                 'room_id' => 5,
                 'start_date' => '2026-01-05',
                 'end_date' => '2026-01-05',
@@ -407,7 +941,7 @@ class DatabaseSeeder extends Seeder
                 'updated_at' => now()->subDays(7),
             ],
             [
-                'user_id' => 9,
+                'user_id' => 19,
                 'room_id' => 5,
                 'start_date' => '2026-01-05',
                 'end_date' => '2026-01-05',
@@ -425,7 +959,7 @@ class DatabaseSeeder extends Seeder
                 'updated_at' => now()->subDays(7),
             ],
             [
-                'user_id' => 9,
+                'user_id' => 19,
                 'room_id' => 2,
                 'start_date' => '2026-01-25',
                 'end_date' => '2026-01-27',
@@ -443,7 +977,7 @@ class DatabaseSeeder extends Seeder
                 'updated_at' => now()->subDays(3),
             ],
             [
-                'user_id' => 7,
+                'user_id' => 17,
                 'room_id' => 1,
                 'start_date' => '2026-02-11',
                 'end_date' => '2026-02-12',
@@ -461,7 +995,7 @@ class DatabaseSeeder extends Seeder
                 'updated_at' => now()->subDays(3),
             ],
             [
-                'user_id' => 9,
+                'user_id' => 19,
                 'room_id' => 1,
                 'start_date' => '2026-02-16',
                 'end_date' => '2026-02-19',
@@ -472,12 +1006,119 @@ class DatabaseSeeder extends Seeder
                 'pic_phone' => '08223344556',
                 'agenda_detail' => 'Coba coba coba.',
                 'status' => 'Ditolak',
-                'rejection_reason' => null,
+                'rejection_reason' => 'ruangan sudah dipesan',
                 'approved_by' => 3,
                 'approved_at' => now()->subDays(3),
                 'created_at' => now()->subDays(5),
                 'updated_at' => now()->subDays(3),
             ],
+            [
+                'user_id' => 19,
+                'room_id' => 10,
+                'start_date' => '2026-02-16',
+                'end_date' => '2026-02-19',
+                'start_time' => '08:00:00',
+                'end_time' => '11:00:00',
+                'agenda_name' => 'Coba coba',
+                'pic_name' => 'Andi Wijaya',
+                'pic_phone' => '08223344556',
+                'agenda_detail' => 'Coba coba coba.',
+                'status' => 'Menunggu',
+                'rejection_reason' => null,
+                'approved_by' => null,
+                'approved_at' => now()->subDays(3),
+                'created_at' => now()->subDays(5),
+                'updated_at' => now()->subDays(3),
+            ],
         ]);
+    }
+
+    /**
+     * Seed Notifications
+     */
+    private function seedNotifications(): void
+    {
+        // Get admin users
+        $admins = User::whereHas('role', function ($query) {
+            $query->whereIn('role_name', ['admin_unit', 'admin_gedung']);
+        })->get();
+
+        if ($admins->isEmpty()) {
+            $this->command->info('No admin users found. Skipping notification seeder.');
+            return;
+        }
+
+        // Get some bookings for sample notifications
+        $bookings = Booking::with(['user', 'room.building'])->take(5)->get();
+
+        if ($bookings->isEmpty()) {
+            $this->command->info('No bookings found. Creating sample notifications without booking references.');
+        }
+
+        foreach ($admins as $admin) {
+            // Sample new booking notifications
+            if ($bookings->count() > 0) {
+                foreach ($bookings->take(3) as $booking) {
+                    Notification::create([
+                        'user_id' => $admin->id,
+                        'booking_id' => $booking->id,
+                        'type' => Notification::TYPE_NEW_BOOKING,
+                        'title' => 'Reservasi Baru',
+                        'message' => ($booking->user->name ?? 'User') . ' mengajukan reservasi ruangan ' . 
+                                   ($booking->room->room_name ?? 'Ruang Rapat') . ' di ' . 
+                                   ($booking->room->building->building_name ?? 'Gedung'),
+                        'data' => [
+                            'booking_id' => $booking->id,
+                            'user_name' => $booking->user->name ?? 'User',
+                            'room_name' => $booking->room->room_name ?? 'Ruang Rapat',
+                            'building_name' => $booking->room->building->building_name ?? 'Gedung',
+                            'start_date' => $booking->start_date->format('Y-m-d'),
+                            'end_date' => $booking->end_date->format('Y-m-d'),
+                            'start_time' => $booking->start_time,
+                            'end_time' => $booking->end_time,
+                            'agenda_name' => $booking->agenda_name,
+                        ],
+                        'is_read' => false,
+                        'created_at' => now()->subMinutes(rand(5, 120)),
+                    ]);
+                }
+            }
+
+            // Sample generic notifications
+            Notification::create([
+                'user_id' => $admin->id,
+                'booking_id' => null,
+                'type' => Notification::TYPE_NEW_BOOKING,
+                'title' => 'Reservasi Baru',
+                'message' => 'John Doe mengajukan reservasi ruangan Meeting Room A di Gedung Utama',
+                'data' => [
+                    'user_name' => 'John Doe',
+                    'room_name' => 'Meeting Room A',
+                    'building_name' => 'Gedung Utama',
+                ],
+                'is_read' => false,
+                'created_at' => now()->subMinutes(15),
+            ]);
+
+            Notification::create([
+                'user_id' => $admin->id,
+                'booking_id' => null,
+                'type' => Notification::TYPE_NEW_BOOKING,
+                'title' => 'Reservasi Baru',
+                'message' => 'Jane Smith meminta reservasi Ruang Rapat Besar untuk tanggal 20 Januari 2026',
+                'data' => [
+                    'user_name' => 'Jane Smith',
+                    'room_name' => 'Ruang Rapat Besar',
+                    'building_name' => 'Gedung Kantor',
+                ],
+                'is_read' => true,
+                'read_at' => now()->subMinutes(10),
+                'created_at' => now()->subHours(2),
+            ]);
+
+            $this->command->info("Created sample notifications for admin: {$admin->name}");
+        }
+
+        $this->command->info('Notification seeder completed successfully!');
     }
 }

@@ -47,10 +47,23 @@ class AuthController extends Controller
             // Clear rate limiter on successful login
             RateLimiter::clear($throttleKey);
             
+            $user = Auth::user();
+            
+            // Check if user account is active
+            if (!$user->is_active) {
+                // Logout the user immediately
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akun Anda tidak aktif / telah dinonaktifkan. Silakan hubungi administrator.'
+                ], 403);
+            }
+            
             // Regenerate session for security
             $request->session()->regenerate();
-
-            $user = Auth::user();
             
             // Determine redirect based on user role
             $redirect = $this->getRedirectUrl($user);

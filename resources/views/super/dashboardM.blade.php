@@ -95,8 +95,6 @@
                     
                     <!-- Right Actions -->
                     <div class="flex items-center gap-3">
-                        <!-- Notification Component -->
-                        @include('super.partials.notification-dropdown')
                         
                         <!-- Super Admin Profile -->
                         <div class="relative" id="superDropdownContainer">
@@ -124,7 +122,7 @@
                                     </svg>
                                     Profil Saya
                                 </a>
-                                <button type="button" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50" id="logoutBtn">
+                                <button type="button" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50" data-action="logout" id="logoutDropdownBtn">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                                     </svg>
@@ -138,8 +136,9 @@
 
             <!-- Page Content -->
             <div class="p-4 lg:p-8">
-                <!-- Alert Container for Page Notifications -->
-                <div id="alertContainer" class="mb-4"></div>
+                
+                <!-- Alert Container for Notifications -->
+                <div id="alertContainer" class="fixed top-20 right-4 z-[60] w-full max-w-sm space-y-2"></div>
                 
                 <!-- Welcome Banner -->
                 <section class="relative bg-gradient-to-r from-primary to-primary-dark rounded-2xl overflow-hidden mb-6">
@@ -307,6 +306,81 @@
         </main>
     </div>
 
+    <!-- Logout Confirmation Modal - Consistent with User Role Style -->
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" id="logoutModal" style="display: none;">
+        <div class="modal-content bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all duration-300">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-5 lg:p-6 border-b border-gray-100 bg-gradient-to-r from-red-50 to-transparent flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/25">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900">Konfirmasi Keluar</h3>
+                </div>
+                <button type="button" class="p-2.5 hover:bg-gray-100 rounded-xl transition-all duration-200 hover:rotate-90" id="closeLogoutModal">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <!-- Modal Body -->
+            <div class="p-5 lg:p-6">
+                <p class="text-gray-600 text-center mb-6">Apakah Anda yakin ingin keluar dari akun?</p>
+                <div class="flex gap-3">
+                    <button type="button" class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors" id="cancelLogout">
+                        Batal
+                    </button>
+                    <button type="button" class="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 transition-all shadow-lg shadow-red-500/25" id="confirmLogout">
+                        Ya, Keluar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Change Confirmation Modal -->
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" id="statusModal" style="display: none;">
+        <div class="modal-content bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all duration-300">
+            <!-- Hidden inputs inside modal content -->
+            <input type="hidden" id="statusChangeUserId">
+            <input type="hidden" id="statusChangeNewState">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-5 lg:p-6 border-b border-gray-100 bg-gradient-to-r from-amber-50 to-transparent flex-shrink-0" id="statusModalHeader">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" id="statusModalIcon">
+                        <!-- Icon will be set dynamically -->
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900" id="statusModalTitle">Konfirmasi Perubahan Status</h3>
+                </div>
+                <button type="button" class="p-2.5 hover:bg-gray-100 rounded-xl transition-all duration-200 hover:rotate-90" id="closeStatusModal">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <!-- Modal Body -->
+            <div class="p-5 lg:p-6">
+                <div class="text-center mb-4">
+                    <p class="text-gray-700 font-medium" id="statusModalUserName">-</p>
+                    <p class="text-gray-600 mt-2" id="statusModalMessage">-</p>
+                </div>
+                <div class="bg-gray-50 rounded-xl p-4 mb-4">
+                    <p class="text-sm text-gray-500 text-center" id="statusModalImpact">-</p>
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors" id="cancelStatusChange">
+                        Batal
+                    </button>
+                    <button type="button" class="flex-1 px-4 py-2.5 rounded-xl font-medium transition-all shadow-lg" id="confirmStatusChange">
+                        Konfirmasi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Add/Edit User Modal -->
     <div class="modal-overlay hidden" id="userModal">
         <div class="modal-container">
@@ -429,38 +503,51 @@
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div class="modal-overlay hidden" id="deleteModal">
-        <div class="modal-container">
-            <div class="modal-content max-w-md">
-                <!-- Modal Header -->
-                <div class="modal-header border-b-0">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-bold text-gray-900">Hapus Akun</h3>
-                    </div>
-                    <button type="button" class="modal-close-btn" id="closeDeleteModal">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+    <!-- Delete Account Confirmation Modal - Consistent with User Role Style -->
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" id="deleteModal" style="display: none;">
+        <div class="modal-content bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all duration-300">
+            <!-- Hidden input inside modal content -->
+            <input type="hidden" id="deleteUserId">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-5 lg:p-6 border-b border-gray-100 bg-gradient-to-r from-red-50 to-transparent flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/25">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                         </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900">Hapus Akun</h3>
+                </div>
+                <button type="button" class="p-2.5 hover:bg-gray-100 rounded-xl transition-all duration-200 hover:rotate-90" id="closeDeleteModal">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <!-- Modal Body -->
+            <div class="p-5 lg:p-6">
+                <div class="text-center mb-4">
+                    <p class="text-gray-600">Apakah Anda yakin ingin menghapus akun</p>
+                    <p class="text-gray-900 font-semibold mt-1" id="deleteUserName">-</p>
+                </div>
+                <div class="bg-red-50 border border-red-100 rounded-xl p-4 mb-4">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <div class="text-sm text-red-700">
+                            <p class="font-medium">Perhatian!</p>
+                            <p class="mt-1">Tindakan ini bersifat <strong>permanen</strong> dan tidak dapat dibatalkan. Semua data terkait akun ini akan dihapus.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button type="button" class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors" id="cancelDeleteBtn">
+                        Batal
                     </button>
-                </div>
-                
-                <!-- Modal Body -->
-                <div class="modal-body">
-                    <p class="text-sm text-gray-600">Apakah Anda yakin ingin menghapus akun <strong id="deleteUserName"></strong>?</p>
-                    <p class="text-sm text-red-500 mt-2">Tindakan ini tidak dapat dibatalkan.</p>
-                    <input type="hidden" id="deleteUserId">
-                </div>
-                
-                <!-- Modal Footer -->
-                <div class="modal-footer">
-                    <button type="button" class="btn-secondary" id="cancelDeleteBtn">Batal</button>
-                    <button type="button" class="btn-danger" id="confirmDeleteBtn">Ya, Hapus</button>
+                    <button type="button" class="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 transition-all shadow-lg shadow-red-500/25" id="confirmDeleteBtn">
+                        Ya, Hapus
+                    </button>
                 </div>
             </div>
         </div>
