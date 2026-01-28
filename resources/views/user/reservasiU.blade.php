@@ -28,6 +28,7 @@
 	</script>
 	<link rel="stylesheet" href="{{ asset('css/user/reservasiU.css') }}">
 	<link rel="stylesheet" href="{{ asset('css/user/notification.css') }}">
+	<link rel="stylesheet" href="{{ asset('css/user/schedule-confirmation.css') }}">
 </head>
 <body class="bg-background font-helvetica min-h-screen">
 	<div class="flex min-h-screen">
@@ -199,24 +200,39 @@
 
 				<div>
 					<label class="form-label">Unit</label>
-					<select id="unitId" class="form-input">
-						<option value="">Pilih Unit</option>
-						@foreach(($units ?? []) as $u)
-							<option value="{{ $u->id }}">{{ $u->unit_name }}</option>
-						@endforeach
-					</select>
+					<div class="select-wrapper">
+						<select id="unitId" class="form-input">
+							<option value="">Pilih Unit</option>
+							@foreach(($units ?? []) as $u)
+								<option value="{{ $u->id }}">{{ $u->unit_name }}</option>
+							@endforeach
+						</select>
+						<svg class="dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+						</svg>
+					</div>
 				</div>
 				<div>
 					<label class="form-label">Gedung</label>
-					<select id="buildingId" class="form-input">
-						<option value="">Pilih Gedung</option>
-					</select>
+					<div class="select-wrapper">
+						<select id="buildingId" class="form-input">
+							<option value="">Pilih Gedung</option>
+						</select>
+						<svg class="dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+						</svg>
+					</div>
 				</div>
 				<div>
 					<label class="form-label">Ruangan</label>
-					<select id="roomId" class="form-input" required>
-						<option value="">Pilih Ruangan</option>
-					</select>
+					<div class="select-wrapper">
+						<select id="roomId" class="form-input" required>
+							<option value="">Pilih Ruangan</option>
+						</select>
+						<svg class="dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+						</svg>
+					</div>
 				</div>
 				<div class="grid grid-cols-2 gap-2">
 					<div>
@@ -297,6 +313,127 @@
 		</div>
 	</div>
 
+	<!-- Modal: Schedule Change Confirmation -->
+	<div id="scheduleChangeModal" class="fixed inset-0 hidden items-center justify-center p-4 z-50">
+		<div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+		<div class="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden">
+			<!-- Modal Header -->
+			<div class="flex items-center justify-between p-5 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-amber-50">
+				<div class="flex items-center gap-3">
+					<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg">
+						<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+						</svg>
+					</div>
+					<div>
+						<h3 class="text-lg font-bold text-gray-900">Perubahan Jadwal Reservasi</h3>
+						<p class="text-xs text-gray-500 mt-0.5">Mohon konfirmasi perubahan jadwal dari admin</p>
+					</div>
+				</div>
+				<button type="button" class="p-2.5 hover:bg-white/50 rounded-xl transition-all duration-200" id="closeScheduleChangeModal">
+					<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+					</svg>
+				</button>
+			</div>
+			
+			<!-- Modal Body -->
+			<div class="p-5 lg:p-6">
+				<!-- Agenda Name -->
+				<div class="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
+					<p class="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">Agenda</p>
+					<p class="text-base font-bold text-gray-900" id="scheduleChangeAgenda">-</p>
+				</div>
+
+				<!-- Comparison Grid -->
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+					<!-- Old Schedule -->
+					<div class="border-2 border-red-200 rounded-xl p-4 bg-red-50/50">
+						<div class="flex items-center gap-2 mb-3">
+							<svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+							</svg>
+							<h4 class="font-bold text-red-900">Jadwal Lama</h4>
+						</div>
+						<div class="space-y-3">
+							<div>
+								<p class="text-xs font-semibold text-red-600 uppercase tracking-wider mb-1">Ruangan</p>
+								<p class="text-sm font-medium text-gray-900" id="oldRoom">-</p>
+							</div>
+							<div>
+								<p class="text-xs font-semibold text-red-600 uppercase tracking-wider mb-1">Gedung</p>
+								<p class="text-sm font-medium text-gray-900" id="oldBuilding">-</p>
+							</div>
+							<div>
+								<p class="text-xs font-semibold text-red-600 uppercase tracking-wider mb-1">Tanggal</p>
+								<p class="text-sm font-medium text-gray-900" id="oldDate">-</p>
+							</div>
+							<div>
+								<p class="text-xs font-semibold text-red-600 uppercase tracking-wider mb-1">Jam</p>
+								<p class="text-sm font-medium text-gray-900" id="oldTime">-</p>
+							</div>
+						</div>
+					</div>
+
+					<!-- New Schedule -->
+					<div class="border-2 border-green-200 rounded-xl p-4 bg-green-50/50">
+						<div class="flex items-center gap-2 mb-3">
+							<svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+							</svg>
+							<h4 class="font-bold text-green-900">Jadwal Baru</h4>
+						</div>
+						<div class="space-y-3">
+							<div>
+								<p class="text-xs font-semibold text-green-600 uppercase tracking-wider mb-1">Ruangan</p>
+								<p class="text-sm font-medium text-gray-900" id="newRoom">-</p>
+							</div>
+							<div>
+								<p class="text-xs font-semibold text-green-600 uppercase tracking-wider mb-1">Gedung</p>
+								<p class="text-sm font-medium text-gray-900" id="newBuilding">-</p>
+							</div>
+							<div>
+								<p class="text-xs font-semibold text-green-600 uppercase tracking-wider mb-1">Tanggal</p>
+								<p class="text-sm font-medium text-gray-900" id="newDate">-</p>
+							</div>
+							<div>
+								<p class="text-xs font-semibold text-green-600 uppercase tracking-wider mb-1">Jam</p>
+								<p class="text-sm font-medium text-gray-900" id="newTime">-</p>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Info Banner -->
+				<div class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+					<svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+					</svg>
+					<div>
+						<p class="text-sm font-semibold text-amber-900 mb-1">Konfirmasi Diperlukan</p>
+						<p class="text-sm text-amber-700">Jadwal reservasi Anda telah diubah oleh admin. Silakan konfirmasi apakah Anda setuju atau tidak setuju dengan perubahan ini.</p>
+					</div>
+				</div>
+
+				<!-- Action Buttons -->
+				<div class="flex flex-col sm:flex-row gap-3">
+					<button type="button" id="rejectScheduleChange" class="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all shadow-lg shadow-red-500/25">
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+						</svg>
+						Tidak Setuju
+					</button>
+					<button type="button" id="approveScheduleChange" class="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all shadow-lg shadow-green-500/25">
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+						</svg>
+						Setuju
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<!-- Logout Confirmation Modal -->
     <div class="modal-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" id="logoutModal">
         <div class="modal-content bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden">
@@ -337,11 +474,14 @@
 			create: '{{ route('user.api.booking.create') }}',
 			update: function(id){ return '{{ url('/api/user/bookings') }}/'+id },
 			delete: function(id){ return '{{ url('/api/user/bookings') }}/'+id },
+			scheduleChange: function(id){ return '{{ url('/api/user/bookings') }}/'+id+'/schedule-change' },
+			confirmSchedule: function(id){ return '{{ url('/api/user/bookings') }}/'+id+'/confirm-schedule' },
 			guestBuildings: '{{ route('guest.api.buildings') }}',
 			guestRooms: '{{ route('guest.api.rooms') }}',
 		};
 	</script>
 	<script src="{{ asset('js/user/notification.js') }}"></script>
+	<script src="{{ asset('js/user/schedule-confirmation.js') }}"></script>
 	<script src="{{ asset('js/user/reservasiU.js') }}"></script>
 </body>
 </html>

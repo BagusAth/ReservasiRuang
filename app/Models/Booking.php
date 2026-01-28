@@ -24,12 +24,19 @@ class Booking extends Model
         'rejection_reason',
         'approved_by',
         'approved_at',
+        'schedule_changed_data',
+        'user_confirmation_status',
+        'user_confirmed_at',
+        'is_rescheduled',
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
         'approved_at' => 'datetime',
+        'schedule_changed_data' => 'array',
+        'user_confirmed_at' => 'datetime',
+        'is_rescheduled' => 'boolean',
     ];
 
     /**
@@ -38,6 +45,13 @@ class Booking extends Model
     const STATUS_PENDING = 'Menunggu';
     const STATUS_APPROVED = 'Disetujui';
     const STATUS_REJECTED = 'Ditolak';
+    
+    /**
+     * User confirmation status constants
+     */
+    const CONFIRMATION_PENDING = 'Belum Dikonfirmasi';
+    const CONFIRMATION_APPROVED = 'Disetujui User';
+    const CONFIRMATION_REJECTED = 'Ditolak User';
 
     /**
      * Get the user who made this booking.
@@ -316,5 +330,82 @@ class Booking extends Model
         }
 
         return "{$roomName} ({$location}) sudah dibooking pada tanggal {$dateDisplay} pukul {$startTime} - {$endTime}. Silakan pilih waktu atau ruangan lain.";
+    }
+    
+    /**
+     * Check if booking needs user confirmation for schedule changes.
+     */
+    public function needsUserConfirmation(): bool
+    {
+        return $this->is_rescheduled && 
+               $this->user_confirmation_status === self::CONFIRMATION_PENDING;
+    }
+    
+    /**
+     * Check if user has confirmed the schedule change.
+     */
+    public function isConfirmedByUser(): bool
+    {
+        return $this->user_confirmation_status === self::CONFIRMATION_APPROVED;
+    }
+    
+    /**
+     * Check if user has rejected the schedule change.
+     */
+    public function isRejectedByUser(): bool
+    {
+        return $this->user_confirmation_status === self::CONFIRMATION_REJECTED;
+    }
+    
+    /**
+     * User approves the schedule change.
+     */
+    public function approveScheduleChange(): bool
+    {
+        if (!$this->needsUserConfirmation()) {
+            return false;
+        }
+        
+        return $this->update([
+            'user_confirmation_status' => self::CONFIRMATION_APPROVED,
+            'user_confirmed_at' => now(),
+        ]);
+    }
+    
+    /**
+     * User rejects the schedule change.
+     */
+    public function rejectScheduleChange(): bool
+    {
+        if (!$this->needsUserConfirmation()) {
+            return false;
+        }
+        
+        return $this->update([
+            'user_confirmation_status' => self::CONFIRMATION_REJECTED,
+            'user_confirmed_at' => now(),
+        ]);
+    }
+    
+    /**
+     * Mark booking as rescheduled and store old data.
+     */
+    public function markAsRescheduled(array $oldScheduleData): bool
+    {
+        return $this->update([
+            'is_rescheduled' => true,
+            'user_confirmation_status' => self::CONFIRMATION_PENDING,
+            'schedule_changed_data' => $oldScheduleData,
+            'user_confirmed_at' => null,
+        ]);
+    }
+    
+    /**
+     * Scope for bookings needing user confirmation.
+     */
+    public function scopeNeedsConfirmation($query)
+    {
+        return $query->where('is_rescheduled', true)
+                     ->where('user_confirmation_status', self::CONFIRMATION_PENDING);
     }
 }

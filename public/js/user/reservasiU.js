@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	tableState.load();
 	bindUI();
 	initFormValidation();
+	initDropdownAnimations();
 });
 
 /* ============================================
@@ -139,9 +140,33 @@ function renderTable() {
 	rows.forEach(r => {
 		const tr = document.createElement('tr');
 		
-		// Build status badge with rejection reason button if rejected
+		// Debug: Log booking data to check confirmation status
+		if (r.is_rescheduled) {
+			console.log('Rescheduled booking found:', {
+				id: r.id,
+				is_rescheduled: r.is_rescheduled,
+				user_confirmation_status: r.user_confirmation_status,
+				should_show_badge: r.is_rescheduled && r.user_confirmation_status === 'Belum Dikonfirmasi'
+			});
+		}
+		
+		// Build status badge with special handling for rescheduled bookings
 		let statusHtml = statusBadge(r.status);
-		if (r.status === 'Ditolak' && r.rejection_reason) {
+		
+		// Add confirmation badge if booking needs user confirmation
+		if (r.is_rescheduled && r.user_confirmation_status === 'Belum Dikonfirmasi') {
+			statusHtml = `
+				<div class="flex flex-col items-center gap-2">
+					${statusBadge(r.status)}
+					<button type="button" class="confirm-change-btn inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-orange-500 to-amber-600 text-white text-xs font-semibold rounded-full hover:from-orange-600 hover:to-amber-700 transition-all shadow-md shadow-orange-500/25 animate-pulse" onclick="showScheduleConfirmation(${r.id})">
+						<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+						</svg>
+						Konfirmasi Perubahan
+					</button>
+				</div>
+			`;
+		} else if (r.status === 'Ditolak' && r.rejection_reason) {
 			statusHtml = `
 				<div class="flex flex-col items-center gap-1">
 					${statusBadge(r.status)}
@@ -256,6 +281,76 @@ function statusBadge(status) {
 	return `<span class="status-badge ${cls}">${status}</span>`;
 }
 
+/**
+ * Show schedule confirmation modal
+ * @param {number} bookingId - The booking ID requiring confirmation
+ */
+async function showScheduleConfirmation(bookingId) {
+	try {
+		const data = await window.ScheduleConfirmation.fetchScheduleChangeDetails(bookingId);
+		window.ScheduleConfirmation.openModal(bookingId, data, (action, result) => {
+			// Callback after confirmation
+			console.log('Schedule confirmation:', action, result);
+		});
+	} catch (error) {
+		console.error('Failed to fetch schedule change details:', error);
+		showNotification('Gagal memuat detail perubahan jadwal', 'error');
+	}
+}
+
+/**
+ * Show notification (integrated with schedule-confirmation.js)
+ * @param {string} message - Notification message
+ * @param {string} type - Notification type
+ */
+function showNotification(message, type = 'info') {
+	const container = document.getElementById('notificationAlertContainer');
+	if (!container) return;
+
+	const colors = {
+		success: 'bg-green-50 border-green-200 text-green-800',
+		error: 'bg-red-50 border-red-200 text-red-800',
+		warning: 'bg-amber-50 border-amber-200 text-amber-800',
+		info: 'bg-blue-50 border-blue-200 text-blue-800'
+	};
+
+	const icons = {
+		success: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>',
+		error: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>',
+		warning: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>',
+		info: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+	};
+
+	const alert = document.createElement('div');
+	alert.className = `flex items-center gap-3 p-4 rounded-xl border ${colors[type]} shadow-sm mb-4`;
+	alert.innerHTML = `
+		<svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			${icons[type]}
+		</svg>
+		<p class="text-sm font-medium flex-1">${message}</p>
+		<button type="button" class="p-1 hover:bg-white/50 rounded-lg transition-colors" onclick="this.parentElement.remove()">
+			<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+			</svg>
+		</button>
+	`;
+
+	container.appendChild(alert);
+
+	// Auto remove after 5 seconds
+	setTimeout(() => {
+		alert.style.opacity = '0';
+		alert.style.transform = 'translateY(-1rem)';
+		alert.style.transition = 'all 0.3s ease';
+		setTimeout(() => alert.remove(), 300);
+	}, 5000);
+}
+
+// Expose loadTableData globally for schedule-confirmation.js
+window.loadTableData = function() {
+	tableState.load();
+};
+
 /* ===== Modal + Form ===== */
 function openModal(mode, data=null) {
 	document.getElementById('formMode').value = mode;
@@ -312,13 +407,30 @@ function fillForm(r) {
 async function onUnitChange() {
 	const unitId = document.getElementById('unitId').value;
 	const buildingSel = document.getElementById('buildingId');
+	const buildingWrapper = buildingSel.closest('.select-wrapper');
+	
+	// Set loading state
+	setDropdownLoading(buildingWrapper, true);
 	buildingSel.innerHTML = '<option value="">Memuat...</option>';
 	document.getElementById('roomId').innerHTML = '<option value="">Pilih Ruangan</option>';
 	hideRoomInfo();
-	if (!unitId) { buildingSel.innerHTML = '<option value="">Pilih Gedung</option>'; return; }
-	const res = await fetch(`${window.__USER_API__.guestBuildings}?unit_id=${unitId}`);
-	const data = await res.json();
-	buildingSel.innerHTML = '<option value="">Pilih Gedung</option>' + (data.data||[]).map(b => `<option value="${b.id}">${escapeHtml(b.building_name)}</option>`).join('');
+	
+	if (!unitId) {
+		setDropdownLoading(buildingWrapper, false);
+		buildingSel.innerHTML = '<option value="">Pilih Gedung</option>';
+		return;
+	}
+	
+	try {
+		const res = await fetch(`${window.__USER_API__.guestBuildings}?unit_id=${unitId}`);
+		const data = await res.json();
+		buildingSel.innerHTML = '<option value="">Pilih Gedung</option>' + (data.data||[]).map(b => `<option value="${b.id}">${escapeHtml(b.building_name)}</option>`).join('');
+	} catch (error) {
+		console.error('Error loading buildings:', error);
+		buildingSel.innerHTML = '<option value="">Error memuat data</option>';
+	} finally {
+		setDropdownLoading(buildingWrapper, false);
+	}
 }
 
 // Store room data for info display
@@ -327,33 +439,45 @@ let roomsData = [];
 async function onBuildingChange() {
 	const buildingId = document.getElementById('buildingId').value;
 	const roomSel = document.getElementById('roomId');
+	const roomWrapper = roomSel.closest('.select-wrapper');
+	
+	// Set loading state
+	setDropdownLoading(roomWrapper, true);
 	roomSel.innerHTML = '<option value="">Memuat...</option>';
 	hideRoomInfo();
 	roomsData = [];
 	
 	if (!buildingId) { 
+		setDropdownLoading(roomWrapper, false);
 		roomSel.innerHTML = '<option value="">Pilih Ruangan</option>'; 
 		return; 
 	}
 	
-	const res = await fetch(`${window.__USER_API__.guestRooms}?building_id=${buildingId}`);
-	const data = await res.json();
-	roomsData = data.data || [];
-	
-	// Build room options with capacity and location info
-	let optionsHtml = '<option value="">Pilih Ruangan</option>';
-	roomsData.forEach(r => {
-		const capacityText = r.capacity ? `${r.capacity} orang` : 'Kapasitas tidak tersedia';
-		const locationText = r.location || 'Lokasi tidak tersedia';
-		const displayText = `${escapeHtml(r.room_name)} — ${capacityText} • ${locationText}`;
-		optionsHtml += `<option value="${r.id}" data-capacity="${r.capacity || ''}" data-location="${escapeHtml(r.location || '')}">${displayText}</option>`;
-	});
-	
-	roomSel.innerHTML = optionsHtml;
-	
-	// Add room change listener
-	roomSel.removeEventListener('change', onRoomChange);
-	roomSel.addEventListener('change', onRoomChange);
+	try {
+		const res = await fetch(`${window.__USER_API__.guestRooms}?building_id=${buildingId}`);
+		const data = await res.json();
+		roomsData = data.data || [];
+		
+		// Build room options with capacity and location info
+		let optionsHtml = '<option value="">Pilih Ruangan</option>';
+		roomsData.forEach(r => {
+			const capacityText = r.capacity ? `${r.capacity} orang` : 'Kapasitas tidak tersedia';
+			const locationText = r.location || 'Lokasi tidak tersedia';
+			const displayText = `${escapeHtml(r.room_name)} — ${capacityText} • ${locationText}`;
+			optionsHtml += `<option value="${r.id}" data-capacity="${r.capacity || ''}" data-location="${escapeHtml(r.location || '')}">${displayText}</option>`;
+		});
+		
+		roomSel.innerHTML = optionsHtml;
+		
+		// Add room change listener
+		roomSel.removeEventListener('change', onRoomChange);
+		roomSel.addEventListener('change', onRoomChange);
+	} catch (error) {
+		console.error('Error loading rooms:', error);
+		roomSel.innerHTML = '<option value="">Error memuat data</option>';
+	} finally {
+		setDropdownLoading(roomWrapper, false);
+	}
 }
 
 function onRoomChange() {
@@ -814,4 +938,86 @@ function escapeHtml(str='') {
 		.replace(/>/g, '&gt;')
 		.replace(/"/g, '&quot;')
 		.replace(/'/g, '&#39;');
+}
+
+/* ============================================
+   Dropdown Animation Enhancement
+   ============================================ */
+function setDropdownLoading(wrapper, isLoading) {
+	if (!wrapper) return;
+	
+	if (isLoading) {
+		wrapper.classList.add('loading');
+	} else {
+		wrapper.classList.remove('loading');
+	}
+}
+
+function initDropdownAnimations() {
+	// Get all select elements with dropdown icons
+	const selectWrappers = document.querySelectorAll('.select-wrapper');
+	
+	selectWrappers.forEach(wrapper => {
+		const select = wrapper.querySelector('select');
+		const icon = wrapper.querySelector('.dropdown-icon');
+		
+		if (!select || !icon) return;
+		
+		// Add click handler for immediate visual feedback
+		select.addEventListener('mousedown', () => {
+			icon.style.transform = 'translateY(-50%) rotate(180deg)';
+			icon.style.color = 'var(--primary)';
+		});
+		
+		// Handle focus event
+		select.addEventListener('focus', () => {
+			icon.style.transform = 'translateY(-50%) rotate(180deg)';
+			icon.style.color = 'var(--primary)';
+		});
+		
+		// Handle blur event
+		select.addEventListener('blur', () => {
+			icon.style.transform = 'translateY(-50%) rotate(0deg)';
+			icon.style.color = '#6b7280';
+		});
+		
+		// Handle change event for smooth transition back
+		select.addEventListener('change', () => {
+			// Small delay to show the selection before rotating back
+			setTimeout(() => {
+				if (document.activeElement !== select) {
+					icon.style.transform = 'translateY(-50%) rotate(0deg)';
+					icon.style.color = '#6b7280';
+				}
+			}, 150);
+		});
+		
+		// Handle hover effect
+		select.addEventListener('mouseenter', () => {
+			if (document.activeElement !== select) {
+				icon.style.color = 'var(--primary-dark)';
+			}
+		});
+		
+		select.addEventListener('mouseleave', () => {
+			if (document.activeElement !== select) {
+				icon.style.color = '#6b7280';
+			}
+		});
+		
+		// Handle disabled state
+		const checkDisabledState = () => {
+			if (select.disabled) {
+				icon.style.color = '#d1d5db';
+				icon.style.transform = 'translateY(-50%) rotate(0deg)';
+			}
+		};
+		
+		// Check on load
+		checkDisabledState();
+		
+		// Monitor disabled attribute changes
+		const observer = new MutationObserver(checkDisabledState);
+		observer.observe(select, { attributes: true, attributeFilter: ['disabled'] });
+	});
 }

@@ -907,7 +907,8 @@ class AdminController extends Controller
             ], 422);
         }
 
-        // Save the changes
+        // Mark booking as rescheduled and save
+        $booking->markAsRescheduled($oldDetails);
         $booking->save();
 
         // Prepare new details
@@ -919,30 +920,21 @@ class AdminController extends Controller
             'time' => substr($booking->start_time, 0, 5) . ' - ' . substr($booking->end_time, 0, 5),
         ];
 
-        // Send notification to user using custom notification model
-        $notificationMessage = $request->notification_message ?? 
-            'Jadwal reservasi Anda telah diubah oleh admin. Silakan cek detail reservasi untuk informasi lebih lanjut.';
-
-        \App\Models\Notification::create([
-            'user_id' => $booking->user_id,
-            'booking_id' => $booking->id,
-            'type' => 'booking_rescheduled',
-            'title' => 'Jadwal Reservasi Diubah',
-            'message' => $notificationMessage,
-            'data' => [
-                'old_details' => $oldDetails,
-                'new_details' => $newDetails,
-                'action_url' => route('user.reservasi'),
-            ],
-        ]);
+        // Send notification to user using Notification model
+        \App\Models\Notification::createBookingRescheduledNotification(
+            $booking,
+            $oldDetails,
+            $newDetails
+        );
 
         return response()->json([
             'success' => true,
-            'message' => 'Reservasi berhasil dijadwalkan ulang dan notifikasi telah dikirim ke pengguna',
+            'message' => 'Reservasi berhasil dijadwalkan ulang. Notifikasi telah dikirim ke pengguna dan menunggu konfirmasi.',
             'data' => [
                 'booking_id' => $booking->id,
                 'old_details' => $oldDetails,
                 'new_details' => $newDetails,
+                'requires_confirmation' => true,
             ]
         ]);
     }

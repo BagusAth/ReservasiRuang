@@ -49,6 +49,10 @@ Route::middleware(['role:user'])->group(function () {
         Route::put('/bookings/{id}', [UserController::class, 'updateBooking'])->name('booking.update');
         Route::delete('/bookings/{id}', [UserController::class, 'deleteBooking'])->name('booking.delete');
         
+        // Schedule change confirmation endpoints
+        Route::get('/bookings/{id}/schedule-change', [UserController::class, 'getScheduleChangeDetail'])->name('booking.scheduleChangeDetail');
+        Route::post('/bookings/{id}/confirm-schedule', [UserController::class, 'confirmScheduleChange'])->name('booking.confirmSchedule');
+        
         // Notification endpoints untuk User
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
         Route::get('/notifications/recent', [NotificationController::class, 'recent'])->name('notifications.recent');
