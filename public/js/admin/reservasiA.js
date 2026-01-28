@@ -923,8 +923,8 @@ async function openEditStatusModal(bookingId) {
             // Capacity
             document.getElementById('editStatusCapacity').textContent = `${data.room?.capacity || '-'} orang`;
             
-            // Participants
-            document.getElementById('editStatusParticipants').textContent = `${data.participant_count || 0} orang`;
+            // Location
+            document.getElementById('editStatusLocation').textContent = `${data.room?.location || '-'}`;
             
             // PIC
             document.getElementById('editStatusPIC').textContent = data.pic_name || '-';

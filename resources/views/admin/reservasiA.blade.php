@@ -527,7 +527,7 @@
                         </div>
                     </div>
 
-                    <!-- Jumlah Peserta -->
+                    <!-- lokasi -->
                     <div class="modal-info-item">
                         <div class="icon-wrapper bg-orange-50">
                             <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -535,8 +535,8 @@
                             </svg>
                         </div>
                         <div class="content">
-                            <p class="label">Jumlah Peserta</p>
-                            <p id="editStatusParticipants" class="value">-</p>
+                            <p class="label">Lokasi</p>
+                            <p id="editStatusLocation" class="value">-</p>
                         </div>
                     </div>
 
