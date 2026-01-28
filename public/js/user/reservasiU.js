@@ -372,7 +372,6 @@ function onRoomChange() {
 }
 
 function showRoomInfo(room) {
-	const panel = document.getElementById('roomInfoPanel');
 	const capacityEl = document.getElementById('roomCapacity');
 	const locationEl = document.getElementById('roomLocation');
 	

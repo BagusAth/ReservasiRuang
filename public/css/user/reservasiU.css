@@ -310,11 +310,8 @@ body {
 }
 
 /* ============================================
-   Room Info Panel & Dropdown Styles
+   Dropdown Styles
    ============================================ */
-#roomInfoPanel {
-	animation: slideDown 0.3s ease;
-}
 
 @keyframes slideDown {
 	from {
@@ -359,16 +356,6 @@ body {
 	font-size: 14px;
 	background: #fafafa;
 	padding: 10px 14px;
-}
-
-/* Room info panel styling */
-#roomInfoPanel {
-	background: linear-gradient(135deg, rgba(0, 162, 185, 0.03) 0%, rgba(0, 162, 185, 0.08) 100%);
-	border: 1px solid rgba(0, 162, 185, 0.2);
-}
-
-#roomInfoPanel .text-primary {
-	color: var(--primary);
 }
 
 /* ============================================

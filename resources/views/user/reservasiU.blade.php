@@ -217,24 +217,6 @@
 					<select id="roomId" class="form-input" required>
 						<option value="">Pilih Ruangan</option>
 					</select>
-					<!-- Room Info Display -->
-					<div id="roomInfoPanel" class="hidden mt-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
-						<div class="flex items-start gap-2">
-							<svg class="w-4 h-4 text-primary mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-							</svg>
-							<div class="text-sm space-y-1">
-								<div class="flex items-center gap-2">
-									<span class="text-gray-500">Kapasitas:</span>
-									<span class="font-medium text-gray-800" id="roomCapacity">-</span>
-								</div>
-								<div class="flex items-center gap-2">
-									<span class="text-gray-500">Lokasi:</span>
-									<span class="font-medium text-gray-800" id="roomLocation">-</span>
-								</div>
-							</div>
-						</div>
-					</div>
 				</div>
 				<div class="grid grid-cols-2 gap-2">
 					<div>
