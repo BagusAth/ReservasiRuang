@@ -29,8 +29,6 @@ class Booking extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
-        // Don't cast time columns to datetime to avoid parsing issues
-        // Use raw string format from database (H:i:s)
         'approved_at' => 'datetime',
     ];
 
@@ -317,6 +315,6 @@ class Booking extends Model
             $location = "{$unitName} - {$buildingName}";
         }
 
-        return "Ruangan {$roomName} ({$location}) sudah dibooking pada tanggal {$dateDisplay} pukul {$startTime} - {$endTime}. Silakan pilih waktu atau ruangan lain.";
+        return "{$roomName} ({$location}) sudah dibooking pada tanggal {$dateDisplay} pukul {$startTime} - {$endTime}. Silakan pilih waktu atau ruangan lain.";
     }
 }

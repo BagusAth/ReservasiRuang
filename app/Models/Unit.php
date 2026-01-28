@@ -63,7 +63,7 @@ class Unit extends Model
     }
 
     /**
-     * Scope untuk unit aktif.
+     * Scope for active units.
      */
     public function scopeActive($query)
     {

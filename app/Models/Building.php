@@ -25,7 +25,6 @@ class Building extends Model
 
     /**
      * Get the unit that owns this building.
-     * Relasi: Gedung → 1 Unit
      */
     public function unit()
     {
@@ -58,7 +57,7 @@ class Building extends Model
     }
 
     /**
-     * Scope untuk gedung dalam unit tertentu.
+     * Scope for buildings in a specific unit.
      */
     public function scopeInUnit($query, $unitId)
     {

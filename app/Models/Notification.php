@@ -34,7 +34,7 @@ class Notification extends Model
     const TYPE_BOOKING_REJECTED = 'booking_rejected';
     const TYPE_BOOKING_CANCELLED = 'booking_cancelled';
     const TYPE_BOOKING_UPDATED = 'booking_updated';
-    const TYPE_BOOKING_SUBMITTED = 'booking_submitted'; // For user confirmation
+    const TYPE_BOOKING_SUBMITTED = 'booking_submitted'; 
 
     /**
      * Get the user that owns the notification.
@@ -149,13 +149,14 @@ class Notification extends Model
         $user = $booking->user;
         $room = $booking->room;
         $building = $room->building;
+        $bookingDate = $booking->start_date->format('d-m-Y');
 
         return self::create([
             'user_id' => $admin->id,
             'booking_id' => $booking->id,
             'type' => self::TYPE_NEW_BOOKING,
             'title' => 'Reservasi Baru',
-            'message' => "{$user->name} mengajukan reservasi ruangan {$room->room_name} di {$building->building_name}",
+            'message' => "{$user->name} mengajukan reservasi {$room->room_name} di {$building->building_name} pada tanggal {$bookingDate}",
             'data' => [
                 'booking_id' => $booking->id,
                 'user_name' => $user->name,
@@ -177,6 +178,7 @@ class Notification extends Model
     {
         $user = $booking->user;
         $room = $booking->room;
+        $bookingDate = $booking->start_date->format('d-m-Y');
 
         $type = match($booking->status) {
             Booking::STATUS_APPROVED => self::TYPE_BOOKING_APPROVED,
@@ -201,7 +203,7 @@ class Notification extends Model
             'booking_id' => $booking->id,
             'type' => $type,
             'title' => $title,
-            'message' => "Reservasi Anda untuk ruangan {$room->room_name} telah {$statusText}",
+            'message' => "Reservasi Anda untuk {$room->room_name} pada tanggal {$bookingDate} telah {$statusText}",
             'data' => [
                 'booking_id' => $booking->id,
                 'room_name' => $room->room_name,
@@ -220,13 +222,14 @@ class Notification extends Model
         $user = $booking->user;
         $room = $booking->room;
         $building = $room->building;
+        $bookingDate = $booking->start_date->format('d-m-Y');
 
         return self::create([
             'user_id' => $user->id,
             'booking_id' => $booking->id,
             'type' => self::TYPE_BOOKING_SUBMITTED,
             'title' => 'Pengajuan Reservasi Berhasil',
-            'message' => "Reservasi Anda untuk ruangan {$room->room_name} di {$building->building_name} telah berhasil diajukan dan sedang menunggu persetujuan admin.",
+            'message' => "Reservasi Anda untuk {$room->room_name} di {$building->building_name} pada tanggal {$bookingDate} telah berhasil diajukan dan sedang menunggu persetujuan admin.",
             'data' => [
                 'booking_id' => $booking->id,
                 'room_name' => $room->room_name,
