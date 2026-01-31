@@ -864,12 +864,23 @@ function handleRoleChange() {
     const role = document.getElementById('userRole').value;
     const unitField = document.getElementById('unitField');
     const buildingField = document.getElementById('buildingField');
+    const unitLabel = unitField.querySelector('label');
 
     unitField.classList.add('hidden');
     buildingField.classList.add('hidden');
 
     if (role === 'admin_unit') {
         unitField.classList.remove('hidden');
+        // Update label for admin_unit
+        if (unitLabel) {
+            unitLabel.innerHTML = 'Unit <span class="text-red-500">*</span>';
+        }
+    } else if (role === 'user') {
+        unitField.classList.remove('hidden');
+        // Update label for user
+        if (unitLabel) {
+            unitLabel.innerHTML = 'Unit <span class="text-red-500">*</span>';
+        }
     } else if (role === 'admin_gedung') {
         buildingField.classList.remove('hidden');
     }
@@ -1044,6 +1055,11 @@ function validateUserForm(isEdit) {
     // Validate unit for admin_unit
     if (role === 'admin_unit' && !unitId) {
         return { valid: false, field: 'userUnit', message: 'Unit wajib dipilih untuk role Admin Unit.' };
+    }
+
+    // Validate unit for user
+    if (role === 'user' && !unitId) {
+        return { valid: false, field: 'userUnit', message: 'Unit wajib dipilih untuk role User.' };
     }
 
     // Validate building for admin_gedung

@@ -4,6 +4,23 @@
    ============================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
+	// Debug: Check unit dropdown
+	const unitDropdown = document.getElementById('unitId');
+	if (unitDropdown) {
+		const optionCount = unitDropdown.options.length;
+		console.log('🔍 Unit dropdown found with', optionCount, 'options');
+		if (optionCount > 1) {
+			console.log('✅ Unit dropdown is populated');
+			for (let i = 1; i < optionCount; i++) {
+				console.log(`  - ${unitDropdown.options[i].text} (ID: ${unitDropdown.options[i].value})`);
+			}
+		} else {
+			console.warn('⚠️ Unit dropdown is empty (only placeholder option)');
+		}
+	} else {
+		console.error('❌ Unit dropdown not found!');
+	}
+	
 	initSidebar();
 	initUserDropdown();
 	initDeleteModal();

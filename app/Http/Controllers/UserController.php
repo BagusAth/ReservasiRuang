@@ -32,8 +32,30 @@ class UserController extends Controller{
      */
     public function reservationsPage(){
         $user = Auth::user();
-        $units = Unit::active()->orderBy('unit_name')->get();
-        return view('user.reservasiU', compact('user', 'units'));
+        // Get accessible units for the user (own unit + neighbors for regular users, all for admins)
+        $accessibleUnits = $user->getAccessibleUnits();
+        return view('user.reservasiU', compact('user', 'accessibleUnits'));
+    }
+
+    /**
+     * Get accessible units for the current user (API endpoint).
+     * Returns units that the user can make reservations in.
+     */
+    public function getAccessibleUnits(): JsonResponse
+    {
+        $user = Auth::user();
+        $accessibleUnits = $user->getAccessibleUnits();
+        
+        return response()->json([
+            'success' => true,
+            'data' => $accessibleUnits->map(function ($unit) {
+                return [
+                    'id' => $unit->id,
+                    'name' => $unit->unit_name,
+                    'description' => $unit->description,
+                ];
+            })
+        ]);
     }
 
     /**
@@ -374,6 +396,28 @@ class UserController extends Controller{
             'pic_phone.min' => 'Nomor telepon minimal 9 digit.',
         ]);
 
+        // Validate unit access for regular users
+        if ($user->isUser()) {
+            $room = Room::with('building.unit')->find($validated['room_id']);
+            
+            if (!$room || !$room->building || !$room->building->unit) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ruangan tidak valid atau tidak terkait dengan unit manapun.'
+                ], 422);
+            }
+            
+            $targetUnitId = $room->building->unit_id;
+            
+            // Check if user can access this unit
+            if (!$user->canAccessUnit($targetUnitId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses untuk melakukan reservasi di unit ini. Anda hanya dapat melakukan reservasi di unit Anda sendiri atau unit tetangga yang ditentukan.'
+                ], 403);
+            }
+        }
+
         // Waktu valid (end_time harus > start_time jika satu hari)
         if ($validated['start_date'] === $validated['end_date'] && $validated['end_time'] <= $validated['start_time']) {
             return response()->json([
@@ -456,6 +500,28 @@ class UserController extends Controller{
             'pic_phone.regex' => 'Nomor telepon hanya boleh berisi angka.',
             'pic_phone.min' => 'Nomor telepon minimal 9 digit.',
         ]);
+
+        // Validate unit access for regular users
+        if ($user->isUser()) {
+            $room = Room::with('building.unit')->find($validated['room_id']);
+            
+            if (!$room || !$room->building || !$room->building->unit) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ruangan tidak valid atau tidak terkait dengan unit manapun.'
+                ], 422);
+            }
+            
+            $targetUnitId = $room->building->unit_id;
+            
+            // Check if user can access this unit
+            if (!$user->canAccessUnit($targetUnitId)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki akses untuk melakukan reservasi di unit ini. Anda hanya dapat melakukan reservasi di unit Anda sendiri atau unit tetangga yang ditentukan.'
+                ], 403);
+            }
+        }
 
         if ($validated['start_date'] === $validated['end_date'] && $validated['end_time'] <= $validated['start_time']) {
             return response()->json([

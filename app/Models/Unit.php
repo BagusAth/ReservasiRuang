@@ -63,6 +63,62 @@ class Unit extends Model
     }
 
     /**
+     * Get all neighbor units that this unit can access.
+     * Returns many-to-many relationship.
+     */
+    public function neighbors()
+    {
+        return $this->belongsToMany(
+            Unit::class,
+            'unit_neighbors',
+            'unit_id',
+            'neighbor_unit_id'
+        )->withTimestamps();
+    }
+
+    /**
+     * Get units that have this unit as a neighbor (reverse relationship).
+     */
+    public function neighborOf()
+    {
+        return $this->belongsToMany(
+            Unit::class,
+            'unit_neighbors',
+            'neighbor_unit_id',
+            'unit_id'
+        )->withTimestamps();
+    }
+
+    /**
+     * Get all units that a user from this unit can make reservations in.
+     * Includes: this unit + all neighbor units.
+     */
+    public function accessibleUnits()
+    {
+        return Unit::whereIn('id', array_merge(
+            [$this->id],
+            $this->neighbors->pluck('id')->toArray()
+        ))->active()->get();
+    }
+
+    /**
+     * Check if this unit can access another unit (for reservations).
+     * 
+     * @param int $targetUnitId
+     * @return bool
+     */
+    public function canAccessUnit(int $targetUnitId): bool
+    {
+        // Can access own unit
+        if ($this->id === $targetUnitId) {
+            return true;
+        }
+        
+        // Can access neighbor units
+        return $this->neighbors()->where('neighbor_unit_id', $targetUnitId)->exists();
+    }
+
+    /**
      * Scope for active units.
      */
     public function scopeActive($query)

@@ -203,7 +203,7 @@
 					<div class="select-wrapper">
 						<select id="unitId" class="form-input">
 							<option value="">Pilih Unit</option>
-							@foreach(($units ?? []) as $u)
+							@foreach(($accessibleUnits ?? []) as $u)
 								<option value="{{ $u->id }}">{{ $u->unit_name }}</option>
 							@endforeach
 						</select>
@@ -479,6 +479,10 @@
 			guestBuildings: '{{ route('guest.api.buildings') }}',
 			guestRooms: '{{ route('guest.api.rooms') }}',
 		};
+		
+		// Debug: Log accessible units loaded from backend
+		window.__ACCESSIBLE_UNITS__ = @json($accessibleUnits ?? []);
+		console.log('🔍 Accessible Units loaded:', window.__ACCESSIBLE_UNITS__);
 	</script>
 	<script src="{{ asset('js/user/notification.js') }}"></script>
 	<script src="{{ asset('js/user/schedule-confirmation.js') }}"></script>

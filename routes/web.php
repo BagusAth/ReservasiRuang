@@ -43,6 +43,7 @@ Route::middleware(['role:user'])->group(function () {
         Route::get('/bookings', [UserController::class, 'getBookings'])->name('bookings');
         Route::get('/bookings/{id}', [UserController::class, 'getBookingDetail'])->name('booking.detail');
         Route::get('/stats', [UserController::class, 'getStats'])->name('stats');
+        Route::get('/accessible-units', [UserController::class, 'getAccessibleUnits'])->name('accessibleUnits');
         // Peminjaman table endpoints (only current user's)
         Route::get('/my-bookings', [UserController::class, 'listMyBookings'])->name('myBookings');
         Route::post('/bookings', [UserController::class, 'createBooking'])->name('booking.create');

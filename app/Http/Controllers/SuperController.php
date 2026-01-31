@@ -231,7 +231,7 @@ class SuperController extends Controller
             'email' => 'required|email|max:255|unique:users,email',
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'role' => 'required|string|in:user,admin_unit,admin_gedung',
-            'unit_id' => 'nullable|exists:units,id|required_if:role,admin_unit',
+            'unit_id' => 'nullable|exists:units,id|required_if:role,admin_unit,user',
             'building_id' => 'nullable|exists:buildings,id|required_if:role,admin_gedung',
         ], $messages);
 
@@ -259,6 +259,14 @@ class SuperController extends Controller
                 ], 422);
             }
 
+            if ($request->role === 'user' && empty($request->unit_id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unit wajib dipilih untuk role User.',
+                    'errors' => ['unit_id' => ['Unit wajib dipilih untuk role User.']]
+                ], 422);
+            }
+
             if ($request->role === 'admin_gedung' && empty($request->building_id)) {
                 return response()->json([
                     'success' => false,
@@ -272,7 +280,7 @@ class SuperController extends Controller
                 'email' => strtolower(trim($request->email)),
                 'password' => Hash::make($request->password),
                 'role_id' => $role->id,
-                'unit_id' => $request->role === 'admin_unit' ? $request->unit_id : null,
+                'unit_id' => ($request->role === 'admin_unit' || $request->role === 'user') ? $request->unit_id : null,
                 'building_id' => $request->role === 'admin_gedung' ? $request->building_id : null,
                 'is_active' => true,
             ]);
@@ -377,6 +385,14 @@ class SuperController extends Controller
                 ], 422);
             }
 
+            if ($role === 'user' && $request->has('unit_id') && empty($request->unit_id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unit wajib dipilih untuk role User.',
+                    'errors' => ['unit_id' => ['Unit wajib dipilih untuk role User.']]
+                ], 422);
+            }
+
             if ($role === 'admin_gedung' && $request->has('building_id') && empty($request->building_id)) {
                 return response()->json([
                     'success' => false,
@@ -398,13 +414,10 @@ class SuperController extends Controller
                     $user->role_id = $roleModel->id;
                     
                     // Clear unit/building if not applicable to new role
-                    if ($request->role === 'user') {
+                    if ($request->role === 'admin_gedung') {
                         $user->unit_id = null;
+                    } elseif ($request->role === 'admin_unit' || $request->role === 'user') {
                         $user->building_id = null;
-                    } elseif ($request->role === 'admin_unit') {
-                        $user->building_id = null;
-                    } elseif ($request->role === 'admin_gedung') {
-                        $user->unit_id = null;
                     }
                 }
             }
@@ -727,15 +740,4 @@ class SuperController extends Controller
      * @param string $roleName
      * @return string
      */
-    private function getRoleDisplayName(string $roleName): string
-    {
-        $displayNames = [
-            'user' => 'User',
-            'admin_unit' => 'Admin Unit',
-            'admin_gedung' => 'Admin Gedung',
-            'super_admin' => 'Super Admin',
-        ];
-
-        return $displayNames[$roleName] ?? $roleName;
-    }
-}
+    private function getRoleDisplayName(string $roleName): string    {        $displayNames = [            'user' => 'User',            'admin_unit' => 'Admin Unit',            'admin_gedung' => 'Admin Gedung',            'super_admin' => 'Super Admin',        ];        return $displayNames[$roleName] ?? $roleName;    }    public function getUnitWithNeighbors(int $id): JsonResponse    {        try {            $unit = Unit::with('neighbors')->findOrFail($id);            return response()->json([                'success' => true,                'data' => [                    'id' => $unit->id,                    'name' => $unit->unit_name,                    'neighbors' => $unit->neighbors->map(function ($neighbor) {                        return [                            'id' => $neighbor->id,                            'name' => $neighbor->unit_name,                        ];                    })                ]            ]);        } catch (\Exception $e) {            return response()->json([                'success' => false,                'message' => 'Unit tidak ditemukan.'            ], 404);        }    }    public function updateUnitNeighbors(Request $request, int $id): JsonResponse    {        try {            $unit = Unit::findOrFail($id);            $validated = $request->validate([                'neighbor_ids' => 'array',                'neighbor_ids.*' => 'exists:units,id',            ]);            $neighborIds = $validated['neighbor_ids'] ?? [];            $neighborIds = array_filter($neighborIds, function ($neighborId) use ($id) {                return $neighborId != $id;            });            $unit->neighbors()->sync($neighborIds);            return response()->json([                'success' => true,                'message' => 'Unit tetangga berhasil diperbarui.',            ]);        } catch (\Exception $e) {            return response()->json([                'success' => false,                'message' => 'Gagal memperbarui unit tetangga: ' . $e->getMessage()            ], 500);        }    }}

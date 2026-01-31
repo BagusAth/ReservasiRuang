@@ -116,6 +116,87 @@ class User extends Authenticatable
     }
 
     /**
+     * Get all units that this user can make reservations in.
+     * For regular users: their own unit + neighbor units.
+     * For admins and super admin: all units.
+     * 
+     * @return \Illuminate\Support\Collection
+     */
+    public function getAccessibleUnits()
+    {
+        // Super admin can access all units
+        if ($this->isSuperAdmin()) {
+            return Unit::active()->get();
+        }
+        
+        // Admin Unit can access all units
+        if ($this->isAdminUnit()) {
+            return Unit::active()->get();
+        }
+        
+        // Admin Gedung can access all units
+        if ($this->isAdminGedung()) {
+            return Unit::active()->get();
+        }
+        
+        // Regular user: only their unit + neighbor units
+        if ($this->isUser() && $this->unit) {
+            return $this->unit->accessibleUnits();
+        }
+        
+        // Fallback: no units accessible
+        return collect([]);
+    }
+
+    /**
+     * Check if user can make reservation in a specific unit.
+     * 
+     * @param int $unitId
+     * @return bool
+     */
+    public function canAccessUnit(int $unitId): bool
+    {
+        // Super admin can access all units
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+        
+        // Admin Unit can access all units
+        if ($this->isAdminUnit()) {
+            return true;
+        }
+        
+        // Admin Gedung can access all units
+        if ($this->isAdminGedung()) {
+            return true;
+        }
+        
+        // Regular user: check unit + neighbors
+        if ($this->isUser() && $this->unit) {
+            return $this->unit->canAccessUnit($unitId);
+        }
+        
+        return false;
+    }
+
+    /**
+     * Get all buildings that this user can make reservations in.
+     * Based on accessible units.
+     * 
+     * @return \Illuminate\Support\Collection
+     */
+    public function getAccessibleBuildings()
+    {
+        $accessibleUnits = $this->getAccessibleUnits();
+        $unitIds = $accessibleUnits->pluck('id')->toArray();
+        
+        return Building::whereIn('unit_id', $unitIds)
+            ->where('is_active', true)
+            ->with('unit')
+            ->get();
+    }
+
+    /**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>
