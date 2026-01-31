@@ -36,6 +36,19 @@
                 <input type="text" id="searchInput" placeholder="Cari reservasi..." class="search-input">
             </div>
             
+            <!-- Today Agenda Actions -->
+            <div class="header-actions">
+                <a href="#" class="dashboard-btn" title="Buka Agenda Hari Ini">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                        <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                        <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                        <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+                    </svg>
+                    <span>Agenda Hari Ini</span>
+                </a>
+            </div>
+
             <!-- Header Actions -->
             <div class="header-actions">
                 @if($isAuthenticated && $dashboardUrl)

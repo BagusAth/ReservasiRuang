@@ -284,6 +284,14 @@ body {
     transform: translateY(-1px);
 }
 
+.action-btn.approve.disabled,
+.action-btn.approve:disabled {
+    color: #9ca3af;
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: transparent;
+}
+
 .action-btn.reject {
     color: #ef4444;
 }

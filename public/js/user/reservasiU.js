@@ -166,6 +166,32 @@ function renderTable() {
 					</button>
 				</div>
 			`;
+		} else if (r.is_rescheduled && r.user_confirmation_status === 'Disetujui User') {
+			// Show badge for approved schedule change
+			statusHtml = `
+				<div class="flex flex-col items-center gap-2">
+					${statusBadge(r.status)}
+					<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full border border-green-200">
+						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+						</svg>
+						Perubahan Disetujui
+					</span>
+				</div>
+			`;
+		} else if (r.is_rescheduled && r.user_confirmation_status === 'Ditolak User') {
+			// Show badge for rejected schedule change
+			statusHtml = `
+				<div class="flex flex-col items-center gap-2">
+					${statusBadge(r.status)}
+					<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full border border-red-200">
+						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+						</svg>
+						Perubahan Ditolak
+					</span>
+				</div>
+			`;
 		} else if (r.status === 'Ditolak' && r.rejection_reason) {
 			statusHtml = `
 				<div class="flex flex-col items-center gap-1">
