@@ -666,9 +666,22 @@ function renderDetailModal(data) {
                     </svg>
                 </div>
                 <div class="content">
-                    <p class="label">PIC</p>
+                    <p class="label">Penanggung Jawab (PIC)</p>
                     <p class="value">${escapeHtml(data.pic_name || '-')}</p>
                     <p class="text-sm text-gray-500">${escapeHtml(data.pic_phone || '-')}</p>
+                </div>
+            </div>
+
+            <div class="modal-info-item">
+                <div class="icon-wrapper bg-blue-50">
+                    <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                </div>
+                <div class="content">
+                    <p class="label">Nama Pemohon</p>
+                    <p class="value">${escapeHtml(data.requester?.name || '-')}</p>
+                    <p class="text-sm text-gray-500">${escapeHtml(data.requester?.email || '')}</p>
                 </div>
             </div>
 
@@ -681,19 +694,6 @@ function renderDetailModal(data) {
                 <div class="content">
                     <p class="label">Detail Agenda</p>
                     <p class="value">${escapeHtml(data.agenda_detail || '-')}</p>
-                </div>
-            </div>
-
-            <div class="modal-info-item">
-                <div class="icon-wrapper bg-gray-100">
-                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                    </svg>
-                </div>
-                <div class="content">
-                    <p class="label">Diajukan Oleh</p>
-                    <p class="value">${escapeHtml(data.requester?.name || '-')}</p>
-                    <p class="text-sm text-gray-500">${escapeHtml(data.requester?.email || '')}</p>
                 </div>
             </div>
 
@@ -1003,6 +1003,10 @@ async function openEditStatusModal(bookingId) {
             
             // PIC Phone
             document.getElementById('editStatusPICPhone').textContent = data.pic_phone || '-';
+            
+            // Requester (Pemohon)
+            document.getElementById('editStatusRequester').textContent = data.requester?.name || '-';
+            document.getElementById('editStatusRequesterEmail').textContent = data.requester?.email || '-';
             
             // Description
             const descContainer = document.getElementById('editStatusDescriptionContainer');

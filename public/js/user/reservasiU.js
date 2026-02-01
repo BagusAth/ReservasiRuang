@@ -398,14 +398,46 @@ window.loadTableData = function() {
 function openModal(mode, data=null) {
 	document.getElementById('formMode').value = mode;
 	document.getElementById('modalTitle').textContent = mode === 'create' ? 'Ajukan Peminjaman' : 'Ubah Peminjaman';
-	if (mode === 'create') resetForm();
+	if (mode === 'create') {
+		resetForm();
+		// Auto-fill PIC name with logged-in user's name
+		const userName = document.querySelector('header span.text-sm.font-medium.text-gray-700')?.textContent?.trim();
+		if (userName && userName !== 'User') {
+			document.getElementById('picName').value = userName;
+		}
+	}
 	if (mode === 'edit' && data) fillForm(data);
+	
+	// Set minimum date to today (prevent back dating)
+	setMinimumDateToday();
+	
 	document.getElementById('bookingModal').classList.remove('hidden');
 	document.getElementById('bookingModal').classList.add('flex');
 }
 function closeModal() {
 	document.getElementById('bookingModal').classList.add('hidden');
 	document.getElementById('bookingModal').classList.remove('flex');
+}
+
+/**
+ * Set minimum date to today for all date inputs to prevent back dating
+ */
+function setMinimumDateToday() {
+	const today = new Date();
+	const year = today.getFullYear();
+	const month = String(today.getMonth() + 1).padStart(2, '0');
+	const day = String(today.getDate()).padStart(2, '0');
+	const todayStr = `${year}-${month}-${day}`;
+	
+	const startDateInput = document.getElementById('startDate');
+	const endDateInput = document.getElementById('endDate');
+	
+	if (startDateInput) {
+		startDateInput.setAttribute('min', todayStr);
+	}
+	if (endDateInput) {
+		endDateInput.setAttribute('min', todayStr);
+	}
 }
 function resetForm() {
 	document.getElementById('bookingForm').reset();
@@ -568,9 +600,11 @@ async function submitForm(e) {
 	// Get form values
 	const picName = document.getElementById('picName').value.trim();
 	const picPhone = document.getElementById('picPhone').value.trim();
+	const startDate = document.getElementById('startDate').value;
+	const endDate = document.getElementById('endDate').value;
 	
-	// Validate form
-	const validationErrors = validateForm(picName, picPhone);
+	// Validate form (including back date validation)
+	const validationErrors = validateForm(picName, picPhone, startDate, endDate);
 	
 	if (validationErrors.length > 0) {
 		displayValidationErrors(validationErrors);
@@ -632,8 +666,37 @@ async function submitForm(e) {
 /* ============================================
    Form Validation Functions
    ============================================ */
-function validateForm(picName, picPhone) {
+function validateForm(picName, picPhone, startDate, endDate) {
 	const errors = [];
+	
+	// Validate back date - start date cannot be in the past
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+	
+	if (startDate) {
+		const startDateObj = new Date(startDate);
+		startDateObj.setHours(0, 0, 0, 0);
+		
+		if (startDateObj < today) {
+			errors.push({ 
+				field: 'startDate', 
+				message: 'Tanggal mulai tidak boleh tanggal yang sudah lewat. Silakan pilih tanggal hari ini atau yang akan datang.' 
+			});
+		}
+	}
+	
+	if (endDate) {
+		const endDateObj = new Date(endDate);
+		endDateObj.setHours(0, 0, 0, 0);
+		
+		if (endDateObj < today) {
+			errors.push({ 
+				field: 'endDate', 
+				message: 'Tanggal selesai tidak boleh tanggal yang sudah lewat. Silakan pilih tanggal hari ini atau yang akan datang.' 
+			});
+		}
+	}
+	
 	
 	// Validate PIC Name - only letters and spaces allowed
 	const nameRegex = /^[a-zA-Z\s]+$/;
@@ -698,7 +761,7 @@ function clearValidationErrors() {
 	document.querySelectorAll('.validation-error').forEach(el => el.remove());
 	
 	// Remove error classes from fields
-	const fields = ['picName', 'picPhone'];
+	const fields = ['picName', 'picPhone', 'startDate', 'endDate'];
 	fields.forEach(fieldId => {
 		const field = document.getElementById(fieldId);
 		if (field) {
@@ -711,6 +774,8 @@ function clearValidationErrors() {
 function initFormValidation() {
 	const picNameField = document.getElementById('picName');
 	const picPhoneField = document.getElementById('picPhone');
+	const startDateField = document.getElementById('startDate');
+	const endDateField = document.getElementById('endDate');
 	
 	if (picNameField) {
 		picNameField.addEventListener('input', function() {
@@ -734,6 +799,25 @@ function initFormValidation() {
 				this.value = cleaned;
 			}
 			// Clear error state on input
+			this.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+			const errorDiv = this.parentNode.querySelector('.validation-error');
+			if (errorDiv) errorDiv.remove();
+		});
+	}
+	
+	// Validate date fields on change
+	if (startDateField) {
+		startDateField.addEventListener('change', function() {
+			// Clear error state
+			this.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+			const errorDiv = this.parentNode.querySelector('.validation-error');
+			if (errorDiv) errorDiv.remove();
+		});
+	}
+	
+	if (endDateField) {
+		endDateField.addEventListener('change', function() {
+			// Clear error state
 			this.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
 			const errorDiv = this.parentNode.querySelector('.validation-error');
 			if (errorDiv) errorDiv.remove();

@@ -381,7 +381,7 @@ class UserController extends Controller{
 
         $validated = $request->validate([
             'room_id' => 'required|exists:rooms,id',
-            'start_date' => 'required|date',
+            'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i',
@@ -394,7 +394,28 @@ class UserController extends Controller{
             'pic_name.min' => 'Nama PIC minimal 2 karakter.',
             'pic_phone.regex' => 'Nomor telepon hanya boleh berisi angka.',
             'pic_phone.min' => 'Nomor telepon minimal 9 digit.',
+            'start_date.after_or_equal' => 'Tanggal mulai tidak boleh tanggal yang sudah lewat. Silakan pilih tanggal hari ini atau yang akan datang.',
+            'end_date.after_or_equal' => 'Tanggal selesai tidak boleh lebih awal dari tanggal mulai.',
         ]);
+
+        // Additional back date validation with custom error message
+        $today = \Carbon\Carbon::today();
+        $startDate = \Carbon\Carbon::parse($validated['start_date']);
+        $endDate = \Carbon\Carbon::parse($validated['end_date']);
+        
+        if ($startDate->lt($today)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tanggal mulai tidak boleh tanggal yang sudah lewat. Silakan pilih tanggal hari ini atau yang akan datang.',
+            ], 422);
+        }
+        
+        if ($endDate->lt($today)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tanggal selesai tidak boleh tanggal yang sudah lewat. Silakan pilih tanggal hari ini atau yang akan datang.',
+            ], 422);
+        }
 
         // Validate unit access for regular users
         if ($user->isUser()) {
@@ -486,7 +507,7 @@ class UserController extends Controller{
 
         $validated = $request->validate([
             'room_id' => 'required|exists:rooms,id',
-            'start_date' => 'required|date',
+            'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i',
@@ -499,7 +520,28 @@ class UserController extends Controller{
             'pic_name.min' => 'Nama PIC minimal 2 karakter.',
             'pic_phone.regex' => 'Nomor telepon hanya boleh berisi angka.',
             'pic_phone.min' => 'Nomor telepon minimal 9 digit.',
+            'start_date.after_or_equal' => 'Tanggal mulai tidak boleh tanggal yang sudah lewat. Silakan pilih tanggal hari ini atau yang akan datang.',
+            'end_date.after_or_equal' => 'Tanggal selesai tidak boleh lebih awal dari tanggal mulai.',
         ]);
+
+        // Additional back date validation with custom error message
+        $today = \Carbon\Carbon::today();
+        $startDate = \Carbon\Carbon::parse($validated['start_date']);
+        $endDate = \Carbon\Carbon::parse($validated['end_date']);
+        
+        if ($startDate->lt($today)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tanggal mulai tidak boleh tanggal yang sudah lewat. Silakan pilih tanggal hari ini atau yang akan datang.',
+            ], 422);
+        }
+        
+        if ($endDate->lt($today)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tanggal selesai tidak boleh tanggal yang sudah lewat. Silakan pilih tanggal hari ini atau yang akan datang.',
+            ], 422);
+        }
 
         // Validate unit access for regular users
         if ($user->isUser()) {

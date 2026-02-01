@@ -565,6 +565,20 @@
                                     <p id="editStatusPICPhone" class="value">-</p>
                                 </div>
                             </div>
+
+                            <!-- Pemohon -->
+                            <div class="modal-info-item">
+                                <div class="icon-wrapper bg-indigo-50">
+                                    <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                </div>
+                                <div class="content">
+                                    <p class="label">Nama Pemohon</p>
+                                    <p id="editStatusRequester" class="value">-</p>
+                                    <p id="editStatusRequesterEmail" class="text-sm text-gray-500">-</p>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Deskripsi (if exists) - Full Width -->
