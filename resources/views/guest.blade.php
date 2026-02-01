@@ -27,6 +27,20 @@
                 </a>
             </div>
             
+            <!-- Navigation Tabs -->
+            <nav class="header-nav">
+                <a href="/agenda" class="nav-tab" target="_blank" title="Buka Agenda Hari Ini di tab baru">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <span>Agenda Hari Ini</span>
+                </a>
+            </nav>
+            
             <!-- Search Bar -->
             <div class="header-search">
                 <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -34,19 +48,6 @@
                     <path d="m21 21-4.35-4.35"></path>
                 </svg>
                 <input type="text" id="searchInput" placeholder="Cari reservasi..." class="search-input">
-            </div>
-            
-            <!-- Today Agenda Actions -->
-            <div class="header-actions">
-                <a href="#" class="dashboard-btn" title="Buka Agenda Hari Ini">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="7" height="7" rx="1"></rect>
-                        <rect x="14" y="3" width="7" height="7" rx="1"></rect>
-                        <rect x="3" y="14" width="7" height="7" rx="1"></rect>
-                        <rect x="14" y="14" width="7" height="7" rx="1"></rect>
-                    </svg>
-                    <span>Agenda Hari Ini</span>
-                </a>
             </div>
 
             <!-- Header Actions -->

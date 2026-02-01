@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\GuestController;
+use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminController;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 
 // Guest Routes (Public - Tanpa Login)
 Route::get('/', [GuestController::class, 'index'])->name('guest.index');
+Route::get('/agenda', [AgendaController::class, 'index'])->name('agenda.index');
 
 // Authentication Routes
 Route::post('/api/login', [AuthController::class, 'login'])->name('api.login');
@@ -29,6 +31,15 @@ Route::prefix('api/guest')->name('guest.api.')->group(function () {
     Route::get('/bookings', [GuestController::class, 'getBookings'])->name('bookings');
     Route::get('/bookings/{id}', [GuestController::class, 'getBookingDetail'])->name('booking.detail');
     Route::get('/search', [GuestController::class, 'searchBookings'])->name('search');
+});
+
+// API untuk Agenda Hari Ini
+Route::prefix('api/agenda')->name('agenda.api.')->group(function () {
+    Route::get('/units', [AgendaController::class, 'getUnits'])->name('units');
+    Route::get('/buildings', [AgendaController::class, 'getBuildings'])->name('buildings');
+    Route::get('/rooms', [AgendaController::class, 'getRooms'])->name('rooms');
+    Route::get('/today', [AgendaController::class, 'getTodayAgenda'])->name('today');
+    Route::get('/bookings/{id}', [AgendaController::class, 'getBookingDetail'])->name('booking.detail');
 });
 
 // User Routes (Role: user)

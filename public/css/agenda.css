@@ -1,0 +1,775 @@
+/* ============================================
+   AGENDA HARI INI - Simplified Styles
+   PLN Nusantara Power Services
+   ============================================ */
+
+/* ============================================
+   CSS VARIABLES
+   ============================================ */
+:root {
+    /* Primary Colors */
+    --primary-color: #00A2B9;
+    --primary-dark: #008999;
+    --primary-light: #33B5C8;
+    
+    /* Status Colors */
+    --status-ongoing: #28A745;
+    --status-ongoing-bg: #D4EDDA;
+    --status-upcoming: #FFA500;
+    --status-upcoming-bg: #FFF3CD;
+    --status-pending: #6C757D;
+    --status-pending-bg: #E9ECEF;
+    --status-completed: #17A2B8;
+    --status-completed-bg: #D1ECF1;
+    
+    /* Neutral Colors */
+    --bg-primary: #F5F8F8;
+    --bg-white: #FFFFFF;
+    --text-primary: #1A1A1A;
+    --text-secondary: #4A5568;
+    --text-muted: #718096;
+    --border-color: #E2E8F0;
+    
+    /* Typography */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+    
+    /* Border Radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    
+    /* Transitions */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.25s ease;
+}
+
+/* ============================================
+   RESET & BASE
+   ============================================ */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: var(--font-family);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    background-color: var(--bg-primary);
+    min-height: 100vh;
+}
+
+/* ============================================
+   MAIN CONTENT
+   ============================================ */
+.main-content {
+    min-height: 100vh;
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* ============================================
+   PAGE HEADER
+   ============================================ */
+.page-header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 30px 20px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border-radius: var(--radius-lg);
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+}
+
+.page-subtitle {
+    font-size: 16px;
+    font-weight: 400;
+    opacity: 0.95;
+}
+
+/* ============================================
+   FILTER SECTION
+   ============================================ */
+.filter-section {
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 180px;
+}
+
+.filter-group.filter-actions {
+    flex: 0 0 auto;
+    min-width: auto;
+}
+
+.filter-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.select-wrapper {
+    position: relative;
+}
+
+.filter-select {
+    width: 100%;
+    padding: 10px 36px 10px 12px;
+    font-size: 14px;
+    font-family: var(--font-family);
+    color: var(--text-primary);
+    background-color: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    appearance: none;
+    cursor: pointer;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.filter-select:hover:not(:disabled) {
+    border-color: var(--primary-light);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 162, 185, 0.15);
+}
+
+.filter-select:disabled {
+    background-color: #F5F5F5;
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.select-arrow {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.reset-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: var(--font-family);
+    color: var(--text-secondary);
+    background-color: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.reset-btn:hover:not(:disabled) {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    background-color: rgba(0, 162, 185, 0.05);
+}
+
+.reset-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ============================================
+   AGENDA SECTION
+   ============================================ */
+.agenda-section {
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+.agenda-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    color: var(--text-muted);
+    gap: 16px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+.agenda-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.agenda-empty svg {
+    margin-bottom: 20px;
+    opacity: 0.4;
+}
+
+.empty-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.empty-text {
+    font-size: 14px;
+    max-width: 300px;
+}
+
+/* ============================================
+   ERROR STATE
+   ============================================ */
+.agenda-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.agenda-error svg {
+    margin-bottom: 20px;
+    color: #EF4444;
+    opacity: 0.6;
+}
+
+.error-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.error-text {
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.retry-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.retry-btn:hover {
+    background: var(--primary-dark);
+}
+
+/* ============================================
+   TABLE CONTAINER
+   ============================================ */
+.table-container {
+    overflow-x: auto;
+}
+
+/* ============================================
+   AGENDA TABLE
+   ============================================ */
+.agenda-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.agenda-table thead {
+    background: var(--primary-color);
+    color: white;
+}
+
+.agenda-table th {
+    padding: 14px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.agenda-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color var(--transition-fast);
+}
+
+.agenda-table tbody tr:hover {
+    background-color: #F8FAFA;
+}
+
+.agenda-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.agenda-table td {
+    padding: 14px 16px;
+    vertical-align: middle;
+}
+
+/* Column Widths */
+.col-no {
+    width: 50px;
+    text-align: center !important;
+}
+
+.col-date {
+    width: 200px;
+}
+
+.col-time {
+    width: 100px;
+}
+
+.col-event {
+    min-width: 200px;
+}
+
+.col-room {
+    width: 150px;
+}
+
+.col-floor {
+    width: 150px;
+}
+
+.col-pic {
+    width: 150px;
+}
+
+.col-info {
+    width: 100px;
+    text-align: center !important;
+}
+
+/* Table Cell Content */
+.agenda-table td.col-no {
+    text-align: center;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.cell-date {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.cell-time {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.cell-event {
+    font-weight: 500;
+    color: var(--text-primary);
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.cell-room {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.cell-floor {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.cell-pic {
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   STATUS BADGES
+   ============================================ */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.status-badge.ongoing {
+    background-color: var(--status-ongoing);
+    color: white;
+}
+
+.status-badge.upcoming {
+    background-color: var(--status-upcoming);
+    color: white;
+}
+
+.status-badge.pending {
+    background-color: var(--status-pending);
+    color: white;
+}
+
+.status-badge.completed {
+    background-color: var(--status-completed);
+    color: white;
+}
+
+/* ============================================
+   MOBILE CARDS VIEW
+   ============================================ */
+.agenda-cards {
+    display: none;
+    padding: 16px;
+    gap: 16px;
+}
+
+.agenda-card {
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    gap: 12px;
+}
+
+.card-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: var(--primary-color);
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.card-status {
+    flex-shrink: 0;
+}
+
+.card-event-name {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.card-row {
+    display: flex;
+    font-size: 13px;
+}
+
+.card-label {
+    width: 70px;
+    flex-shrink: 0;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.card-value {
+    flex: 1;
+    color: var(--text-primary);
+}
+
+.card-value.time-value {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+.hidden {
+    display: none !important;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+/* Tablet */
+@media (max-width: 1024px) {
+    .main-content {
+        padding: 16px;
+    }
+    
+    .page-header {
+        padding: 24px 16px;
+    }
+    
+    .page-title {
+        font-size: 24px;
+    }
+    
+    .page-subtitle {
+        font-size: 14px;
+    }
+    
+    .filter-section {
+        padding: 16px 20px;
+    }
+    
+    .filter-group {
+        min-width: 150px;
+    }
+    
+    .agenda-table th,
+    .agenda-table td {
+        padding: 12px 12px;
+    }
+    
+    .col-event {
+        min-width: 150px;
+    }
+}
+
+/* Mobile - Switch to Cards */
+@media (max-width: 768px) {
+    .main-content {
+        padding: 12px;
+    }
+    
+    .page-header {
+        padding: 20px 16px;
+        margin-bottom: 16px;
+    }
+    
+    .page-title {
+        font-size: 20px;
+    }
+    
+    .page-subtitle {
+        font-size: 13px;
+    }
+    
+    .filter-section {
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .filter-row {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .filter-group {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .filter-group.filter-actions {
+        width: 100%;
+    }
+    
+    .reset-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    /* Hide table, show cards */
+    .table-container {
+        display: none !important;
+    }
+    
+    .agenda-cards {
+        display: flex !important;
+        flex-direction: column;
+    }
+    
+    .agenda-card {
+        padding: 14px;
+    }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+    .main-content {
+        padding: 8px;
+    }
+    
+    .page-header {
+        padding: 16px 12px;
+        border-radius: var(--radius-md);
+    }
+    
+    .page-title {
+        font-size: 18px;
+    }
+    
+    .page-subtitle {
+        font-size: 12px;
+    }
+    
+    .agenda-loading,
+    .agenda-empty,
+    .agenda-error {
+        padding: 60px 16px;
+    }
+    
+    .empty-title,
+    .error-title {
+        font-size: 16px;
+    }
+    
+    .card-event-name {
+        font-size: 14px;
+    }
+    
+    .card-row {
+        font-size: 12px;
+    }
+    
+    .card-label {
+        width: 60px;
+    }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+@media print {
+    body {
+        background: white;
+    }
+    
+    .main-content {
+        padding: 0;
+        max-width: none;
+    }
+    
+    .page-header {
+        background: var(--primary-color) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        margin-bottom: 16px;
+    }
+    
+    .agenda-section {
+        box-shadow: none;
+        border: 1px solid var(--border-color);
+    }
+    
+    .agenda-table thead {
+        background: var(--primary-color) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .status-badge {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .agenda-cards {
+        display: none !important;
+    }
+    
+    .table-container {
+        display: block !important;
+    }
+}
