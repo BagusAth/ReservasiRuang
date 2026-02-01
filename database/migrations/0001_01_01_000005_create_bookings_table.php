@@ -27,6 +27,21 @@ return new class extends Migration
             $table->text('rejection_reason')->nullable();
             $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamp('approved_at')->nullable();
+            
+            // Field untuk menyimpan data jadwal lama sebelum diubah admin
+            $table->json('schedule_changed_data')->nullable();
+            
+            // Status konfirmasi user untuk perubahan jadwal
+            $table->enum('user_confirmation_status', ['Belum Dikonfirmasi', 'Disetujui User', 'Ditolak User'])
+                  ->nullable()
+                  ->comment('Status konfirmasi user terhadap perubahan jadwal oleh admin');
+            
+            // Timestamp konfirmasi user
+            $table->timestamp('user_confirmed_at')->nullable();
+            
+            // Flag untuk menandai apakah booking pernah diubah jadwalnya
+            $table->boolean('is_rescheduled')->default(false);
+            
             $table->timestamps();
         });
     }

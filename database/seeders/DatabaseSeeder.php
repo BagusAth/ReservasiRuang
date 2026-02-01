@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Booking;
 use App\Models\Notification;
+use App\Models\Unit;
 
 class DatabaseSeeder extends Seeder
 {
@@ -31,9 +32,11 @@ class DatabaseSeeder extends Seeder
     {
         $this->seedRoles();
         $this->seedUnits();
+        $this->seedUnitNeighbors();
         $this->seedBuildings();
         $this->seedRooms();
         $this->seedUsers();
+        $this->assignUnitToExistingUsers();
         $this->seedBookings();
         $this->seedNotifications();
     }
@@ -98,6 +101,68 @@ class DatabaseSeeder extends Seeder
                 'unit_name' => 'Unit Administrasi & Umum', //id : 4
                 'description' => 'Unit admsufrjn',
                 'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+    }
+
+    /**
+     * Seed unit neighbors
+     * Relasi: Unit yang bertetangga (many-to-many)
+     */
+    private function seedUnitNeighbors(): void
+    {
+        DB::table('unit_neighbors')->insert([
+            // Unit Pusat (id: 1) bertetangga dengan Unit Engineering & Unit Operasi Sistem
+            [
+                'unit_id' => 1,
+                'neighbor_unit_id' => 2,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'unit_id' => 2,
+                'neighbor_unit_id' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Unit Engineering (id: 2) bertetangga dengan Unit Pusat & Unit Operasi Sistem
+            [
+                'unit_id' => 2,
+                'neighbor_unit_id' => 3,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'unit_id' => 2,
+                'neighbor_unit_id' => 4,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Unit Operasi Sistem (id: 3) bertetangga dengan Unit Pusat & Unit Engineering
+            [
+                'unit_id' => 4,
+                'neighbor_unit_id' => 2,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'unit_id' => 3,
+                'neighbor_unit_id' => 2,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Unit Administrasi & Umum (id: 4) bertetangga dengan Unit Pusat
+            [
+                'unit_id' => 4,
+                'neighbor_unit_id' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'unit_id' => 1,
+                'neighbor_unit_id' => 4,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -842,6 +907,46 @@ class DatabaseSeeder extends Seeder
             'building_id' => null,
             'is_active' => true,
         ]);
+    }
+
+    /**
+     * Assign unit_id to existing users who don't have one yet.
+     */
+    private function assignUnitToExistingUsers(): void
+    {
+        echo "🔄 Assigning units to existing users..." . PHP_EOL;
+        
+        // Get users without unit_id (only regular users, role_id = 4)
+        $usersWithoutUnit = User::where('role_id', 4)
+            ->whereNull('unit_id')
+            ->get();
+        
+        if ($usersWithoutUnit->isEmpty()) {
+            echo "✅ All regular users already have unit assignments!" . PHP_EOL;
+            return;
+        }
+        
+        $unitPusat = Unit::where('unit_name', 'Unit Pusat')->first();
+        $unitEngineering = Unit::where('unit_name', 'Unit Engineering')->first();
+        $unitOperasiSistem = Unit::where('unit_name', 'Unit Operasi Sistem')->first();
+        $unitAdministrasi = Unit::where('unit_name', 'Unit Administrasi & Umum')->first();
+        
+        // Assign units to users
+        $units = [$unitPusat, $unitEngineering, $unitOperasiSistem, $unitAdministrasi];
+        $index = 0;
+        
+        foreach ($usersWithoutUnit as $user) {
+            $assignedUnit = $units[$index % count($units)];
+            
+            $user->unit_id = $assignedUnit->id;
+            $user->save();
+            
+            echo "✅ Assigned '{$assignedUnit->unit_name}' to user: {$user->name} ({$user->email})" . PHP_EOL;
+            
+            $index++;
+        }
+        
+        echo PHP_EOL . "✅ Unit assignment completed!" . PHP_EOL;
     }
 
     /**
