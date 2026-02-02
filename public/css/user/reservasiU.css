@@ -399,6 +399,40 @@ body {
 	75% { transform: translateX(5px); }
 }
 
+/* Time Validation Warning */
+.time-validation-warning {
+	animation: fadeInSlide 0.3s ease;
+}
+
+@keyframes fadeInSlide {
+	from {
+		opacity: 0;
+		transform: translateY(-5px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Disabled Time Input Styling */
+.form-input[type="time"]:disabled,
+.form-input[type="date"]:disabled {
+	background-color: #f9fafb;
+	color: #9ca3af;
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+/* Enhanced Time Input with Validation State */
+.form-input[type="time"].border-red-500::-webkit-calendar-picker-indicator {
+	filter: brightness(0) saturate(100%) invert(33%) sepia(88%) saturate(5816%) hue-rotate(350deg) brightness(95%) contrast(95%);
+}
+
+.form-input[type="date"].border-red-500::-webkit-calendar-picker-indicator {
+	filter: brightness(0) saturate(100%) invert(33%) sepia(88%) saturate(5816%) hue-rotate(350deg) brightness(95%) contrast(95%);
+}
+
 /* ============================================
    Dropdown Styles
    ============================================ */

@@ -129,6 +129,12 @@ function bindUI() {
 	// Dependent selects
 	document.getElementById('unitId')?.addEventListener('change', onUnitChange);
 	document.getElementById('buildingId')?.addEventListener('change', onBuildingChange);
+	
+	// Time validation listeners
+	document.getElementById('startDate')?.addEventListener('change', validateTimeInputs);
+	document.getElementById('endDate')?.addEventListener('change', validateTimeInputs);
+	document.getElementById('startTime')?.addEventListener('change', validateTimeInputs);
+	document.getElementById('endTime')?.addEventListener('change', validateTimeInputs);
 }
 
 /* ============================================
@@ -411,6 +417,9 @@ function openModal(mode, data=null) {
 	// Set minimum date to today (prevent back dating)
 	setMinimumDateToday();
 	
+	// Initialize time validation
+	validateTimeInputs();
+	
 	document.getElementById('bookingModal').classList.remove('hidden');
 	document.getElementById('bookingModal').classList.add('flex');
 }
@@ -602,13 +611,113 @@ async function submitForm(e) {
 	const picPhone = document.getElementById('picPhone').value.trim();
 	const startDate = document.getElementById('startDate').value;
 	const endDate = document.getElementById('endDate').value;
+	const startTime = document.getElementById('startTime').value;
+	const endTime = document.getElementById('endTime').value;
 	
 	// Validate form (including back date validation)
 	const validationErrors = validateForm(picName, picPhone, startDate, endDate);
 	
+	// Check for time-related errors that need custom alert
+	const timeError = validationErrors.find(err => err.field === 'endTime' && err.message.includes('jam selesai harus lebih besar'));
+	
+	if (timeError) {
+		// Remove time error from list and handle with custom alert
+		const otherErrors = validationErrors.filter(err => err !== timeError);
+		
+		if (otherErrors.length > 0) {
+			displayValidationErrors(otherErrors);
+			return;
+		}
+		
+		// Show custom alert for time validation
+		if (startDate && endDate && startTime && endTime) {
+			const startDateObj = new Date(startDate);
+			const endDateObj = new Date(endDate);
+			const formattedStartDate = startDateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+			const formattedEndDate = endDateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+			
+			// Check if same day or multi-day
+			const isSameDay = startDateObj.getTime() === endDateObj.getTime();
+			
+			showValidationAlert(
+				'Waktu Peminjaman Tidak Valid',
+				`<div class="space-y-3">
+					<p class="text-gray-700">Peminjaman tidak dapat dilakukan dengan konfigurasi waktu berikut:</p>
+					<div class="bg-red-50 border border-red-200 rounded-lg p-3">
+						<div class="flex items-start gap-2 mb-2">
+							<svg class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+							</svg>
+							<div>
+								${isSameDay 
+									? `<p class="font-semibold text-red-800">Tanggal: ${formattedStartDate}</p>
+									   <p class="font-semibold text-red-800 mt-1">Jam: ${startTime} - ${endTime}</p>`
+									: `<p class="font-semibold text-red-800 mb-1">Mulai: ${formattedStartDate} pukul ${startTime}</p>
+									   <p class="font-semibold text-red-800">Selesai: ${formattedEndDate} pukul ${endTime}</p>`
+								}
+							</div>
+						</div>
+					</div>
+					<p class="text-gray-700"><strong>Alasan:</strong> Jam selesai <span class="text-red-600 font-semibold">(${endTime})</span> tidak boleh lebih awal atau sama dengan jam mulai <span class="text-primary font-semibold">(${startTime})</span>.</p>
+					<p class="text-gray-700">${isSameDay 
+						? 'Untuk peminjaman di hari yang sama, pastikan jam selesai lebih besar dari jam mulai.'
+						: 'Untuk peminjaman multi-hari, pastikan jam selesai lebih besar dari jam mulai.'
+					}</p>
+					<div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+						<p class="text-sm text-blue-800"><strong>💡 Saran:</strong> Ubah jam selesai menjadi waktu yang lebih besar dari jam mulai, misalnya <strong>${startTime}</strong> atau lebih.</p>
+					</div>
+				</div>`
+			);
+		}
+		return;
+	}
+	
 	if (validationErrors.length > 0) {
 		displayValidationErrors(validationErrors);
 		return;
+	}
+	
+	// Additional strict validation for multi-day bookings (double check)
+	if (startDate && endDate && startTime && endTime) {
+		const startDateObj = new Date(startDate);
+		const endDateObj = new Date(endDate);
+		
+		if (startDateObj.getTime() < endDateObj.getTime()) {
+			const [startHour, startMinute] = startTime.split(':').map(Number);
+			const [endHour, endMinute] = endTime.split(':').map(Number);
+			const startTimeInMinutes = startHour * 60 + startMinute;
+			const endTimeInMinutes = endHour * 60 + endMinute;
+			
+			// TIDAK BOLEH: jam selesai lebih awal dari jam mulai pada multi-day booking
+			if (endTimeInMinutes <= startTimeInMinutes) {
+				const formattedStartDate = new Date(startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+				const formattedEndDate = new Date(endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+				
+				showValidationAlert(
+					'Waktu Peminjaman Tidak Valid',
+					`<div class="space-y-3">
+						<p class="text-gray-700">Peminjaman tidak dapat dilakukan dengan konfigurasi waktu berikut:</p>
+						<div class="bg-red-50 border border-red-200 rounded-lg p-3">
+							<div class="flex items-start gap-2 mb-2">
+								<svg class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+								</svg>
+								<div>
+									<p class="font-semibold text-red-800 mb-1">Mulai: ${formattedStartDate} pukul ${startTime}</p>
+									<p class="font-semibold text-red-800">Selesai: ${formattedEndDate} pukul ${endTime}</p>
+								</div>
+							</div>
+						</div>
+						<p class="text-gray-700"><strong>Alasan:</strong> Jam selesai <span class="text-red-600 font-semibold">(${endTime})</span> tidak boleh lebih awal atau sama dengan jam mulai <span class="text-primary font-semibold">(${startTime})</span>.</p>
+						<p class="text-gray-700">Untuk peminjaman multi-hari, pastikan jam selesai lebih besar dari jam mulai.</p>
+						<div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+							<p class="text-sm text-blue-800"><strong>💡 Saran:</strong> Ubah jam selesai menjadi waktu yang lebih besar dari jam mulai, misalnya <strong>${startTime}</strong> atau lebih.</p>
+						</div>
+					</div>`
+				);
+				return;
+			}
+		}
 	}
 	
 	// Disable button and show loading state
@@ -697,6 +806,97 @@ function validateForm(picName, picPhone, startDate, endDate) {
 		}
 	}
 	
+	// Validate time logic
+	const startTime = document.getElementById('startTime')?.value;
+	const endTime = document.getElementById('endTime')?.value;
+	
+	if (startDate && startTime) {
+		const startDateObj = new Date(startDate);
+		startDateObj.setHours(0, 0, 0, 0);
+		const todayDate = new Date();
+		todayDate.setHours(0, 0, 0, 0);
+		
+		// If booking date is today, check if start time is not in the past
+		if (startDateObj.getTime() === todayDate.getTime()) {
+			const now = new Date();
+			const currentHour = now.getHours();
+			const currentMinute = now.getMinutes();
+			const [startHour, startMinute] = startTime.split(':').map(Number);
+			
+			// Compare times
+			const currentTimeInMinutes = currentHour * 60 + currentMinute;
+			const startTimeInMinutes = startHour * 60 + startMinute;
+			
+			if (startTimeInMinutes < currentTimeInMinutes) {
+				errors.push({
+					field: 'startTime',
+					message: `Jam mulai tidak boleh sebelum waktu saat ini (${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}). Silakan pilih jam yang lebih baru.`
+				});
+			}
+		}
+	}
+	
+	// Validate end time must be after start time
+	if (startTime && endTime && startDate && endDate) {
+		const startDateObj = new Date(startDate);
+		const endDateObj = new Date(endDate);
+		
+		// For same-day bookings, end time must be after start time
+		if (startDateObj.getTime() === endDateObj.getTime()) {
+			const [startHour, startMinute] = startTime.split(':').map(Number);
+			const [endHour, endMinute] = endTime.split(':').map(Number);
+			
+			const startTimeInMinutes = startHour * 60 + startMinute;
+			const endTimeInMinutes = endHour * 60 + endMinute;
+			
+			if (endTimeInMinutes <= startTimeInMinutes) {
+				errors.push({
+					field: 'endTime',
+					message: 'Jam selesai harus lebih besar dari jam mulai untuk peminjaman di hari yang sama.'
+				});
+			}
+		}
+		
+		// For multi-day bookings, validate the logical time range
+		if (startDateObj.getTime() < endDateObj.getTime()) {
+			// Create datetime objects to properly validate
+			const [startHour, startMinute] = startTime.split(':').map(Number);
+			const [endHour, endMinute] = endTime.split(':').map(Number);
+			
+			const startDateTime = new Date(startDate);
+			startDateTime.setHours(startHour, startMinute, 0, 0);
+			
+			const endDateTime = new Date(endDate);
+			endDateTime.setHours(endHour, endMinute, 0, 0);
+			
+			// End datetime must be after start datetime
+			if (endDateTime <= startDateTime) {
+				const formattedStartDate = new Date(startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+				const formattedEndDate = new Date(endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+				
+				errors.push({
+					field: 'endTime',
+					message: `Waktu selesai (${formattedEndDate} ${endTime}) harus setelah waktu mulai (${formattedStartDate} ${startTime}). Peminjaman tidak valid karena berakhir sebelum atau bersamaan dengan waktu mulai.`
+				});
+			}
+			
+			// Additional check: jam selesai tidak boleh lebih awal dari jam mulai pada multi-day
+			const startTimeInMinutes = startHour * 60 + startMinute;
+			const endTimeInMinutes = endHour * 60 + endMinute;
+			
+			if (endTimeInMinutes <= startTimeInMinutes) {
+				const formattedStartDate = new Date(startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+				const formattedEndDate = new Date(endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+				
+				errors.push({
+					field: 'endTime',
+					message: `Untuk peminjaman multi-hari, jam selesai (${endTime}) harus lebih besar dari jam mulai (${startTime}). Silakan ubah jam selesai.`
+				});
+			}
+		}
+	}
+	
+	
 	
 	// Validate PIC Name - only letters and spaces allowed
 	const nameRegex = /^[a-zA-Z\s]+$/;
@@ -759,15 +959,220 @@ function displayValidationErrors(errors) {
 function clearValidationErrors() {
 	// Remove all validation error messages
 	document.querySelectorAll('.validation-error').forEach(el => el.remove());
+	document.querySelectorAll('.time-validation-warning').forEach(el => el.remove());
 	
 	// Remove error classes from fields
-	const fields = ['picName', 'picPhone', 'startDate', 'endDate'];
+	const fields = ['picName', 'picPhone', 'startDate', 'endDate', 'startTime', 'endTime'];
 	fields.forEach(fieldId => {
 		const field = document.getElementById(fieldId);
 		if (field) {
 			field.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
 		}
 	});
+}
+
+/**
+ * Validate time inputs based on selected dates
+ * Disable invalid time options for today's date
+ */
+function validateTimeInputs() {
+	const startDateInput = document.getElementById('startDate');
+	const endDateInput = document.getElementById('endDate');
+	const startTimeInput = document.getElementById('startTime');
+	const endTimeInput = document.getElementById('endTime');
+	
+	if (!startDateInput || !startTimeInput || !endTimeInput) return;
+	
+	const startDate = startDateInput.value;
+	const endDate = endDateInput?.value;
+	const startTime = startTimeInput.value;
+	const endTime = endTimeInput.value;
+	
+	if (!startDate) return;
+	
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+	const startDateObj = new Date(startDate);
+	startDateObj.setHours(0, 0, 0, 0);
+	
+	// If start date is today, set minimum start time
+	if (startDateObj.getTime() === today.getTime()) {
+		const now = new Date();
+		const currentHour = now.getHours();
+		const currentMinute = now.getMinutes();
+		
+		// Round up to next 5 minutes
+		const roundedMinute = Math.ceil(currentMinute / 5) * 5;
+		let minHour = currentHour;
+		let minMinute = roundedMinute;
+		
+		if (minMinute >= 60) {
+			minHour++;
+			minMinute = 0;
+		}
+		
+		const minTime = `${String(minHour).padStart(2, '0')}:${String(minMinute).padStart(2, '0')}`;
+		startTimeInput.setAttribute('min', minTime);
+		
+		// Show warning if current value is less than minimum
+		if (startTime && startTime < minTime) {
+			startTimeInput.value = minTime;
+			showTimeValidationWarning('startTime', `Jam mulai disesuaikan ke waktu yang valid (minimal ${minTime})`);
+		}
+	} else {
+		// Remove minimum time restriction for future dates
+		startTimeInput.removeAttribute('min');
+	}
+	
+	// Validate end time based on start time for same-day bookings
+	if (startDate && endDate && startTime) {
+		const endDateObj = new Date(endDate);
+		endDateObj.setHours(0, 0, 0, 0);
+		
+		// If same day booking
+		if (startDateObj.getTime() === endDateObj.getTime()) {
+			const [startHour, startMinute] = startTime.split(':').map(Number);
+			
+			// Set minimum end time (for visual indicator only)
+			let minEndMinute = startMinute + 5;
+			let minEndHour = startHour;
+			
+			if (minEndMinute >= 60) {
+				minEndHour++;
+				minEndMinute -= 60;
+			}
+			
+			const minEndTime = `${String(minEndHour).padStart(2, '0')}:${String(minEndMinute).padStart(2, '0')}`;
+			endTimeInput.setAttribute('min', minEndTime);
+			
+			// DON'T auto-adjust - let validation happen on submit
+		} else if (startDateObj.getTime() < endDateObj.getTime()) {
+			// Multi-day booking - set minimum but DON'T auto-adjust
+			// Let user submit and show alert instead
+			const [startHour, startMinute] = startTime.split(':').map(Number);
+			
+			// Set minimum end time to be greater than start time (for visual indicator)
+			let minEndMinute = startMinute + 1;
+			let minEndHour = startHour;
+			
+			if (minEndMinute >= 60) {
+				minEndHour++;
+				minEndMinute = 0;
+			}
+			
+			const minEndTime = `${String(minEndHour).padStart(2, '0')}:${String(minEndMinute).padStart(2, '0')}`;
+			endTimeInput.setAttribute('min', minEndTime);
+			
+			// DON'T auto-adjust for multi-day - let validation happen on submit
+		} else {
+			endTimeInput.removeAttribute('min');
+		}
+	}
+}
+
+/**
+ * Show validation alert modal with custom styling
+ */
+function showValidationAlert(title, htmlContent) {
+	// Create modal if it doesn't exist
+	let modal = document.getElementById('validationAlertModal');
+	if (!modal) {
+		modal = document.createElement('div');
+		modal.id = 'validationAlertModal';
+		modal.className = 'fixed inset-0 z-[60] flex items-center justify-center p-4';
+		modal.innerHTML = `
+			<div class="absolute inset-0 bg-black/60 backdrop-blur-sm validation-modal-overlay"></div>
+			<div class="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden validation-modal-content">
+				<div class="flex items-center justify-between p-5 border-b bg-gradient-to-r from-red-50 to-orange-50">
+					<div class="flex items-center gap-3">
+						<div class="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/30">
+							<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+							</svg>
+						</div>
+						<h3 class="font-bold text-lg text-gray-900 validation-alert-title"></h3>
+					</div>
+					<button class="p-2 rounded-lg hover:bg-white/50 transition-colors validation-alert-close">
+						<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+						</svg>
+					</button>
+				</div>
+				<div class="p-6 validation-alert-content"></div>
+				<div class="p-5 border-t bg-gray-50 flex justify-end">
+					<button type="button" class="px-6 py-2.5 bg-primary text-white rounded-xl font-semibold hover:bg-primary-dark transition-all shadow-sm hover:shadow-md validation-alert-ok">
+						Mengerti
+					</button>
+				</div>
+			</div>
+		`;
+		document.body.appendChild(modal);
+		
+		// Add close handlers
+		const closeBtn = modal.querySelector('.validation-alert-close');
+		const okBtn = modal.querySelector('.validation-alert-ok');
+		const overlay = modal.querySelector('.validation-modal-overlay');
+		
+		const closeModal = () => {
+			modal.style.opacity = '0';
+			modal.querySelector('.validation-modal-content').style.transform = 'scale(0.95) translateY(-10px)';
+			setTimeout(() => {
+				modal.remove();
+			}, 200);
+		};
+		
+		closeBtn.addEventListener('click', closeModal);
+		okBtn.addEventListener('click', closeModal);
+		overlay.addEventListener('click', closeModal);
+	} else {
+		// Update existing modal
+		modal.querySelector('.validation-alert-title').textContent = title;
+		modal.querySelector('.validation-alert-content').innerHTML = htmlContent;
+	}
+	
+	// Show modal with animation
+	modal.style.opacity = '0';
+	modal.querySelector('.validation-modal-content').style.transform = 'scale(0.95) translateY(-10px)';
+	modal.querySelector('.validation-modal-content').style.transition = 'all 0.2s ease';
+	
+	setTimeout(() => {
+		modal.style.transition = 'opacity 0.2s ease';
+		modal.style.opacity = '1';
+		modal.querySelector('.validation-modal-content').style.transform = 'scale(1) translateY(0)';
+	}, 10);
+}
+
+/**
+ * Show time validation warning
+ */
+function showTimeValidationWarning(fieldId, message) {
+	const field = document.getElementById(fieldId);
+	if (!field) return;
+	
+	// Remove existing warning
+	const existingWarning = field.parentNode.querySelector('.time-validation-warning');
+	if (existingWarning) {
+		existingWarning.remove();
+	}
+	
+	// Create warning element
+	const warning = document.createElement('div');
+	warning.className = 'time-validation-warning text-xs text-amber-600 mt-1 flex items-center gap-1';
+	warning.innerHTML = `
+		<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+		</svg>
+		${escapeHtml(message)}
+	`;
+	
+	field.parentNode.appendChild(warning);
+	
+	// Auto-remove after 3 seconds
+	setTimeout(() => {
+		warning.style.opacity = '0';
+		warning.style.transition = 'opacity 0.3s';
+		setTimeout(() => warning.remove(), 300);
+	}, 3000);
 }
 
 // Add real-time validation on input
@@ -818,6 +1223,26 @@ function initFormValidation() {
 	if (endDateField) {
 		endDateField.addEventListener('change', function() {
 			// Clear error state
+			this.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+			const errorDiv = this.parentNode.querySelector('.validation-error');
+			if (errorDiv) errorDiv.remove();
+		});
+	}
+	
+	// Add time field validation
+	const startTimeField = document.getElementById('startTime');
+	const endTimeField = document.getElementById('endTime');
+	
+	if (startTimeField) {
+		startTimeField.addEventListener('change', function() {
+			this.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+			const errorDiv = this.parentNode.querySelector('.validation-error');
+			if (errorDiv) errorDiv.remove();
+		});
+	}
+	
+	if (endTimeField) {
+		endTimeField.addEventListener('change', function() {
 			this.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
 			const errorDiv = this.parentNode.querySelector('.validation-error');
 			if (errorDiv) errorDiv.remove();

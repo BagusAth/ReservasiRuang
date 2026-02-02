@@ -416,6 +416,32 @@ class UserController extends Controller{
                 'message' => 'Tanggal selesai tidak boleh tanggal yang sudah lewat. Silakan pilih tanggal hari ini atau yang akan datang.',
             ], 422);
         }
+        
+        // Validate start time for today's bookings
+        if ($startDate->isToday()) {
+            $now = \Carbon\Carbon::now();
+            $startDateTime = \Carbon\Carbon::parse($validated['start_date'] . ' ' . $validated['start_time']);
+            
+            if ($startDateTime->lt($now)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jam mulai tidak boleh sebelum waktu saat ini (' . $now->format('H:i') . '). Silakan pilih jam yang lebih baru.',
+                ], 422);
+            }
+        }
+        
+        // Validate end time for today's bookings
+        if ($endDate->isToday()) {
+            $now = \Carbon\Carbon::now();
+            $endDateTime = \Carbon\Carbon::parse($validated['end_date'] . ' ' . $validated['end_time']);
+            
+            if ($endDateTime->lt($now)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jam selesai tidak boleh sebelum waktu saat ini (' . $now->format('H:i') . '). Silakan pilih jam yang lebih baru.',
+                ], 422);
+            }
+        }
 
         // Validate unit access for regular users
         if ($user->isUser()) {
@@ -443,8 +469,35 @@ class UserController extends Controller{
         if ($validated['start_date'] === $validated['end_date'] && $validated['end_time'] <= $validated['start_time']) {
             return response()->json([
                 'success' => false,
-                'message' => 'Jam selesai harus setelah jam mulai untuk peminjaman 1 hari.'
+                'message' => 'Jam selesai harus lebih besar dari jam mulai untuk peminjaman di hari yang sama.'
             ], 422);
+        }
+        
+        // For multi-day bookings, validate that the time range is logical
+        if ($startDate->ne($endDate)) {
+            // For multi-day bookings spanning multiple dates
+            $startDateTime = \Carbon\Carbon::parse($validated['start_date'] . ' ' . $validated['start_time']);
+            $endDateTime = \Carbon\Carbon::parse($validated['end_date'] . ' ' . $validated['end_time']);
+            
+            if ($endDateTime->lte($startDateTime)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Waktu selesai harus setelah waktu mulai. Periksa kembali tanggal dan jam peminjaman Anda.'
+                ], 422);
+            }
+            
+            // Additional strict validation: For multi-day bookings, end time should be greater than start time
+            $startTimeParts = explode(':', $validated['start_time']);
+            $endTimeParts = explode(':', $validated['end_time']);
+            $startTimeMinutes = (int)$startTimeParts[0] * 60 + (int)$startTimeParts[1];
+            $endTimeMinutes = (int)$endTimeParts[0] * 60 + (int)$endTimeParts[1];
+            
+            if ($endTimeMinutes <= $startTimeMinutes) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Untuk peminjaman multi-hari, jam selesai (' . $validated['end_time'] . ') harus lebih besar dari jam mulai (' . $validated['start_time'] . '). Silakan ubah jam selesai.'
+                ], 422);
+            }
         }
 
         // Check for conflicting approved bookings
@@ -542,6 +595,32 @@ class UserController extends Controller{
                 'message' => 'Tanggal selesai tidak boleh tanggal yang sudah lewat. Silakan pilih tanggal hari ini atau yang akan datang.',
             ], 422);
         }
+        
+        // Validate start time for today's bookings
+        if ($startDate->isToday()) {
+            $now = \Carbon\Carbon::now();
+            $startDateTime = \Carbon\Carbon::parse($validated['start_date'] . ' ' . $validated['start_time']);
+            
+            if ($startDateTime->lt($now)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jam mulai tidak boleh sebelum waktu saat ini (' . $now->format('H:i') . '). Silakan pilih jam yang lebih baru.',
+                ], 422);
+            }
+        }
+        
+        // Validate end time for today's bookings
+        if ($endDate->isToday()) {
+            $now = \Carbon\Carbon::now();
+            $endDateTime = \Carbon\Carbon::parse($validated['end_date'] . ' ' . $validated['end_time']);
+            
+            if ($endDateTime->lt($now)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jam selesai tidak boleh sebelum waktu saat ini (' . $now->format('H:i') . '). Silakan pilih jam yang lebih baru.',
+                ], 422);
+            }
+        }
 
         // Validate unit access for regular users
         if ($user->isUser()) {
@@ -565,11 +644,39 @@ class UserController extends Controller{
             }
         }
 
+        // Waktu valid (end_time harus > start_time jika satu hari)
         if ($validated['start_date'] === $validated['end_date'] && $validated['end_time'] <= $validated['start_time']) {
             return response()->json([
                 'success' => false,
-                'message' => 'Jam selesai harus setelah jam mulai untuk peminjaman 1 hari.'
+                'message' => 'Jam selesai harus lebih besar dari jam mulai untuk peminjaman di hari yang sama.'
             ], 422);
+        }
+        
+        // For multi-day bookings, validate that the time range is logical
+        if ($startDate->ne($endDate)) {
+            // For multi-day bookings spanning multiple dates
+            $startDateTime = \Carbon\Carbon::parse($validated['start_date'] . ' ' . $validated['start_time']);
+            $endDateTime = \Carbon\Carbon::parse($validated['end_date'] . ' ' . $validated['end_time']);
+            
+            if ($endDateTime->lte($startDateTime)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Waktu selesai harus setelah waktu mulai. Periksa kembali tanggal dan jam peminjaman Anda.'
+                ], 422);
+            }
+            
+            // Additional strict validation: For multi-day bookings, end time should be greater than start time
+            $startTimeParts = explode(':', $validated['start_time']);
+            $endTimeParts = explode(':', $validated['end_time']);
+            $startTimeMinutes = (int)$startTimeParts[0] * 60 + (int)$startTimeParts[1];
+            $endTimeMinutes = (int)$endTimeParts[0] * 60 + (int)$endTimeParts[1];
+            
+            if ($endTimeMinutes <= $startTimeMinutes) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Untuk peminjaman multi-hari, jam selesai (' . $validated['end_time'] . ') harus lebih besar dari jam mulai (' . $validated['start_time'] . '). Silakan ubah jam selesai.'
+                ], 422);
+            }
         }
 
         // Check for conflicting approved bookings (exclude current booking)
