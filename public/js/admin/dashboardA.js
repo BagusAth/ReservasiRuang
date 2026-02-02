@@ -37,6 +37,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalBody = document.getElementById('modalBody');
     const closeModalBtn = document.getElementById('closeModal');
 
+    // Day Bookings Modal elements
+    const dayBookingsModal = document.getElementById('dayBookingsModal');
+    const dayBookingsBody = document.getElementById('dayBookingsBody');
+    const dayBookingsTitleText = document.getElementById('dayBookingsTitleText');
+    const closeDayBookingsModalBtn = document.getElementById('closeDayBookingsModal');
+
     // Sidebar elements
     const sidebar = document.getElementById('sidebar');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -264,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 html += `<div class="${classes}" data-date="${dateString}">`;
                 html += `<div class="day-number">${dayNumber}</div>`;
-                html += renderDayBookings(dayBookings);
+                html += renderDayBookings(dayBookings, dateString);
                 html += '</div>';
             }
         }
@@ -281,7 +287,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function renderDayBookings(dayBookings) {
+    function renderDayBookings(dayBookings, dateString) {
         if (dayBookings.length === 0) return '';
         
         let html = '<div class="booking-list">';
@@ -297,7 +303,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         if (dayBookings.length > maxVisible) {
-            html += `<div class="booking-more">+${dayBookings.length - maxVisible} lainnya</div>`;
+            html += `<div class="booking-more" data-date="${dateString}" title="Lihat ${dayBookings.length - maxVisible} reservasi lainnya">+${dayBookings.length - maxVisible} lainnya</div>`;
         }
         
         html += '</div>';
@@ -305,11 +311,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function attachBookingListeners() {
+        // Click handler for individual booking items
         document.querySelectorAll('.booking-item').forEach(item => {
             item.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const bookingId = this.dataset.id;
                 openBookingModal(bookingId);
+            });
+        });
+
+        // Click handler for "more bookings" indicator
+        document.querySelectorAll('.booking-more').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const dateString = this.dataset.date;
+                if (dateString) {
+                    showDayBookings(dateString);
+                }
             });
         });
     }
@@ -334,6 +352,154 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="loading-spinner"></div>
             </div>
         `;
+    }
+
+    // ============================================
+    // Day Bookings Modal Functions
+    // ============================================
+    const DAYS_ID = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+    /**
+     * Show modal with all bookings for a specific day
+     * @param {string} dateString - Date in YYYY-MM-DD format
+     */
+    function showDayBookings(dateString) {
+        if (!dayBookingsModal || !dayBookingsBody) return;
+
+        const dayBookings = getBookingsForDate(dateString);
+        if (dayBookings.length === 0) return;
+
+        // Format date for display
+        const date = new Date(dateString + 'T00:00:00');
+        const dayName = DAYS_ID[date.getDay()];
+        const day = date.getDate();
+        const formattedDate = `${dayName}, ${day} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+
+        // Update modal title
+        if (dayBookingsTitleText) {
+            dayBookingsTitleText.textContent = formattedDate;
+        }
+
+        // Sort bookings by start_time
+        const sortedBookings = [...dayBookings].sort((a, b) => {
+            return a.start_time.localeCompare(b.start_time);
+        });
+
+        // Build bookings list HTML
+        let html = `
+            <div class="day-bookings-info">
+                <span class="day-bookings-count">${sortedBookings.length} Reservasi</span>
+            </div>
+            <div class="day-bookings-list">
+        `;
+
+        sortedBookings.forEach(booking => {
+            const statusClass = getStatusClass(booking.status);
+            const badgeClass = getBadgeClass(booking.status);
+
+            html += `
+                <div class="day-booking-item ${statusClass}" data-booking-id="${booking.id}">
+                    <div class="day-booking-header">
+                        <h4 class="day-booking-title">${escapeHtml(booking.agenda_name)}</h4>
+                        <span class="day-booking-badge ${badgeClass}">${booking.status}</span>
+                    </div>
+                    <div class="day-booking-details">
+                        <div class="day-booking-detail">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <span>${booking.start_time} - ${booking.end_time}</span>
+                        </div>
+                        <div class="day-booking-detail">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            <span>${escapeHtml(booking.room?.name || booking.room_name || '-')} - ${escapeHtml(booking.building?.name || booking.building_name || '-')}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+
+        // Update modal body
+        dayBookingsBody.innerHTML = html;
+
+        // Add click handlers for booking items in day modal
+        const bookingItems = dayBookingsBody.querySelectorAll('.day-booking-item');
+        bookingItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const bookingId = this.dataset.bookingId;
+                if (bookingId) {
+                    closeDayBookingsModal();
+                    openBookingModal(bookingId);
+                }
+            });
+        });
+
+        // Open the modal
+        openDayBookingsModal();
+    }
+
+    /**
+     * Get CSS class for booking status
+     */
+    function getStatusClass(status) {
+        switch (status) {
+            case 'Disetujui': return 'status-approved';
+            case 'Ditolak': return 'status-rejected';
+            case 'Menunggu': return 'status-pending';
+            default: return 'status-pending';
+        }
+    }
+
+    /**
+     * Get badge CSS class for booking status
+     */
+    function getBadgeClass(status) {
+        switch (status) {
+            case 'Disetujui': return 'badge-approved';
+            case 'Ditolak': return 'badge-rejected';
+            case 'Menunggu': return 'badge-pending';
+            default: return 'badge-pending';
+        }
+    }
+
+    /**
+     * Escape HTML to prevent XSS
+     */
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    /**
+     * Open day bookings modal
+     */
+    function openDayBookingsModal() {
+        if (dayBookingsModal) {
+            dayBookingsModal.classList.remove('hidden');
+            setTimeout(() => dayBookingsModal.classList.add('active'), 10);
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    /**
+     * Close day bookings modal
+     */
+    function closeDayBookingsModal() {
+        if (dayBookingsModal) {
+            dayBookingsModal.classList.remove('active');
+            setTimeout(() => {
+                dayBookingsModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }, 300);
+        }
     }
 
     function renderBookingDetail(data) {
@@ -716,10 +882,24 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target === bookingModal) closeModal();
     });
 
-    // Escape key to close modal
+    // Day Bookings Modal event listeners
+    if (closeDayBookingsModalBtn) {
+        closeDayBookingsModalBtn.addEventListener('click', closeDayBookingsModal);
+    }
+    if (dayBookingsModal) {
+        dayBookingsModal.addEventListener('click', (e) => {
+            if (e.target === dayBookingsModal) closeDayBookingsModal();
+        });
+    }
+
+    // Escape key to close modals
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !bookingModal.classList.contains('hidden')) {
-            closeModal();
+        if (e.key === 'Escape') {
+            if (dayBookingsModal && !dayBookingsModal.classList.contains('hidden')) {
+                closeDayBookingsModal();
+            } else if (!bookingModal.classList.contains('hidden')) {
+                closeModal();
+            }
         }
     });
 
