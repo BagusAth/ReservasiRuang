@@ -114,7 +114,6 @@ class DatabaseSeeder extends Seeder
     private function seedUnitNeighbors(): void
     {
         DB::table('unit_neighbors')->insert([
-            // Unit Pusat (id: 1) bertetangga dengan Unit Engineering & Unit Operasi Sistem
             [
                 'unit_id' => 1,
                 'neighbor_unit_id' => 2,
@@ -127,7 +126,6 @@ class DatabaseSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            // Unit Engineering (id: 2) bertetangga dengan Unit Pusat & Unit Operasi Sistem
             [
                 'unit_id' => 2,
                 'neighbor_unit_id' => 3,
@@ -140,7 +138,6 @@ class DatabaseSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            // Unit Operasi Sistem (id: 3) bertetangga dengan Unit Pusat & Unit Engineering
             [
                 'unit_id' => 4,
                 'neighbor_unit_id' => 2,
@@ -153,7 +150,6 @@ class DatabaseSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            // Unit Administrasi & Umum (id: 4) bertetangga dengan Unit Pusat
             [
                 'unit_id' => 4,
                 'neighbor_unit_id' => 1,
@@ -1170,8 +1166,8 @@ class DatabaseSeeder extends Seeder
                         'type' => Notification::TYPE_NEW_BOOKING,
                         'title' => 'Reservasi Baru',
                         'message' => ($booking->user->name ?? 'User') . ' mengajukan reservasi ruangan ' . 
-                                   ($booking->room->room_name ?? 'Ruang Rapat') . ' di ' . 
-                                   ($booking->room->building->building_name ?? 'Gedung'),
+                                    ($booking->room->room_name ?? 'Ruang Rapat') . ' di ' . 
+                                    ($booking->room->building->building_name ?? 'Gedung'),
                         'data' => [
                             'booking_id' => $booking->id,
                             'user_name' => $booking->user->name ?? 'User',

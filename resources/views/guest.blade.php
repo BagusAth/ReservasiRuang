@@ -27,7 +27,16 @@
                 </a>
             </div>
             
-            <!-- Navigation Tabs -->
+            <!-- Search Bar -->
+            <div class="header-search">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" id="searchInput" placeholder="Cari reservasi..." class="search-input">
+            </div>
+
+            <!-- Today's Agenda -->
             <nav class="header-nav">
                 <a href="/agenda" class="nav-tab" target="_blank" title="Buka Agenda Hari Ini di tab baru">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -40,15 +49,6 @@
                     <span>Agenda Hari Ini</span>
                 </a>
             </nav>
-            
-            <!-- Search Bar -->
-            <div class="header-search">
-                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <path d="m21 21-4.35-4.35"></path>
-                </svg>
-                <input type="text" id="searchInput" placeholder="Cari reservasi..." class="search-input">
-            </div>
 
             <!-- Header Actions -->
             <div class="header-actions">

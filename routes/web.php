@@ -148,4 +148,3 @@ Route::middleware(['role:super_admin'])->group(function () {
         Route::delete('/notifications', [NotificationController::class, 'clearAll'])->name('notifications.clearAll');
     });
 });
-
