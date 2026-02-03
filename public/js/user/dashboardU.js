@@ -24,7 +24,7 @@ const MONTHS = [
 
 const DAYS = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
-const MAX_EVENTS_DISPLAY = 3;
+const MAX_EVENTS_DISPLAY = 2;
 
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
@@ -398,12 +398,24 @@ function renderBookingsOnCalendar(bookings) {
         if (!container) return;
 
         const dayBookings = bookingsByDate[dateStr];
+        
+        // Sort bookings by start_time for consistent display
+        dayBookings.sort((a, b) => {
+            return (a.start_time || '').localeCompare(b.start_time || '');
+        });
 
         dayBookings.slice(0, MAX_EVENTS_DISPLAY).forEach(booking => {
             const statusClass = getStatusClass(booking.status);
             const item = document.createElement('div');
             item.className = `booking-item ${statusClass}`;
-            item.textContent = booking.agenda_name;
+            
+            // Format start_time (remove seconds if present) - consistent with Admin Dashboard
+            const startTime = booking.start_time ? booking.start_time.substring(0, 5) : '';
+            
+            // Display format: "HH:MM Agenda Name" - matching Admin Dashboard
+            item.textContent = startTime ? `${startTime} ${booking.agenda_name}` : booking.agenda_name;
+            item.title = `${startTime ? startTime + ' - ' : ''}${booking.agenda_name}`;
+            
             item.setAttribute('data-booking-id', booking.id);
             item.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -414,8 +426,9 @@ function renderBookingsOnCalendar(bookings) {
 
         if (dayBookings.length > MAX_EVENTS_DISPLAY) {
             const more = document.createElement('div');
-            more.className = 'more-bookings';
+            more.className = 'booking-more';
             more.textContent = `+${dayBookings.length - MAX_EVENTS_DISPLAY} lainnya`;
+            more.title = `Lihat ${dayBookings.length - MAX_EVENTS_DISPLAY} reservasi lainnya`;
             more.addEventListener('click', (e) => {
                 e.stopPropagation();
                 showDayBookings(dateStr, dayBookings);
@@ -820,6 +833,10 @@ function showDayBookings(dateStr, bookings) {
         const statusClass = getStatusClass(booking.status);
         const statusBadgeClass = getBadgeClass(booking.status);
         
+        // Format time display (remove seconds if present) - consistent with Admin Dashboard
+        const startTime = booking.start_time ? booking.start_time.substring(0, 5) : '--:--';
+        const endTime = booking.end_time ? booking.end_time.substring(0, 5) : '--:--';
+        
         html += `
             <div class="day-booking-item ${statusClass}" onclick="showBookingDetail(${booking.id}); closeDayBookingsModal();">
                 <div class="day-booking-header">
@@ -832,7 +849,7 @@ function showDayBookings(dateStr, bookings) {
                             <circle cx="12" cy="12" r="10"></circle>
                             <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
-                        <span>${booking.start_time} - ${booking.end_time}</span>
+                        <span>${startTime} - ${endTime}</span>
                     </div>
                     <div class="day-booking-detail">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

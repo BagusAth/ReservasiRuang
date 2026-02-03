@@ -21,10 +21,7 @@ class UserController extends Controller{
         // Get user's booking statistics
         $stats = $this->getUserBookingStats($user->id);
         
-        // Get upcoming booking (next reservation)
-        $upcomingBooking = $this->getUpcomingBooking($user->id);
-        
-        return view('user.dashboardU', compact('user', 'stats', 'upcomingBooking'));
+        return view('user.dashboardU', compact('user', 'stats'));
     }
 
     /**
@@ -89,44 +86,6 @@ class UserController extends Controller{
             'pending' => $pendingBookings,
             'approved' => $approvedBookings,
             'today' => $todayBookings,
-        ];
-    }
-
-    /**
-     * Get the next upcoming booking for user.
-     */
-    private function getUpcomingBooking(int $userId): ?array
-    {
-        $now = Carbon::now();
-        
-        $booking = Booking::with(['room.building'])
-            ->where('user_id', $userId)
-            ->where('status', Booking::STATUS_APPROVED)
-            ->where(function ($query) use ($now) {
-                $query->where('start_date', '>', $now->toDateString())
-                    ->orWhere(function ($q) use ($now) {
-                        $q->where('start_date', '=', $now->toDateString())
-                            ->where('start_time', '>=', $now->format('H:i:s'));
-                    });
-            })
-            ->orderBy('start_date')
-            ->orderBy('start_time')
-            ->first();
-        
-        if (!$booking) {
-            return null;
-        }
-        
-        return [
-            'id' => $booking->id,
-            'agenda_name' => $booking->agenda_name,
-            'start_date' => $booking->start_date->format('Y-m-d'),
-            'end_date' => $booking->end_date->format('Y-m-d'),
-            'start_time' => substr($booking->start_time, 0, 5),
-            'end_time' => substr($booking->end_time, 0, 5),
-            'room_name' => $booking->room->room_name ?? '-',
-            'building_name' => $booking->room->building->building_name ?? '-',
-            'floor' => $booking->room->location ?? '-',
         ];
     }
 

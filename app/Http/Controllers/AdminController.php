@@ -26,10 +26,7 @@ class AdminController extends Controller
         // Get booking statistics based on admin scope
         $stats = $this->getAdminBookingStats($user);
         
-        // Get upcoming booking (next reservation in admin's scope)
-        $upcomingBooking = $this->getUpcomingBooking($user);
-        
-        return view('admin.dashboardA', compact('user', 'adminType', 'adminScope', 'stats', 'upcomingBooking'));
+        return view('admin.dashboardA', compact('user', 'adminType', 'adminScope', 'stats'));
     }
 
     /**
@@ -152,45 +149,6 @@ class AdminController extends Controller
         }
         
         return $query;
-    }
-
-    /**
-     * Get the next upcoming booking in admin's scope.
-     */
-    private function getUpcomingBooking($user): ?array
-    {
-        $now = Carbon::now();
-        
-        $query = $this->getAdminBookingsQuery($user);
-        
-        $booking = $query->with(['room.building'])
-            ->where('status', Booking::STATUS_APPROVED)
-            ->where(function ($q) use ($now) {
-                $q->where('start_date', '>', $now->toDateString())
-                    ->orWhere(function ($subQ) use ($now) {
-                        $subQ->where('start_date', '=', $now->toDateString())
-                            ->where('start_time', '>=', $now->format('H:i:s'));
-                    });
-            })
-            ->orderBy('start_date')
-            ->orderBy('start_time')
-            ->first();
-        
-        if (!$booking) {
-            return null;
-        }
-        
-        return [
-            'id' => $booking->id,
-            'agenda_name' => $booking->agenda_name,
-            'start_date' => $booking->start_date->format('Y-m-d'),
-            'end_date' => $booking->end_date->format('Y-m-d'),
-            'start_time' => substr($booking->start_time, 0, 5),
-            'end_time' => substr($booking->end_time, 0, 5),
-            'room_name' => $booking->room->room_name ?? '-',
-            'building_name' => $booking->room->building->building_name ?? '-',
-            'floor' => $booking->room->location ?? '-',
-        ];
     }
 
     /**

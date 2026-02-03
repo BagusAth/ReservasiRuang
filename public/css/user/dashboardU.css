@@ -200,6 +200,26 @@
     border-left-color: #ED1C24;
 }
 
+/* More indicator - Consistent with Admin Dashboard */
+.booking-more {
+    color: #00A2B9;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 8px;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+    position: relative;
+    z-index: 5;
+}
+
+.booking-more:hover {
+    color: #008799;
+    background-color: rgba(0, 162, 185, 0.1);
+}
+
+/* Legacy support for .more-bookings class */
 .more-bookings {
     font-size: 11px;
     font-weight: 600;
@@ -419,14 +439,43 @@
 /* ============================================
    Responsive Adjustments
    ============================================ */
+/* Tablet breakpoint - Consistent with Admin Dashboard */
+@media (max-width: 1023px) {
+    .calendar-day {
+        min-height: 70px;
+        padding: 6px;
+    }
+    
+    .booking-item {
+        font-size: 9px;
+        padding: 2px 4px;
+    }
+    
+    .booking-more {
+        font-size: 10px;
+        padding: 3px 6px;
+    }
+}
+
+/* Mobile breakpoint - Consistent with Admin Dashboard */
 @media (max-width: 640px) {
     .calendar-day {
-        min-height: 60px;
+        min-height: 50px;
         padding: 4px;
     }
     
     .calendar-day .day-number {
         font-size: 0.75rem;
+    }
+    
+    .booking-item {
+        font-size: 8px;
+        padding: 2px 3px;
+    }
+    
+    .booking-more {
+        font-size: 9px;
+        padding: 2px 4px;
     }
     
     .booking-indicator {
@@ -731,17 +780,168 @@
     }
 }
 
-/* More bookings button styling */
-.more-bookings {
-    font-size: 11px;
-    font-weight: 600;
-    color: #00A2B9;
-    padding: 4px 8px;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: background-color 0.15s ease;
+/* ============================================
+   Upcoming Reservation Card Styles
+   ============================================ */
+.upcoming-reservation-card {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
 }
 
-.more-bookings:hover {
-    background-color: rgba(0, 162, 185, 0.1);
+.upcoming-reservation-card:hover {
+    box-shadow: 0 4px 20px rgba(0, 162, 185, 0.12);
+}
+
+/* Status Badge */
+.upcoming-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.upcoming-status-badge.status-ongoing {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.upcoming-status-badge.status-upcoming {
+    background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* Status Dot with Pulse Animation */
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: white;
+}
+
+.status-dot.pulse {
+    animation: pulse-animation 2s infinite;
+}
+
+@keyframes pulse-animation {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(255, 255, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    }
+}
+
+/* Booking Content */
+.upcoming-booking-content {
+    position: relative;
+}
+
+.upcoming-booking-content h4 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Multi-day Badge */
+.multi-day-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%);
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Time Info Badge */
+.time-info-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-top: 4px;
+    width: 100%;
+}
+
+.time-info-badge.time-remaining {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.15) 100%);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.time-info-badge.time-upcoming {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(29, 78, 216, 0.15) 100%);
+    color: #1D4ED8;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.time-info-badge svg {
+    flex-shrink: 0;
+}
+
+/* Line clamp utility */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ============================================
+   Upcoming Reservation Responsive Styles
+   ============================================ */
+@media (max-width: 1023px) {
+    .upcoming-status-badge {
+        font-size: 10px;
+        padding: 3px 10px;
+    }
+    
+    .time-info-badge {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 639px) {
+    .upcoming-reservation-card .flex.items-center.justify-between {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .upcoming-status-badge {
+        font-size: 9px;
+        padding: 3px 8px;
+    }
+    
+    .multi-day-badge {
+        font-size: 9px;
+        padding: 2px 6px;
+    }
+    
+    .time-info-badge {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+    
+    .upcoming-booking-content h4 {
+        font-size: 16px;
+    }
 }
