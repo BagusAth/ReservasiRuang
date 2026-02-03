@@ -187,6 +187,37 @@
                             <!-- Time Filter Header -->
                             <div class="p-4 lg:p-6 border-b border-gray-100">
                                 <div class="flex flex-col gap-4">
+                                    <!-- Building & Room Filters Row -->
+                                    <div class="flex flex-col sm:flex-row gap-4">
+                                        <!-- Building Filter (Admin Unit Only) -->
+                                        @if($adminType === 'admin_unit')
+                                        <div class="flex-1">
+                                            <label for="buildingFilter" class="block text-xs font-medium text-gray-600 mb-2">Gedung</label>
+                                            <select id="buildingFilter" class="calendar-filter-select w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary transition-all">
+                                                <option value="">Semua Gedung</option>
+                                            </select>
+                                        </div>
+                                        @endif
+                                        
+                                        <!-- Room Filter -->
+                                        <div class="flex-1">
+                                            <label for="roomFilter" class="block text-xs font-medium text-gray-600 mb-2">Ruangan</label>
+                                            <select id="roomFilter" class="calendar-filter-select w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary transition-all">
+                                                <option value="">Semua Ruangan</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <!-- Clear Filters Button -->
+                                        <div class="flex items-end">
+                                            <button type="button" id="clearFilters" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-medium transition-all flex items-center gap-2">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                                </svg>
+                                                Reset Filter
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     <!-- Time Filters Row -->
                                     <div class="flex flex-col sm:flex-row gap-4">
                                         <!-- Start Time -->
@@ -229,37 +260,6 @@
                                                 </button>
                                             </div>
                                             <input type="time" id="endTime" class="sr-only" value="">
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Building & Room Filters Row -->
-                                    <div class="flex flex-col sm:flex-row gap-4">
-                                        <!-- Building Filter (Admin Unit Only) -->
-                                        @if($adminType === 'admin_unit')
-                                        <div class="flex-1">
-                                            <label for="buildingFilter" class="block text-xs font-medium text-gray-600 mb-2">Filter Gedung</label>
-                                            <select id="buildingFilter" class="calendar-filter-select w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary transition-all">
-                                                <option value="">Semua Gedung</option>
-                                            </select>
-                                        </div>
-                                        @endif
-                                        
-                                        <!-- Room Filter -->
-                                        <div class="flex-1">
-                                            <label for="roomFilter" class="block text-xs font-medium text-gray-600 mb-2">Filter Ruangan</label>
-                                            <select id="roomFilter" class="calendar-filter-select w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary transition-all">
-                                                <option value="">Semua Ruangan</option>
-                                            </select>
-                                        </div>
-                                        
-                                        <!-- Clear Filters Button -->
-                                        <div class="flex items-end">
-                                            <button type="button" id="clearFilters" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-medium transition-all flex items-center gap-2">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                                </svg>
-                                                Reset Filter
-                                            </button>
                                         </div>
                                     </div>
                                 </div>
