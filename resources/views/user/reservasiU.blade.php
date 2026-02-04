@@ -69,7 +69,7 @@
 
 		<!-- Main -->
 		<main class="flex-1 lg:ml-64">
-			<!-- Header (sama dengan dashboard) -->
+			<!-- Header -->
 			<header class="sticky top-0 z-30 bg-white shadow-sm border-b border-gray-100">
 				<div class="flex items-center justify-between px-4 lg:px-8 py-3">
 					<!-- Mobile Menu Button -->

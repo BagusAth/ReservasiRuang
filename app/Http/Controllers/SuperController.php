@@ -31,6 +31,16 @@ class SuperController extends Controller
     }
 
     /**
+     * Halaman Unit (list unit untuk mengatur unit tetangga).
+     */
+    public function unitpage()
+    {
+        $user = Auth::user();
+
+        return view('super.unitM', compact('user'));
+    }
+
+    /**
      * Get dashboard statistics for accounts.
      *
      * @return JsonResponse
@@ -740,4 +750,432 @@ class SuperController extends Controller
      * @param string $roleName
      * @return string
      */
-    private function getRoleDisplayName(string $roleName): string    {        $displayNames = [            'user' => 'User',            'admin_unit' => 'Admin Unit',            'admin_gedung' => 'Admin Gedung',            'super_admin' => 'Super Admin',        ];        return $displayNames[$roleName] ?? $roleName;    }    public function getUnitWithNeighbors(int $id): JsonResponse    {        try {            $unit = Unit::with('neighbors')->findOrFail($id);            return response()->json([                'success' => true,                'data' => [                    'id' => $unit->id,                    'name' => $unit->unit_name,                    'neighbors' => $unit->neighbors->map(function ($neighbor) {                        return [                            'id' => $neighbor->id,                            'name' => $neighbor->unit_name,                        ];                    })                ]            ]);        } catch (\Exception $e) {            return response()->json([                'success' => false,                'message' => 'Unit tidak ditemukan.'            ], 404);        }    }    public function updateUnitNeighbors(Request $request, int $id): JsonResponse    {        try {            $unit = Unit::findOrFail($id);            $validated = $request->validate([                'neighbor_ids' => 'array',                'neighbor_ids.*' => 'exists:units,id',            ]);            $neighborIds = $validated['neighbor_ids'] ?? [];            $neighborIds = array_filter($neighborIds, function ($neighborId) use ($id) {                return $neighborId != $id;            });            $unit->neighbors()->sync($neighborIds);            return response()->json([                'success' => true,                'message' => 'Unit tetangga berhasil diperbarui.',            ]);        } catch (\Exception $e) {            return response()->json([                'success' => false,                'message' => 'Gagal memperbarui unit tetangga: ' . $e->getMessage()            ], 500);        }    }}
+    private function getRoleDisplayName(string $roleName): string
+    {
+        $displayNames = [
+            'user' => 'User',
+            'admin_unit' => 'Admin Unit',
+            'admin_gedung' => 'Admin Gedung',
+            'super_admin' => 'Super Admin',
+        ];
+        return $displayNames[$roleName] ?? $roleName;
+    }
+
+    /* ============================================
+       Unit Management Methods
+       ============================================ */
+
+    /**
+     * Get list of all units with pagination and search.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function listUnits(Request $request): JsonResponse
+    {
+        try {
+            $query = Unit::query();
+
+            // Search filter
+            if ($request->has('search') && !empty($request->search)) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('unit_name', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%");
+                });
+            }
+
+            // Status filter
+            if ($request->has('status') && $request->status !== '') {
+                $isActive = $request->status === 'active';
+                $query->where('is_active', $isActive);
+            }
+
+            // Order by name
+            $query->orderBy('unit_name', 'asc');
+
+            // Pagination
+            $perPage = $request->get('per_page', 10);
+            $units = $query->paginate($perPage);
+
+            // Transform data with additional counts
+            $transformedData = $units->getCollection()->map(function ($unit) {
+                return [
+                    'id' => $unit->id,
+                    'unit_name' => $unit->unit_name,
+                    'description' => $unit->description,
+                    'is_active' => $unit->is_active,
+                    'buildings_count' => $unit->buildings()->count(),
+                    'users_count' => User::where('unit_id', $unit->id)->count(),
+                    'neighbors_count' => $unit->neighbors()->count(),
+                    'created_at' => $unit->created_at->format('d M Y'),
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $transformedData,
+                'pagination' => [
+                    'current_page' => $units->currentPage(),
+                    'last_page' => $units->lastPage(),
+                    'per_page' => $units->perPage(),
+                    'total' => $units->total(),
+                    'from' => $units->firstItem(),
+                    'to' => $units->lastItem(),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat data unit: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get unit detail by ID.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function getUnitDetail(int $id): JsonResponse
+    {
+        try {
+            $unit = Unit::with(['neighbors', 'buildings'])->findOrFail($id);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $unit->id,
+                    'unit_name' => $unit->unit_name,
+                    'description' => $unit->description,
+                    'is_active' => $unit->is_active,
+                    'buildings_count' => $unit->buildings->count(),
+                    'users_count' => User::where('unit_id', $unit->id)->count(),
+                    'neighbors' => $unit->neighbors->map(function ($neighbor) {
+                        return [
+                            'id' => $neighbor->id,
+                            'unit_name' => $neighbor->unit_name,
+                        ];
+                    }),
+                    'buildings' => $unit->buildings->map(function ($building) {
+                        return [
+                            'id' => $building->id,
+                            'building_name' => $building->building_name,
+                        ];
+                    }),
+                    'created_at' => $unit->created_at->format('d M Y H:i'),
+                    'updated_at' => $unit->updated_at->format('d M Y H:i'),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unit tidak ditemukan.'
+            ], 404);
+        }
+    }
+
+    /**
+     * Create a new unit.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function createUnit(Request $request): JsonResponse
+    {
+        $messages = [
+            'unit_name.required' => 'Nama unit wajib diisi.',
+            'unit_name.unique' => 'Nama unit sudah digunakan.',
+            'unit_name.max' => 'Nama unit maksimal 255 karakter.',
+            'description.max' => 'Deskripsi maksimal 1000 karakter.',
+        ];
+
+        $validator = Validator::make($request->all(), [
+            'unit_name' => 'required|string|max:255|unique:units,unit_name',
+            'description' => 'nullable|string|max:1000',
+            'is_active' => 'boolean',
+        ], $messages);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal.',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $unit = Unit::create([
+                'unit_name' => $request->unit_name,
+                'description' => $request->description,
+                'is_active' => $request->is_active ?? true,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Unit berhasil dibuat.',
+                'data' => [
+                    'id' => $unit->id,
+                    'unit_name' => $unit->unit_name,
+                    'description' => $unit->description,
+                    'is_active' => $unit->is_active,
+                ]
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membuat unit: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update an existing unit.
+     *
+     * @param Request $request
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function updateUnit(Request $request, int $id): JsonResponse
+    {
+        try {
+            $unit = Unit::findOrFail($id);
+
+            $messages = [
+                'unit_name.required' => 'Nama unit wajib diisi.',
+                'unit_name.unique' => 'Nama unit sudah digunakan.',
+                'unit_name.max' => 'Nama unit maksimal 255 karakter.',
+                'description.max' => 'Deskripsi maksimal 1000 karakter.',
+            ];
+
+            $validator = Validator::make($request->all(), [
+                'unit_name' => ['required', 'string', 'max:255', Rule::unique('units', 'unit_name')->ignore($id)],
+                'description' => 'nullable|string|max:1000',
+                'is_active' => 'boolean',
+            ], $messages);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal.',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $unit->update([
+                'unit_name' => $request->unit_name,
+                'description' => $request->description ?? $unit->description,
+                'is_active' => $request->has('is_active') ? $request->is_active : $unit->is_active,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Unit berhasil diperbarui.',
+                'data' => [
+                    'id' => $unit->id,
+                    'unit_name' => $unit->unit_name,
+                    'description' => $unit->description,
+                    'is_active' => $unit->is_active,
+                ]
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unit tidak ditemukan.'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui unit: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a unit.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function deleteUnit(int $id): JsonResponse
+    {
+        try {
+            $unit = Unit::findOrFail($id);
+
+            // Check if unit has buildings
+            if ($unit->buildings()->count() > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unit tidak dapat dihapus karena masih memiliki gedung terkait.'
+                ], 422);
+            }
+
+            // Check if unit has users
+            $usersCount = User::where('unit_id', $id)->count();
+            if ($usersCount > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unit tidak dapat dihapus karena masih memiliki pengguna terkait.'
+                ], 422);
+            }
+
+            // Remove all neighbor relationships
+            $unit->neighbors()->detach();
+            $unit->neighborOf()->detach();
+
+            // Delete the unit
+            $unit->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Unit berhasil dihapus.'
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unit tidak ditemukan.'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus unit: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Toggle unit active status.
+     *
+     * @param Request $request
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function toggleUnitStatus(Request $request, int $id): JsonResponse
+    {
+        try {
+            $unit = Unit::findOrFail($id);
+
+            $unit->is_active = !$unit->is_active;
+            $unit->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status unit berhasil diperbarui.',
+                'data' => [
+                    'id' => $unit->id,
+                    'is_active' => $unit->is_active,
+                    'status_text' => $unit->is_active ? 'Aktif' : 'Non-Aktif',
+                ]
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unit tidak ditemukan.'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengubah status unit: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get unit with its neighbors.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function getUnitWithNeighbors(int $id): JsonResponse
+    {
+        try {
+            $unit = Unit::with('neighbors')->findOrFail($id);
+
+            // Get all other units for selection
+            $allUnits = Unit::where('id', '!=', $id)
+                ->where('is_active', true)
+                ->orderBy('unit_name')
+                ->get(['id', 'unit_name']);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $unit->id,
+                    'unit_name' => $unit->unit_name,
+                    'neighbors' => $unit->neighbors->map(function ($neighbor) {
+                        return [
+                            'id' => $neighbor->id,
+                            'unit_name' => $neighbor->unit_name,
+                        ];
+                    }),
+                    'available_units' => $allUnits->map(function ($u) {
+                        return [
+                            'id' => $u->id,
+                            'unit_name' => $u->unit_name,
+                        ];
+                    }),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unit tidak ditemukan.'
+            ], 404);
+        }
+    }
+
+    /**
+     * Update unit neighbors with bidirectional sync.
+     *
+     * @param Request $request
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function updateUnitNeighbors(Request $request, int $id): JsonResponse
+    {
+        try {
+            $unit = Unit::findOrFail($id);
+
+            $validator = Validator::make($request->all(), [
+                'neighbor_ids' => 'array',
+                'neighbor_ids.*' => 'exists:units,id',
+            ], [
+                'neighbor_ids.array' => 'Data tetangga harus berupa array.',
+                'neighbor_ids.*.exists' => 'Unit tetangga tidak ditemukan.',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal.',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $neighborIds = $request->neighbor_ids ?? [];
+
+            // Use the bidirectional sync method from the model
+            $unit->syncNeighborsBidirectional($neighborIds);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Unit tetangga berhasil diperbarui.',
+                'data' => [
+                    'id' => $unit->id,
+                    'neighbors_count' => $unit->neighbors()->count(),
+                ]
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unit tidak ditemukan.'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui unit tetangga: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+}

@@ -148,10 +148,7 @@ function initLogoutModal() {
         }
     }
 
-    // Use event delegation on document to catch logout button clicks
-    // This works even if button is inside hidden dropdown
     document.addEventListener('click', function(e) {
-        // Check if clicked element is the logout button or inside it
         const logoutBtn = e.target.closest('[data-action="logout"]');
         if (logoutBtn) {
             e.preventDefault();
@@ -161,7 +158,6 @@ function initLogoutModal() {
         }
     });
 
-    // Also try direct binding (fallback)
     setTimeout(function() {
         const logoutBtn = document.querySelector('[data-action="logout"]');
         if (logoutBtn) {

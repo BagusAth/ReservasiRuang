@@ -125,4 +125,56 @@ class Unit extends Model
     {
         return $query->where('is_active', true);
     }
+
+    /**
+     * Sync neighbors bidirectionally.
+     * When unit A adds unit B as neighbor, unit B also gets unit A as neighbor.
+     * 
+     * @param array $neighborIds
+     * @return void
+     */
+    public function syncNeighborsBidirectional(array $neighborIds): void
+    {
+        // Filter out self-reference
+        $neighborIds = array_filter($neighborIds, fn($id) => $id != $this->id);
+        
+        // Get current neighbors before sync
+        $currentNeighborIds = $this->neighbors()->pluck('neighbor_unit_id')->toArray();
+        
+        // Sync the direct relationship
+        $this->neighbors()->sync($neighborIds);
+        
+        // Add reverse relationships for new neighbors
+        foreach ($neighborIds as $neighborId) {
+            $neighborUnit = self::find($neighborId);
+            if ($neighborUnit && !$neighborUnit->neighbors()->where('neighbor_unit_id', $this->id)->exists()) {
+                $neighborUnit->neighbors()->attach($this->id);
+            }
+        }
+        
+        // Remove reverse relationships for removed neighbors
+        $removedNeighborIds = array_diff($currentNeighborIds, $neighborIds);
+        foreach ($removedNeighborIds as $removedId) {
+            $removedUnit = self::find($removedId);
+            if ($removedUnit) {
+                $removedUnit->neighbors()->detach($this->id);
+            }
+        }
+    }
+
+    /**
+     * Get count of buildings in this unit.
+     */
+    public function getBuildingsCountAttribute(): int
+    {
+        return $this->buildings()->count();
+    }
+
+    /**
+     * Get count of users in this unit.
+     */
+    public function getUsersCountAttribute(): int
+    {
+        return User::where('unit_id', $this->id)->count();
+    }
 }

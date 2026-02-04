@@ -118,6 +118,9 @@ Route::middleware(['role:super_admin'])->group(function () {
     // Dashboard
     Route::get('/super/dashboard', [SuperController::class, 'dashboard'])->name('super.dashboard');
     
+    // Peminjaman Page
+    Route::get('/super/unit', [SuperController::class, 'unitpage'])->name('super.unit');
+    
     // API untuk Super Admin
     Route::prefix('api/super')->name('super.api.')->group(function () {
         // Statistics
@@ -137,6 +140,16 @@ Route::middleware(['role:super_admin'])->group(function () {
         Route::get('/roles', [SuperController::class, 'getRoles'])->name('roles');
         Route::get('/units', [SuperController::class, 'getUnits'])->name('units');
         Route::get('/buildings', [SuperController::class, 'getBuildings'])->name('buildings');
+        
+        // Unit Management (CRUD + Neighbors)
+        Route::get('/units/list', [SuperController::class, 'listUnits'])->name('units.list');
+        Route::get('/units/{id}', [SuperController::class, 'getUnitDetail'])->name('units.detail');
+        Route::post('/units', [SuperController::class, 'createUnit'])->name('units.create');
+        Route::put('/units/{id}', [SuperController::class, 'updateUnit'])->name('units.update');
+        Route::delete('/units/{id}', [SuperController::class, 'deleteUnit'])->name('units.delete');
+        Route::put('/units/{id}/toggle-status', [SuperController::class, 'toggleUnitStatus'])->name('units.toggleStatus');
+        Route::get('/units/{id}/neighbors', [SuperController::class, 'getUnitWithNeighbors'])->name('units.neighbors');
+        Route::put('/units/{id}/neighbors', [SuperController::class, 'updateUnitNeighbors'])->name('units.updateNeighbors');
         
         // Notification endpoints
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
