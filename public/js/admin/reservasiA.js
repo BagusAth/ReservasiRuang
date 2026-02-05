@@ -318,32 +318,18 @@ function getStatusBadge(status) {
 // ============================================
 function getActionButtons(booking) {
     const isPending = booking.status === 'Menunggu';
-    const canBeApproved = booking.can_be_approved !== false; // Default to true if not specified
     
     let buttons = '';
     
     // Approve/Reject buttons only for pending status
     if (isPending) {
-        // Check if booking can be approved
-        if (canBeApproved) {
-            buttons += `
-                <button type="button" class="action-btn approve" title="Setujui" onclick="openApproveModal(${booking.id})">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
-            `;
-        } else {
-            // Show disabled approve button with tooltip
-            const disabledReason = booking.cannot_approve_reason || 'Tidak dapat disetujui saat ini';
-            buttons += `
-                <button type="button" class="action-btn approve disabled" title="${escapeHtml(disabledReason)}" disabled>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.5">
-                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
-            `;
-        }
+        buttons += `
+            <button type="button" class="action-btn approve" title="Setujui" onclick="openApproveModal(${booking.id})">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        `;
         
         buttons += `
             <button type="button" class="action-btn reject" title="Tolak" onclick="openRejectModal(${booking.id})">
@@ -700,25 +686,19 @@ function renderDetailModal(data) {
             ${rejectionSection}
             
             ${data.is_rescheduled ? `
-                <div class="modal-info-item border-l-4 border-amber-400 bg-amber-50">
-                    <div class="icon-wrapper bg-amber-100">
-                        <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                <div class="modal-info-item border-l-4 border-blue-400 bg-blue-50">
+                    <div class="icon-wrapper bg-blue-100">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
                     <div class="content">
-                        <p class="label text-amber-700">Status Pemindahan Jadwal</p>
+                        <p class="label text-blue-700">Jadwal Telah Dipindahkan</p>
                         <p class="value">
-                            ${data.user_confirmation_status === 'Belum Dikonfirmasi' ? 
-                                '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Menunggu Konfirmasi User</span>' : 
-                                data.user_confirmation_status === 'Disetujui User' ? 
-                                '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Disetujui User</span>' :
-                                '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Ditolak User</span>'
-                            }
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Jadwal Diubah oleh Admin</span>
                         </p>
-                        ${data.user_confirmed_at ? `<p class="text-sm text-gray-500 mt-1">Dikonfirmasi pada: ${escapeHtml(data.user_confirmed_at)}</p>` : ''}
                         ${data.schedule_changed_data ? `
-                            <div class="mt-3 p-3 bg-white rounded-lg border border-amber-200">
+                            <div class="mt-3 p-3 bg-white rounded-lg border border-blue-200">
                                 <p class="text-xs font-semibold text-gray-700 mb-2">Jadwal Sebelumnya:</p>
                                 <div class="text-xs text-gray-600 space-y-1">
                                     <p>🏢 ${escapeHtml(data.schedule_changed_data.building || '-')}</p>
@@ -748,37 +728,15 @@ function renderDetailModal(data) {
         <!-- Action Buttons for Pending Status -->
         ${data.status === 'Menunggu' ? `
             <div class="mt-6 pt-6 border-t border-gray-200">
-                ${!data.can_be_approved && data.cannot_approve_reason ? `
-                    <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
-                        <div class="flex items-start gap-3">
-                            <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                            </svg>
-                            <div>
-                                <p class="text-sm font-semibold text-red-800 mb-1">Persetujuan Ditangguhkan</p>
-                                <p class="text-sm text-red-700">${escapeHtml(data.cannot_approve_reason)}</p>
-                            </div>
-                        </div>
-                    </div>
-                ` : ''}
                 <div class="flex flex-col gap-3">
                     <p class="text-sm font-semibold text-gray-700 mb-2">Tindakan terhadap reservasi ini:</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        ${data.can_be_approved !== false ? `
-                            <button type="button" onclick="handleApproveFromDetail(${data.id})" class="w-full px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                    <polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                                Setujui Reservasi
-                            </button>
-                        ` : `
-                            <button type="button" disabled class="w-full px-5 py-3 bg-gray-300 text-gray-500 rounded-xl font-medium cursor-not-allowed flex items-center justify-center gap-2 opacity-60">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                    <polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                                Setujui Reservasi (Dinonaktifkan)
-                            </button>
-                        `}
+                        <button type="button" onclick="handleApproveFromDetail(${data.id})" class="w-full px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Setujui Reservasi
+                        </button>
                         <button type="button" onclick="handleRejectFromDetail(${data.id})" class="w-full px-5 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <line x1="18" y1="6" x2="6" y2="18" stroke-linecap="round" stroke-linejoin="round"/>

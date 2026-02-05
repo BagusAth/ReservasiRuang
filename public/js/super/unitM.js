@@ -320,7 +320,7 @@ function renderUnitsTable(units, pagination) {
                     </div>
                     <div>
                         <p class="font-medium text-gray-900">${escapeHtml(unit.unit_name)}</p>
-                        <p class="text-xs text-gray-500">${unit.buildings_count} gedung · ${unit.users_count} pengguna</p>
+                        <p class="text-xs text-gray-500">${unit.buildings_count} gedung</p>
                     </div>
                 </div>
             </td>

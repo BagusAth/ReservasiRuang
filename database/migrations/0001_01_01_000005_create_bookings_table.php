@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('pic_name');
             $table->string('pic_phone');
             $table->text('agenda_detail');
-            $table->enum('status', ['Menunggu', 'Disetujui', 'Ditolak'])->default('Menunggu');
+            $table->enum('status', ['Menunggu', 'Disetujui', 'Ditolak', 'Kadaluarsa'])->default('Menunggu');
             $table->text('rejection_reason')->nullable();
             $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamp('approved_at')->nullable();

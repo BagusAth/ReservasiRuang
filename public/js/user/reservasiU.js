@@ -163,55 +163,19 @@ function renderTable() {
 	rows.forEach(r => {
 		const tr = document.createElement('tr');
 		
-		// Debug: Log booking data to check confirmation status
-		if (r.is_rescheduled) {
-			console.log('Rescheduled booking found:', {
-				id: r.id,
-				is_rescheduled: r.is_rescheduled,
-				user_confirmation_status: r.user_confirmation_status,
-				should_show_badge: r.is_rescheduled && r.user_confirmation_status === 'Belum Dikonfirmasi'
-			});
-		}
-		
 		// Build status badge with special handling for rescheduled bookings
 		let statusHtml = statusBadge(r.status);
 		
-		// Add confirmation badge if booking needs user confirmation
-		if (r.is_rescheduled && r.user_confirmation_status === 'Belum Dikonfirmasi') {
+		// Show rescheduled indicator if booking was rescheduled
+		if (r.is_rescheduled) {
 			statusHtml = `
 				<div class="flex flex-col items-center gap-2">
 					${statusBadge(r.status)}
-					<button type="button" class="confirm-change-btn inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-orange-500 to-amber-600 text-white text-xs font-semibold rounded-full hover:from-orange-600 hover:to-amber-700 transition-all shadow-md shadow-orange-500/25 animate-pulse" onclick="showScheduleConfirmation(${r.id})">
-						<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full border border-blue-200">
+						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
 						</svg>
-						Konfirmasi Perubahan
-					</button>
-				</div>
-			`;
-		} else if (r.is_rescheduled && r.user_confirmation_status === 'Disetujui User') {
-			// Show badge for approved schedule change
-			statusHtml = `
-				<div class="flex flex-col items-center gap-2">
-					${statusBadge(r.status)}
-					<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full border border-green-200">
-						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-						</svg>
-						Perubahan Disetujui
-					</span>
-				</div>
-			`;
-		} else if (r.is_rescheduled && r.user_confirmation_status === 'Ditolak User') {
-			// Show badge for rejected schedule change
-			statusHtml = `
-				<div class="flex flex-col items-center gap-2">
-					${statusBadge(r.status)}
-					<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full border border-red-200">
-						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-						</svg>
-						Perubahan Ditolak
+						Jadwal Diubah
 					</span>
 				</div>
 			`;
@@ -331,24 +295,7 @@ function statusBadge(status) {
 }
 
 /**
- * Show schedule confirmation modal
- * @param {number} bookingId - The booking ID requiring confirmation
- */
-async function showScheduleConfirmation(bookingId) {
-	try {
-		const data = await window.ScheduleConfirmation.fetchScheduleChangeDetails(bookingId);
-		window.ScheduleConfirmation.openModal(bookingId, data, (action, result) => {
-			// Callback after confirmation
-			console.log('Schedule confirmation:', action, result);
-		});
-	} catch (error) {
-		console.error('Failed to fetch schedule change details:', error);
-		showNotification('Gagal memuat detail perubahan jadwal', 'error');
-	}
-}
-
-/**
- * Show notification (integrated with schedule-confirmation.js)
+ * Show notification toast
  * @param {string} message - Notification message
  * @param {string} type - Notification type
  */
@@ -395,7 +342,7 @@ function showNotification(message, type = 'info') {
 	}, 5000);
 }
 
-// Expose loadTableData globally for schedule-confirmation.js
+// Expose loadTableData globally
 window.loadTableData = function() {
 	tableState.load();
 };

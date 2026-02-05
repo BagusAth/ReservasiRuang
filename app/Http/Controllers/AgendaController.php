@@ -117,7 +117,6 @@ class AgendaController extends Controller
 
         // Query bookings untuk hari ini
         // A booking appears today if: booking.start_date <= today AND booking.end_date >= today
-        // Hanya tampilkan reservasi yang sudah Disetujui
         $query = Booking::with(['room.building.unit', 'user'])
             ->where('status', 'Disetujui')
             ->where('start_date', '<=', $today)

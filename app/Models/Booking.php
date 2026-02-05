@@ -25,8 +25,6 @@ class Booking extends Model
         'approved_by',
         'approved_at',
         'schedule_changed_data',
-        'user_confirmation_status',
-        'user_confirmed_at',
         'is_rescheduled',
     ];
 
@@ -35,7 +33,6 @@ class Booking extends Model
         'end_date' => 'date',
         'approved_at' => 'datetime',
         'schedule_changed_data' => 'array',
-        'user_confirmed_at' => 'datetime',
         'is_rescheduled' => 'boolean',
     ];
 
@@ -46,12 +43,7 @@ class Booking extends Model
     const STATUS_APPROVED = 'Disetujui';
     const STATUS_REJECTED = 'Ditolak';
     
-    /**
-     * User confirmation status constants
-     */
-    const CONFIRMATION_PENDING = 'Belum Dikonfirmasi';
-    const CONFIRMATION_APPROVED = 'Disetujui User';
-    const CONFIRMATION_REJECTED = 'Ditolak User';
+
 
     /**
      * Get the user who made this booking.
@@ -121,11 +113,6 @@ class Booking extends Model
      */
     public function approve(User $approver): bool
     {
-        // If booking has been rescheduled, check user confirmation status
-        if ($this->is_rescheduled && $this->user_confirmation_status !== self::CONFIRMATION_APPROVED) {
-            return false;
-        }
-        
         return $this->update([
             'status' => self::STATUS_APPROVED,
             'approved_by' => $approver->id,
@@ -338,116 +325,14 @@ class Booking extends Model
     }
     
     /**
-     * Check if booking needs user confirmation for schedule changes.
-     */
-    public function needsUserConfirmation(): bool
-    {
-        return $this->is_rescheduled && 
-               $this->user_confirmation_status === self::CONFIRMATION_PENDING;
-    }
-    
-    /**
-     * Check if user has confirmed the schedule change.
-     */
-    public function isConfirmedByUser(): bool
-    {
-        return $this->user_confirmation_status === self::CONFIRMATION_APPROVED;
-    }
-    
-    /**
-     * Check if user has rejected the schedule change.
-     */
-    public function isRejectedByUser(): bool
-    {
-        return $this->user_confirmation_status === self::CONFIRMATION_REJECTED;
-    }
-    
-    /**
-     * User approves the schedule change.
-     */
-    public function approveScheduleChange(): bool
-    {
-        if (!$this->needsUserConfirmation()) {
-            return false;
-        }
-        
-        return $this->update([
-            'user_confirmation_status' => self::CONFIRMATION_APPROVED,
-            'user_confirmed_at' => now(),
-        ]);
-    }
-    
-    /**
-     * User rejects the schedule change.
-     */
-    public function rejectScheduleChange(): bool
-    {
-        if (!$this->needsUserConfirmation()) {
-            return false;
-        }
-        
-        return $this->update([
-            'user_confirmation_status' => self::CONFIRMATION_REJECTED,
-            'user_confirmed_at' => now(),
-        ]);
-    }
-    
-    /**
      * Mark booking as rescheduled and store old data.
+     * Admin can reschedule directly without user confirmation.
      */
     public function markAsRescheduled(array $oldScheduleData): bool
     {
         return $this->update([
             'is_rescheduled' => true,
-            'user_confirmation_status' => self::CONFIRMATION_PENDING,
             'schedule_changed_data' => $oldScheduleData,
-            'user_confirmed_at' => null,
         ]);
-    }
-    
-    /**
-     * Scope for bookings needing user confirmation.
-     */
-    public function scopeNeedsConfirmation($query)
-    {
-        return $query->where('is_rescheduled', true)
-                     ->where('user_confirmation_status', self::CONFIRMATION_PENDING);
-    }
-    
-    /**
-     * Check if admin can approve this booking.
-     * Admin cannot approve if:
-     * - Booking has been rescheduled AND user has not confirmed yet
-     * - Booking has been rescheduled AND user has rejected the change
-     */
-    public function canBeApprovedByAdmin(): bool
-    {
-        // If booking is not rescheduled, admin can approve
-        if (!$this->is_rescheduled) {
-            return true;
-        }
-        
-        // If rescheduled, admin can only approve if user has confirmed
-        return $this->user_confirmation_status === self::CONFIRMATION_APPROVED;
-    }
-    
-    /**
-     * Get reason why booking cannot be approved by admin.
-     */
-    public function getCannotApproveReason(): ?string
-    {
-        if (!$this->is_rescheduled) {
-            return null;
-        }
-        
-        if ($this->user_confirmation_status === self::CONFIRMATION_PENDING) {
-            return 'Menunggu konfirmasi user untuk perubahan jadwal';
-        }
-        
-        if ($this->user_confirmation_status === self::CONFIRMATION_REJECTED) {
-            return 'User menolak perubahan jadwal yang diajukan';
-        }
-        
-        return null;
     }
 }

@@ -330,11 +330,7 @@ class AdminController extends Controller
                 'created_at' => $booking->created_at->translatedFormat('d F Y, H:i'),
                 // Reschedule information
                 'is_rescheduled' => $booking->is_rescheduled,
-                'user_confirmation_status' => $booking->user_confirmation_status,
                 'schedule_changed_data' => $booking->schedule_changed_data,
-                'user_confirmed_at' => $booking->user_confirmed_at?->translatedFormat('d F Y, H:i'),
-                'can_be_approved' => $booking->canBeApprovedByAdmin(),
-                'cannot_approve_reason' => $booking->getCannotApproveReason(),
             ]
         ]);
     }
@@ -374,8 +370,8 @@ class AdminController extends Controller
             });
         }
 
-        // Order by newest reservation first (created_at desc)
-        $query->orderBy('created_at', 'desc');
+        // Order by oldest reservation first (created_at ascending)
+        $query->orderBy('created_at', 'asc');
 
         // Paginate
         $bookings = $query->paginate($perPage);
@@ -417,9 +413,6 @@ class AdminController extends Controller
                 ],
                 // Reschedule information
                 'is_rescheduled' => $booking->is_rescheduled,
-                'user_confirmation_status' => $booking->user_confirmation_status,
-                'can_be_approved' => $booking->canBeApprovedByAdmin(),
-                'cannot_approve_reason' => $booking->getCannotApproveReason(),
             ];
         });
 
@@ -545,16 +538,8 @@ class AdminController extends Controller
         $newStatus = $request->status;
         $rejectionReason = $request->rejection_reason;
 
-        // If changing to approved, check for conflicts and user confirmation
+        // If changing to approved, check for conflicts
         if ($newStatus === Booking::STATUS_APPROVED) {
-            // Check if admin can approve (validate user confirmation for rescheduled bookings)
-            if (!$booking->canBeApprovedByAdmin()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => $booking->getCannotApproveReason()
-                ], 422);
-            }
-            
             $conflict = Booking::findConflict(
                 $booking->room_id,
                 $booking->start_date->format('Y-m-d'),
@@ -635,14 +620,6 @@ class AdminController extends Controller
                 'message' => 'Reservasi tidak ditemukan atau tidak dalam cakupan Anda'
             ], 404);
         }
-        
-        // Check if admin can approve this booking (validate user confirmation for rescheduled bookings)
-        if (!$booking->canBeApprovedByAdmin()) {
-            return response()->json([
-                'success' => false,
-                'message' => $booking->getCannotApproveReason()
-            ], 422);
-        }
 
         // Check for conflicts with other approved bookings
         $conflict = Booking::findConflict(
@@ -667,7 +644,7 @@ class AdminController extends Controller
         if (!$success) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menyetujui reservasi. Pastikan user telah menyetujui perubahan jadwal.'
+                'message' => 'Gagal menyetujui reservasi.'
             ], 422);
         }
 
@@ -922,12 +899,11 @@ class AdminController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Reservasi berhasil dijadwalkan ulang. Notifikasi telah dikirim ke pengguna dan menunggu konfirmasi.',
+            'message' => 'Reservasi berhasil dipindahkan. Notifikasi telah dikirim ke pengguna.',
             'data' => [
                 'booking_id' => $booking->id,
                 'old_details' => $oldDetails,
                 'new_details' => $newDetails,
-                'requires_confirmation' => true,
             ]
         ]);
     }

@@ -35,9 +35,7 @@ class Notification extends Model
     const TYPE_BOOKING_CANCELLED = 'booking_cancelled';
     const TYPE_BOOKING_UPDATED = 'booking_updated';
     const TYPE_BOOKING_SUBMITTED = 'booking_submitted';
-    const TYPE_BOOKING_RESCHEDULED = 'booking_rescheduled';
-    const TYPE_SCHEDULE_CHANGE_APPROVED = 'schedule_change_approved';
-    const TYPE_SCHEDULE_CHANGE_REJECTED = 'schedule_change_rejected'; 
+    const TYPE_BOOKING_RESCHEDULED = 'booking_rescheduled'; 
 
     /**
      * Get the user that owns the notification.
@@ -117,8 +115,6 @@ class Notification extends Model
             self::TYPE_BOOKING_UPDATED => 'edit',
             self::TYPE_BOOKING_SUBMITTED => 'check-circle',
             self::TYPE_BOOKING_RESCHEDULED => 'clock',
-            self::TYPE_SCHEDULE_CHANGE_APPROVED => 'check-circle',
-            self::TYPE_SCHEDULE_CHANGE_REJECTED => 'x-circle',
             default => 'bell',
         };
     }
@@ -136,8 +132,6 @@ class Notification extends Model
             self::TYPE_BOOKING_CANCELLED => 'warning',
             self::TYPE_BOOKING_UPDATED => 'info',
             self::TYPE_BOOKING_RESCHEDULED => 'warning',
-            self::TYPE_SCHEDULE_CHANGE_APPROVED => 'success',
-            self::TYPE_SCHEDULE_CHANGE_REJECTED => 'danger',
             default => 'secondary',
         };
     }
@@ -255,14 +249,15 @@ class Notification extends Model
     
     /**
      * Create a notification for user when booking schedule is changed by admin.
+     * This is an informational notification - no confirmation required.
      */
     public static function createBookingRescheduledNotification(Booking $booking, array $oldDetails, array $newDetails): self
     {
         $user = $booking->user;
         
-        // Format pesan sesuai requirement
+        // Format pesan informatif (tanpa memerlukan konfirmasi)
         $message = sprintf(
-            "Pemesanan ruangan %s pada tanggal %s pukul %s telah diubah menjadi ruangan %s pada tanggal %s pukul %s. Silakan cek detail reservasi untuk informasi lebih lanjut dan lakukan konfirmasi.",
+            "Pemesanan ruangan %s pada tanggal %s pukul %s telah dipindahkan ke ruangan %s pada tanggal %s pukul %s. Silakan cek detail reservasi untuk informasi lebih lanjut.",
             $oldDetails['room'],
             $oldDetails['date'],
             $oldDetails['time'],
@@ -275,62 +270,13 @@ class Notification extends Model
             'user_id' => $user->id,
             'booking_id' => $booking->id,
             'type' => self::TYPE_BOOKING_RESCHEDULED,
-            'title' => 'Jadwal Reservasi Diubah oleh Admin',
+            'title' => 'Jadwal Reservasi Dipindahkan',
             'message' => $message,
             'data' => [
                 'booking_id' => $booking->id,
                 'old_details' => $oldDetails,
                 'new_details' => $newDetails,
-                'requires_confirmation' => true,
                 'action_url' => '/user/peminjaman',
-            ],
-        ]);
-    }
-    
-    /**
-     * Create notification for admin when user approves schedule change.
-     */
-    public static function createScheduleChangeApprovedNotification(Booking $booking, User $admin): self
-    {
-        $user = $booking->user;
-        $room = $booking->room;
-        $bookingDate = $booking->start_date->format('d-m-Y');
-        
-        return self::create([
-            'user_id' => $admin->id,
-            'booking_id' => $booking->id,
-            'type' => self::TYPE_SCHEDULE_CHANGE_APPROVED,
-            'title' => 'Perubahan Jadwal Disetujui User',
-            'message' => "{$user->name} menyetujui perubahan jadwal reservasi {$room->room_name} pada tanggal {$bookingDate}",
-            'data' => [
-                'booking_id' => $booking->id,
-                'user_name' => $user->name,
-                'room_name' => $room->room_name,
-                'confirmation_status' => 'approved',
-            ],
-        ]);
-    }
-    
-    /**
-     * Create notification for admin when user rejects schedule change.
-     */
-    public static function createScheduleChangeRejectedNotification(Booking $booking, User $admin): self
-    {
-        $user = $booking->user;
-        $room = $booking->room;
-        $bookingDate = $booking->start_date->format('d-m-Y');
-        
-        return self::create([
-            'user_id' => $admin->id,
-            'booking_id' => $booking->id,
-            'type' => self::TYPE_SCHEDULE_CHANGE_REJECTED,
-            'title' => 'Perubahan Jadwal Ditolak User',
-            'message' => "{$user->name} menolak perubahan jadwal reservasi {$room->room_name} pada tanggal {$bookingDate}",
-            'data' => [
-                'booking_id' => $booking->id,
-                'user_name' => $user->name,
-                'room_name' => $room->room_name,
-                'confirmation_status' => 'rejected',
             ],
         ]);
     }

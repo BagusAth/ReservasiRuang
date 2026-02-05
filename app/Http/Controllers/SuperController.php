@@ -806,7 +806,6 @@ class SuperController extends Controller
                     'description' => $unit->description,
                     'is_active' => $unit->is_active,
                     'buildings_count' => $unit->buildings()->count(),
-                    'users_count' => User::where('unit_id', $unit->id)->count(),
                     'neighbors_count' => $unit->neighbors()->count(),
                     'created_at' => $unit->created_at->format('d M Y'),
                 ];
@@ -851,7 +850,6 @@ class SuperController extends Controller
                     'description' => $unit->description,
                     'is_active' => $unit->is_active,
                     'buildings_count' => $unit->buildings->count(),
-                    'users_count' => User::where('unit_id', $unit->id)->count(),
                     'neighbors' => $unit->neighbors->map(function ($neighbor) {
                         return [
                             'id' => $neighbor->id,
