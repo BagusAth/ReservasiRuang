@@ -150,23 +150,30 @@ class User extends Authenticatable
 
     /**
      * Check if user can make reservation in a specific unit.
+     * Also checks if the target unit is active.
      * 
      * @param int $unitId
      * @return bool
      */
     public function canAccessUnit(int $unitId): bool
     {
-        // Super admin can access all units
+        // First check if the target unit exists and is active
+        $targetUnit = Unit::find($unitId);
+        if (!$targetUnit || !$targetUnit->is_active) {
+            return false;
+        }
+        
+        // Super admin can access all active units
         if ($this->isSuperAdmin()) {
             return true;
         }
         
-        // Admin Unit can access all units
+        // Admin Unit can access all active units
         if ($this->isAdminUnit()) {
             return true;
         }
         
-        // Admin Gedung can access all units
+        // Admin Gedung can access all active units
         if ($this->isAdminGedung()) {
             return true;
         }

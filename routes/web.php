@@ -142,7 +142,7 @@ Route::middleware(['role:super_admin'])->group(function () {
         Route::get('/units/{id}', [SuperController::class, 'getUnitDetail'])->name('units.detail');
         Route::post('/units', [SuperController::class, 'createUnit'])->name('units.create');
         Route::put('/units/{id}', [SuperController::class, 'updateUnit'])->name('units.update');
-        Route::delete('/units/{id}', [SuperController::class, 'deleteUnit'])->name('units.delete');
+        // Route::delete('/units/{id}', [SuperController::class, 'deleteUnit'])->name('units.delete'); // Disabled: Unit deletion not allowed
         Route::put('/units/{id}/toggle-status', [SuperController::class, 'toggleUnitStatus'])->name('units.toggleStatus');
         Route::get('/units/{id}/neighbors', [SuperController::class, 'getUnitWithNeighbors'])->name('units.neighbors');
         Route::put('/units/{id}/neighbors', [SuperController::class, 'updateUnitNeighbors'])->name('units.updateNeighbors');

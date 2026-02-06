@@ -401,17 +401,26 @@ class UserController extends Controller{
             }
         }
 
-        // Validate unit access for regular users
+        // Validate room and unit - always check unit status for all users
+        $room = Room::with('building.unit')->find($validated['room_id']);
+        
+        if (!$room || !$room->building || !$room->building->unit) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ruangan tidak valid atau tidak terkait dengan unit manapun.'
+            ], 422);
+        }
+        
+        // Check if unit is active - prevent reservations on inactive units for all users
+        if (!$room->building->unit->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unit "' . $room->building->unit->unit_name . '" sedang tidak aktif. Reservasi tidak dapat dilakukan pada unit yang tidak aktif.'
+            ], 422);
+        }
+
+        // Validate unit access for regular users (check neighbor access)
         if ($user->isUser()) {
-            $room = Room::with('building.unit')->find($validated['room_id']);
-            
-            if (!$room || !$room->building || !$room->building->unit) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Ruangan tidak valid atau tidak terkait dengan unit manapun.'
-                ], 422);
-            }
-            
             $targetUnitId = $room->building->unit_id;
             
             // Check if user can access this unit
@@ -580,17 +589,26 @@ class UserController extends Controller{
             }
         }
 
-        // Validate unit access for regular users
+        // Validate room and unit - always check unit status for all users
+        $room = Room::with('building.unit')->find($validated['room_id']);
+        
+        if (!$room || !$room->building || !$room->building->unit) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ruangan tidak valid atau tidak terkait dengan unit manapun.'
+            ], 422);
+        }
+        
+        // Check if unit is active - prevent reservations on inactive units for all users
+        if (!$room->building->unit->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unit "' . $room->building->unit->unit_name . '" sedang tidak aktif. Reservasi tidak dapat dilakukan pada unit yang tidak aktif.'
+            ], 422);
+        }
+
+        // Validate unit access for regular users (check neighbor access)
         if ($user->isUser()) {
-            $room = Room::with('building.unit')->find($validated['room_id']);
-            
-            if (!$room || !$room->building || !$room->building->unit) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Ruangan tidak valid atau tidak terkait dengan unit manapun.'
-                ], 422);
-            }
-            
             $targetUnitId = $room->building->unit_id;
             
             // Check if user can access this unit

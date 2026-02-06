@@ -103,12 +103,21 @@ class Unit extends Model
 
     /**
      * Check if this unit can access another unit (for reservations).
+     * Also checks if the target unit is active.
      * 
      * @param int $targetUnitId
      * @return bool
      */
     public function canAccessUnit(int $targetUnitId): bool
     {
+        // Find target unit
+        $targetUnit = self::find($targetUnitId);
+        
+        // Target unit must exist and be active
+        if (!$targetUnit || !$targetUnit->is_active) {
+            return false;
+        }
+        
         // Can access own unit
         if ($this->id === $targetUnitId) {
             return true;

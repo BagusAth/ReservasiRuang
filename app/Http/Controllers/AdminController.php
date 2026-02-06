@@ -612,13 +612,23 @@ class AdminController extends Controller
         
         // Build query with admin scope
         $query = $this->getAdminBookingsQuery($user);
-        $booking = $query->find($id);
+        $booking = $query->with('room.building.unit')->find($id);
 
         if (!$booking) {
             return response()->json([
                 'success' => false,
                 'message' => 'Reservasi tidak ditemukan atau tidak dalam cakupan Anda'
             ], 404);
+        }
+
+        // Check if unit is active - cannot approve bookings for inactive units
+        if ($booking->room && $booking->room->building && $booking->room->building->unit) {
+            if (!$booking->room->building->unit->is_active) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Reservasi tidak dapat disetujui karena Unit "' . $booking->room->building->unit->unit_name . '" sedang tidak aktif.'
+                ], 422);
+            }
         }
 
         // Check for conflicts with other approved bookings
@@ -816,12 +826,20 @@ class AdminController extends Controller
         }
 
         // Verify new room is in admin's scope
-        $newRoom = Room::with('building')->find($request->new_room_id);
+        $newRoom = Room::with('building.unit')->find($request->new_room_id);
         if (!$newRoom) {
             return response()->json([
                 'success' => false,
                 'message' => 'Ruangan tidak ditemukan'
             ], 404);
+        }
+
+        // Check if the new room's unit is active
+        if ($newRoom->building && $newRoom->building->unit && !$newRoom->building->unit->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak dapat menjadwalkan ulang ke ruangan di Unit "' . $newRoom->building->unit->unit_name . '" karena unit tersebut sedang tidak aktif.'
+            ], 422);
         }
 
         if ($user->isAdminUnit() && $newRoom->building->unit_id !== $user->unit_id) {
