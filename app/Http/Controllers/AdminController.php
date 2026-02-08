@@ -42,6 +42,18 @@ class AdminController extends Controller
     }
 
     /**
+     * Halaman Peminjaman Admin.
+     */
+    public function roomsPage()
+    {
+        $user = Auth::user();
+        $adminType = $this->getAdminType($user);
+        $adminScope = $this->getAdminScope($user);
+        
+        return view('admin.roomA', compact('user', 'adminType', 'adminScope'));
+    }
+
+    /**
      * Detect admin type based on role.
      */
     private function getAdminType($user): string
@@ -922,6 +934,365 @@ class AdminController extends Controller
                 'booking_id' => $booking->id,
                 'old_details' => $oldDetails,
                 'new_details' => $newDetails,
+            ]
+        ]);
+    }
+
+    // ============================================
+    // ROOM MANAGEMENT METHODS
+    // ============================================
+
+    /**
+     * Get base query for admin's rooms based on scope.
+     */
+    private function getAdminRoomsQuery($user)
+    {
+        $query = Room::query();
+        
+        if ($user->isAdminUnit()) {
+            // Admin Unit: Get all rooms in buildings within their unit
+            $unitId = $user->unit_id;
+            $query->whereHas('building', function ($q) use ($unitId) {
+                $q->where('unit_id', $unitId);
+            });
+        } elseif ($user->isAdminGedung()) {
+            // Admin Gedung: Get all rooms in their building
+            $buildingId = $user->building_id;
+            $query->where('building_id', $buildingId);
+        }
+        
+        return $query;
+    }
+
+    /**
+     * List all rooms for the room management table (with pagination).
+     * Data filtered based on admin scope.
+     */
+    public function listRooms(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        
+        $request->validate([
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1|max:100',
+            'status' => 'nullable|string|in:all,active,inactive',
+            'building_id' => 'nullable|integer',
+            'search' => 'nullable|string|max:100',
+        ]);
+
+        $perPage = $request->input('per_page', 10);
+        $statusFilter = $request->input('status', 'all');
+        $buildingIdFilter = $request->input('building_id');
+        $search = $request->input('search');
+
+        // Base query with admin scope
+        $query = $this->getAdminRoomsQuery($user);
+        $query->with(['building.unit']);
+
+        // Filter by status
+        if ($statusFilter === 'active') {
+            $query->where('is_active', true);
+        } elseif ($statusFilter === 'inactive') {
+            $query->where('is_active', false);
+        }
+
+        // Filter by building (for admin_unit only)
+        if ($buildingIdFilter && $user->isAdminUnit()) {
+            $query->where('building_id', $buildingIdFilter);
+        }
+
+        // Search by room name or location
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('room_name', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%");
+            });
+        }
+
+        // Order by building name then room name
+        $query->orderBy('building_id')
+              ->orderBy('room_name');
+
+        // Paginate
+        $rooms = $query->paginate($perPage);
+
+        // Transform data
+        $transformedData = $rooms->getCollection()->map(function ($room) {
+            return [
+                'id' => $room->id,
+                'room_name' => $room->room_name,
+                'capacity' => $room->capacity,
+                'location' => $room->location,
+                'is_active' => $room->is_active,
+                'building' => [
+                    'id' => $room->building->id,
+                    'name' => $room->building->building_name,
+                ],
+                'unit' => [
+                    'id' => $room->building->unit->id ?? null,
+                    'name' => $room->building->unit->unit_name ?? null,
+                ],
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $transformedData,
+            'meta' => [
+                'current_page' => $rooms->currentPage(),
+                'last_page' => $rooms->lastPage(),
+                'per_page' => $rooms->perPage(),
+                'total' => $rooms->total(),
+            ]
+        ]);
+    }
+
+    /**
+     * Get room detail.
+     */
+    public function getRoomDetail(int $id): JsonResponse
+    {
+        $user = Auth::user();
+        
+        // Build query with admin scope
+        $query = $this->getAdminRoomsQuery($user);
+        
+        $room = $query->with(['building.unit'])->find($id);
+
+        if (!$room) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ruangan tidak ditemukan atau tidak dalam cakupan Anda'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $room->id,
+                'room_name' => $room->room_name,
+                'capacity' => $room->capacity,
+                'location' => $room->location,
+                'is_active' => $room->is_active,
+                'building_id' => $room->building_id,
+                'building' => [
+                    'id' => $room->building->id,
+                    'name' => $room->building->building_name,
+                ],
+                'unit' => [
+                    'id' => $room->building->unit->id ?? null,
+                    'name' => $room->building->unit->unit_name ?? null,
+                ],
+            ]
+        ]);
+    }
+
+    /**
+     * Create a new room.
+     */
+    public function createRoom(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        
+        $request->validate([
+            'room_name' => 'required|string|max:100',
+            'capacity' => 'required|integer|min:1|max:1000',
+            'location' => 'required|string|max:255',
+            'building_id' => 'required|integer|exists:buildings,id',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        // Verify building is in admin's scope
+        $buildingId = $request->building_id;
+        
+        if ($user->isAdminUnit()) {
+            $building = Building::where('id', $buildingId)
+                ->where('unit_id', $user->unit_id)
+                ->first();
+                
+            if (!$building) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gedung tidak dalam cakupan unit Anda'
+                ], 403);
+            }
+        } elseif ($user->isAdminGedung()) {
+            if ($buildingId !== $user->building_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gedung tidak dalam cakupan Anda'
+                ], 403);
+            }
+        }
+
+        // Check for duplicate room name in the same building
+        $existingRoom = Room::where('building_id', $buildingId)
+            ->where('room_name', $request->room_name)
+            ->first();
+            
+        if ($existingRoom) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nama ruangan sudah digunakan dalam gedung ini'
+            ], 422);
+        }
+
+        // Create the room
+        $room = Room::create([
+            'room_name' => $request->room_name,
+            'capacity' => $request->capacity,
+            'location' => $request->location,
+            'building_id' => $buildingId,
+            'is_active' => $request->input('is_active', true),
+        ]);
+
+        $room->load('building.unit');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ruangan berhasil ditambahkan',
+            'data' => [
+                'id' => $room->id,
+                'room_name' => $room->room_name,
+                'capacity' => $room->capacity,
+                'location' => $room->location,
+                'is_active' => $room->is_active,
+                'building' => [
+                    'id' => $room->building->id,
+                    'name' => $room->building->building_name,
+                ],
+                'unit' => [
+                    'id' => $room->building->unit->id ?? null,
+                    'name' => $room->building->unit->unit_name ?? null,
+                ],
+            ]
+        ], 201);
+    }
+
+    /**
+     * Update an existing room.
+     */
+    public function updateRoom(Request $request, int $id): JsonResponse
+    {
+        $user = Auth::user();
+        
+        $request->validate([
+            'room_name' => 'required|string|max:100',
+            'capacity' => 'required|integer|min:1|max:1000',
+            'location' => 'required|string|max:255',
+            'building_id' => 'required|integer|exists:buildings,id',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        // Find room with admin scope
+        $query = $this->getAdminRoomsQuery($user);
+        $room = $query->find($id);
+
+        if (!$room) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ruangan tidak ditemukan atau tidak dalam cakupan Anda'
+            ], 404);
+        }
+
+        // Verify new building is in admin's scope (if changing building)
+        $newBuildingId = $request->building_id;
+        
+        if ($user->isAdminUnit()) {
+            $building = Building::where('id', $newBuildingId)
+                ->where('unit_id', $user->unit_id)
+                ->first();
+                
+            if (!$building) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gedung tidak dalam cakupan unit Anda'
+                ], 403);
+            }
+        } elseif ($user->isAdminGedung()) {
+            if ($newBuildingId !== $user->building_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gedung tidak dalam cakupan Anda'
+                ], 403);
+            }
+        }
+
+        // Check for duplicate room name in the same building (excluding current room)
+        $existingRoom = Room::where('building_id', $newBuildingId)
+            ->where('room_name', $request->room_name)
+            ->where('id', '!=', $id)
+            ->first();
+            
+        if ($existingRoom) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nama ruangan sudah digunakan dalam gedung ini'
+            ], 422);
+        }
+
+        // Update the room
+        $room->update([
+            'room_name' => $request->room_name,
+            'capacity' => $request->capacity,
+            'location' => $request->location,
+            'building_id' => $newBuildingId,
+            'is_active' => $request->input('is_active', $room->is_active),
+        ]);
+
+        $room->load('building.unit');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ruangan berhasil diperbarui',
+            'data' => [
+                'id' => $room->id,
+                'room_name' => $room->room_name,
+                'capacity' => $room->capacity,
+                'location' => $room->location,
+                'is_active' => $room->is_active,
+                'building' => [
+                    'id' => $room->building->id,
+                    'name' => $room->building->building_name,
+                ],
+                'unit' => [
+                    'id' => $room->building->unit->id ?? null,
+                    'name' => $room->building->unit->unit_name ?? null,
+                ],
+            ]
+        ]);
+    }
+
+    /**
+     * Toggle room active status (On/Off).
+     */
+    public function toggleRoomStatus(int $id): JsonResponse
+    {
+        $user = Auth::user();
+        
+        // Find room with admin scope
+        $query = $this->getAdminRoomsQuery($user);
+        $room = $query->find($id);
+
+        if (!$room) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ruangan tidak ditemukan atau tidak dalam cakupan Anda'
+            ], 404);
+        }
+
+        // Toggle the status
+        $room->is_active = !$room->is_active;
+        $room->save();
+
+        $statusText = $room->is_active ? 'diaktifkan' : 'dinonaktifkan';
+
+        return response()->json([
+            'success' => true,
+            'message' => "Ruangan berhasil {$statusText}",
+            'data' => [
+                'id' => $room->id,
+                'is_active' => $room->is_active,
             ]
         ]);
     }

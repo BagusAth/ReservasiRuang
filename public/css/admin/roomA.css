@@ -1,0 +1,566 @@
+/**
+ * Admin Ruangan Page Styles
+ * PLN Nusantara Power Services - Reservasi Ruang Rapat
+ * 
+ * Color Palette:
+ * - Background: #F5F8F8
+ * - Primary: #00A2B9
+ * - Status Active: Green
+ * - Status Inactive: Red/Gray
+ */
+
+/* ============================================
+   CSS Variables
+   ============================================ */
+:root {
+    --primary: #00A2B9;
+    --primary-dark: #008799;
+    --primary-light: #00C4D9;
+    --bg: #F5F8F8;
+    --status-active-text: #478A51;
+    --status-active-bg: #D3F0DD;
+    --status-inactive-text: #6B7280;
+    --status-inactive-bg: #E5E7EB;
+}
+
+/* Column centering - all columns */
+.room-table tbody td:nth-child(4) .capacity-badge {
+    display: inline-flex;
+}
+
+.room-table tbody td:nth-child(5) .toggle-switch {
+    display: inline-flex;
+}
+
+/* ============================================
+   Base Styles & Font Face
+   ============================================ */
+@font-face {
+    font-family: 'Helvetica';
+    src: local('Helvetica');
+    font-weight: normal;
+}
+
+@font-face {
+    font-family: 'Helvetica Light';
+    src: local('Helvetica Light'), local('Helvetica-Light');
+    font-weight: 300;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #00A2B9 #F5F8F8;
+}
+
+*::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+    background: #F5F8F8;
+    border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: #00A2B9;
+    border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: #008799;
+}
+
+body {
+    background: var(--bg);
+}
+
+/* ============================================
+   Sidebar Styles - Modern Professional Design
+   ============================================ */
+.sidebar {
+    background: linear-gradient(180deg, #00A2B9 0%, #0090A5 50%, #007A8C 100%);
+    box-shadow: 
+        4px 0 20px rgba(0, 0, 0, 0.15),
+        inset -1px 0 0 rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(0, 0, 0, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.nav-link.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-left: 4px solid #FFFFFF;
+    margin-left: -4px;
+    box-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+}
+
+.nav-link:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateX(4px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mobile sidebar animation */
+@media (max-width: 1023px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.open {
+        transform: translateX(0);
+    }
+}
+
+.sidebar-overlay.active {
+    display: block !important;
+}
+
+/* ============================================
+   User Dropdown Styles
+   ============================================ */
+.user-dropdown {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+}
+
+.user-dropdown.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* ============================================
+   Room Table Styles
+   ============================================ */
+.room-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.room-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--primary);
+    color: #fff;
+    text-align: center;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 14px 16px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.room-table thead tr th:first-child {
+    border-top-left-radius: 16px;
+}
+
+.room-table thead tr th:last-child {
+    border-top-right-radius: 16px;
+}
+
+.room-table tbody td {
+    padding: 16px;
+    font-size: 14px;
+    text-align: center;
+    border-bottom: 1px solid #EEF2F4;
+    color: #1f2937;
+    vertical-align: middle;
+}
+
+.room-table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.room-table tbody tr:hover {
+    background: #f8fafb;
+}
+
+.room-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Room info cell */
+.room-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.room-info .room-name {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.room-info .room-location {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* ============================================
+   Status Badge
+   ============================================ */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    gap: 6px;
+}
+
+.status-active {
+    color: var(--status-active-text);
+    background: var(--status-active-bg);
+}
+
+.status-inactive {
+    color: var(--status-inactive-text);
+    background: var(--status-inactive-bg);
+}
+
+/* Status dot indicator */
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.status-active .status-dot {
+    background: var(--status-active-text);
+}
+
+.status-inactive .status-dot {
+    background: var(--status-inactive-text);
+}
+
+/* ============================================
+   Action Buttons
+   ============================================ */
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.action-btn.edit {
+    color: var(--primary);
+}
+
+.action-btn.edit:hover:not(:disabled) {
+    background: rgba(0, 162, 185, 0.1);
+    transform: translateY(-1px);
+}
+
+.action-btn.toggle {
+    color: #f59e0b;
+}
+
+.action-btn.toggle:hover:not(:disabled) {
+    background: rgba(245, 158, 11, 0.1);
+    transform: translateY(-1px);
+}
+
+.action-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* Action buttons group */
+.action-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+/* ============================================
+   Modal Styles
+   ============================================ */
+.modal-overlay {
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-overlay.active .modal-content {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+.modal-content {
+    transform: scale(0.95) translateY(20px);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 2px;
+}
+
+/* ============================================
+   Loading Spinner
+   ============================================ */
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.loading-spinner-sm {
+    width: 20px;
+    height: 20px;
+    border-width: 2px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ============================================
+   Toast Notification
+   ============================================ */
+#toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+#toast .toast-success {
+    background: #d1fae5;
+}
+
+#toast .toast-success svg {
+    color: #10b981;
+}
+
+#toast .toast-error {
+    background: #fee2e2;
+}
+
+#toast .toast-error svg {
+    color: #ef4444;
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+@media (max-width: 768px) {
+    .room-table thead th,
+    .room-table tbody td {
+        padding: 12px 10px;
+        font-size: 12px;
+    }
+    
+    .status-badge {
+        padding: 4px 10px;
+        font-size: 11px;
+    }
+    
+    .action-btn {
+        width: 28px;
+        height: 28px;
+    }
+    
+    /* Hide some columns on mobile */
+    .room-table th:nth-child(3),
+    .room-table td:nth-child(3) {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    /* Hide capacity column on small screens */
+    .room-table th:nth-child(4),
+    .room-table td:nth-child(4) {
+        display: none;
+    }
+}
+
+/* ============================================
+   Form Styles
+   ============================================ */
+#roomForm input:focus,
+#roomForm select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 162, 185, 0.1);
+}
+
+#roomForm input[type="radio"]:checked {
+    border-color: var(--primary);
+    background-color: var(--primary);
+}
+
+/* ============================================
+   Pagination Styles
+   ============================================ */
+.pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: 1px solid #e5e7eb;
+    background: white;
+    color: #6b7280;
+}
+
+.pagination-btn:hover:not(.active):not(:disabled) {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(0, 162, 185, 0.05);
+}
+
+.pagination-btn.active {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: white;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ============================================
+   Enhanced Button Styles
+   ============================================ */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+/* ============================================
+   Toggle Switch Style (Optional)
+   ============================================ */
+.toggle-switch {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background-color: #e5e7eb;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.toggle-slider::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: var(--primary);
+}
+
+.toggle-switch input:checked + .toggle-slider::after {
+    transform: translateX(20px);
+}
+
+/* ============================================
+   Capacity Badge
+   ============================================ */
+.capacity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+.capacity-badge svg {
+    width: 14px;
+    height: 14px;
+}

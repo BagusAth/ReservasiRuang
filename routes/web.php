@@ -78,7 +78,9 @@ Route::middleware(['role:admin_unit,admin_gedung'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     // Peminjaman Page
     Route::get('/admin/peminjaman', [AdminController::class, 'reservationsPage'])->name('admin.reservasi');
-    
+    // Ruangan Page
+    Route::get('/admin/ruangan', [AdminController::class, 'roomsPage'])->name('admin.room');    
+
     // API untuk Admin
     Route::prefix('api/admin')->name('admin.api.')->group(function () {
         Route::get('/bookings', [AdminController::class, 'getBookings'])->name('bookings');
@@ -97,6 +99,13 @@ Route::middleware(['role:admin_unit,admin_gedung'])->group(function () {
         // Manual reschedule endpoints
         Route::get('/bookings/{id}/reschedule-data', [AdminController::class, 'getRescheduleData'])->name('booking.rescheduleData');
         Route::post('/bookings/{id}/reschedule', [AdminController::class, 'rescheduleBooking'])->name('booking.reschedule');
+
+        // Room Management endpoints
+        Route::get('/rooms/list', [AdminController::class, 'listRooms'])->name('rooms.list');
+        Route::get('/rooms/{id}', [AdminController::class, 'getRoomDetail'])->name('rooms.detail');
+        Route::post('/rooms', [AdminController::class, 'createRoom'])->name('rooms.create');
+        Route::put('/rooms/{id}', [AdminController::class, 'updateRoom'])->name('rooms.update');
+        Route::put('/rooms/{id}/toggle-status', [AdminController::class, 'toggleRoomStatus'])->name('rooms.toggleStatus');
 
         // Notification endpoints
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
