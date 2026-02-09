@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	initUserDropdown();
 	initDeleteModal();
 	initLogout();
+	initFilters();
 	tableState.load();
 	bindUI();
 	initFormValidation();
@@ -80,6 +81,93 @@ function initUserDropdown() {
 			}
 		});
 	}
+}
+
+/* ============================================
+   Filter & Search Functions
+   ============================================ */
+function initFilters() {
+	const searchInput = document.getElementById('searchBooking');
+	const statusFilter = document.getElementById('filterStatus');
+	const dateFilter = document.getElementById('filterDate');
+
+	if (searchInput) {
+		searchInput.addEventListener('input', debounce(applyFilters, 300));
+	}
+
+	if (statusFilter) {
+		statusFilter.addEventListener('change', applyFilters);
+	}
+
+	if (dateFilter) {
+		dateFilter.addEventListener('change', applyFilters);
+	}
+}
+
+function applyFilters() {
+	const searchTerm = (document.getElementById('searchBooking')?.value || '').toLowerCase().trim();
+	const statusValue = document.getElementById('filterStatus')?.value || 'all';
+	const dateValue = document.getElementById('filterDate')?.value || '';
+
+	tableState.filtered = tableState.raw.filter(item => {
+		// Search filter
+		if (searchTerm) {
+			const searchableText = [
+				item.agenda_name || '',
+				item.room?.name || '',
+				item.unit?.name || '',
+				item.building?.name || '',
+				item.pic_name || ''
+			].join(' ').toLowerCase();
+			
+			if (!searchableText.includes(searchTerm)) {
+				return false;
+			}
+		}
+
+		// Status filter
+		if (statusValue !== 'all') {
+			const statusMap = {
+				'pending': 'Menunggu',
+				'approved': 'Disetujui',
+				'rejected': 'Ditolak'
+			};
+			if (item.status !== statusMap[statusValue]) {
+				return false;
+			}
+		}
+
+		// Date filter
+		if (dateValue) {
+			if (item.start_date !== dateValue && item.end_date !== dateValue) {
+				// Also check if the filter date is within the booking range
+				const filterDate = new Date(dateValue);
+				const startDate = new Date(item.start_date);
+				const endDate = new Date(item.end_date);
+				
+				if (filterDate < startDate || filterDate > endDate) {
+					return false;
+				}
+			}
+		}
+
+		return true;
+	});
+
+	tableState.page = 1;
+	renderTable();
+}
+
+function debounce(func, wait) {
+	let timeout;
+	return function executedFunction(...args) {
+		const later = () => {
+			clearTimeout(timeout);
+			func(...args);
+		};
+		clearTimeout(timeout);
+		timeout = setTimeout(later, wait);
+	};
 }
 
 /* ===== Table State ===== */
@@ -144,21 +232,41 @@ function renderTable() {
 	const tbody = document.getElementById('tableBody');
 	const pagInfo = document.getElementById('pagInfo');
 	const emptyState = document.getElementById('emptyState');
+	const loadingState = document.getElementById('loadingState');
+	const paginationContainer = document.getElementById('paginationContainer');
 	const tableContainer = tbody?.closest('.overflow-x-auto');
 	
 	if (!tbody) return;
 	tbody.innerHTML = '';
 
 	const rows = tableState.paged;
+	const totalItems = tableState.filtered.length;
+	const maxPage = Math.max(1, Math.ceil(totalItems / tableState.pageSize));
+	const startItem = totalItems === 0 ? 0 : (tableState.page - 1) * tableState.pageSize + 1;
+	const endItem = Math.min(tableState.page * tableState.pageSize, totalItems);
+	
+	// Hide loading state
+	if (loadingState) loadingState.classList.add('hidden');
 	
 	// Toggle empty state visibility
-	if (tableState.filtered.length === 0) {
+	if (totalItems === 0) {
 		if (tableContainer) tableContainer.classList.add('hidden');
 		if (emptyState) emptyState.classList.remove('hidden');
+		if (paginationContainer) paginationContainer.classList.add('hidden');
 	} else {
 		if (tableContainer) tableContainer.classList.remove('hidden');
 		if (emptyState) emptyState.classList.add('hidden');
+		if (paginationContainer) paginationContainer.classList.remove('hidden');
 	}
+
+	// Update pagination info
+	const showingFrom = document.getElementById('showingFrom');
+	const showingTo = document.getElementById('showingTo');
+	const totalBookings = document.getElementById('totalBookings');
+	
+	if (showingFrom) showingFrom.textContent = startItem;
+	if (showingTo) showingTo.textContent = endItem;
+	if (totalBookings) totalBookings.textContent = totalItems;
 
 	rows.forEach(r => {
 		const tr = document.createElement('tr');
@@ -215,7 +323,6 @@ function renderTable() {
 		tbody.appendChild(tr);
 	});
 
-	const maxPage = Math.max(1, Math.ceil(tableState.filtered.length / tableState.pageSize));
 	if (pagInfo) pagInfo.textContent = `${tableState.page} / ${maxPage}`;
 }
 
@@ -367,12 +474,16 @@ function openModal(mode, data=null) {
 	// Initialize time validation
 	validateTimeInputs();
 	
-	document.getElementById('bookingModal').classList.remove('hidden');
-	document.getElementById('bookingModal').classList.add('flex');
+	const modal = document.getElementById('bookingModal');
+	modal.classList.remove('hidden');
+	modal.classList.add('active');
 }
 function closeModal() {
-	document.getElementById('bookingModal').classList.add('hidden');
-	document.getElementById('bookingModal').classList.remove('flex');
+	const modal = document.getElementById('bookingModal');
+	modal.classList.remove('active');
+	setTimeout(() => {
+		modal.classList.add('hidden');
+	}, 300);
 }
 
 /**
@@ -1231,7 +1342,7 @@ function showDeleteModal(id) {
 	const modal = document.getElementById('deleteModal');
 	if (modal) {
 		modal.classList.remove('hidden');
-		modal.classList.add('flex');
+		modal.classList.add('active');
 	}
 }
 
@@ -1239,8 +1350,10 @@ function closeDeleteModal() {
 	pendingDeleteId = null;
 	const modal = document.getElementById('deleteModal');
 	if (modal) {
-		modal.classList.add('hidden');
-		modal.classList.remove('flex');
+		modal.classList.remove('active');
+		setTimeout(() => {
+			modal.classList.add('hidden');
+		}, 300);
 	}
 }
 

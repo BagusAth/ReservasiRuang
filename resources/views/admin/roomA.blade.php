@@ -230,7 +230,7 @@
                                     <th>Gedung</th>
                                     <th>Unit</th>
                                     <th>Kapasitas</th>
-                                    <th>Status (On/Off)</th>
+                                    <th>Status</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>

@@ -130,15 +130,53 @@
 				<!-- Alert Container for Page Notifications -->
 				<div id="notificationAlertContainer" class="mb-4"></div>
 				
-				<!-- Page Title + Action -->
-				<div class="flex items-center justify-between mb-6">
-					<h1 class="text-xl lg:text-2xl font-bold text-gray-900">Peminjaman</h1>
-					<button id="btnOpenCreate" class="inline-flex items-center gap-2 bg-primary hover:bg-primary text-white text-sm font-semibold rounded-full px-5 py-2.5 shadow-sm transition-all">
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-						</svg>
-						Ajukan Peminjaman Ruangan
-					</button>
+				<!-- Page Title + Actions -->
+				<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+					<div>
+						<h1 class="text-xl lg:text-2xl font-bold text-gray-900">Peminjaman</h1>
+						<p class="text-sm text-gray-500 mt-1">Kelola peminjaman ruangan Anda</p>
+					</div>
+					<div class="flex items-center gap-3">
+						<button id="btnOpenCreate" class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-xl font-medium transition-colors shadow-lg shadow-primary/25">
+							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+							</svg>
+							<span>Ajukan Peminjaman</span>
+						</button>
+					</div>
+				</div>
+
+				<!-- Filter & Search Panel -->
+				<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
+					<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+						<!-- Search -->
+						<div class="lg:col-span-2">
+							<label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">Cari Peminjaman</label>
+							<div class="relative">
+								<input type="text" id="searchBooking" placeholder="Agenda, ruangan, atau PIC..." class="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+								<svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+								</svg>
+							</div>
+						</div>
+						
+						<!-- Status Filter -->
+						<div>
+							<label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">Status</label>
+							<select id="filterStatus" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+								<option value="all">Semua Status</option>
+								<option value="pending">Menunggu</option>
+								<option value="approved">Disetujui</option>
+								<option value="rejected">Ditolak</option>
+							</select>
+						</div>
+
+						<!-- Date Filter -->
+						<div>
+							<label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">Tanggal</label>
+							<input type="date" id="filterDate" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+						</div>
+					</div>
 				</div>
 
 				<!-- Table Card -->
@@ -171,11 +209,22 @@
 						<p class="text-gray-500 text-sm">Belum ada data peminjaman</p>
 					</div>
 
+					<!-- Loading State -->
+					<div id="loadingState" class="hidden py-12 text-center">
+						<div class="loading-spinner mx-auto mb-3"></div>
+						<p class="text-gray-500 text-sm">Memuat data peminjaman...</p>
+					</div>
+
 					<!-- Pagination -->
-					<div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-gray-100 text-sm">
-						<button id="pagPrev" class="px-3 py-1.5 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 transition-colors">&lt;</button>
-						<span id="pagInfo" class="px-3 text-gray-600">1</span>
-						<button id="pagNext" class="px-3 py-1.5 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 transition-colors">&gt;</button>
+					<div id="paginationContainer" class="hidden px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+						<p class="text-sm text-gray-500">
+							Menampilkan <span id="showingFrom">0</span>-<span id="showingTo">0</span> dari <span id="totalBookings">0</span> peminjaman
+						</p>
+						<div class="flex items-center gap-2" id="paginationButtons">
+							<button id="pagPrev" class="px-3 py-1.5 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 transition-colors">&lt;</button>
+							<span id="pagInfo" class="px-3 text-gray-600">1</span>
+							<button id="pagNext" class="px-3 py-1.5 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 transition-colors">&gt;</button>
+						</div>
 					</div>
 				</div>
 			</section>
@@ -183,18 +232,28 @@
 	</div>
 
 	<!-- Modal: Create/Edit -->
-	<div id="bookingModal" class="fixed inset-0 hidden items-center justify-center p-4 z-50">
-		<div class="absolute inset-0 bg-black/60 backdrop-blur-sm" data-close></div>
-		<div class="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden">
-			<div class="flex items-center justify-between p-4 border-b">
-				<h3 id="modalTitle" class="font-bold text-gray-900">Ajukan Peminjaman</h3>
-				<button class="p-2 rounded-lg hover:bg-gray-100" data-close>
+	<div id="bookingModal" class="modal-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+		<div class="modal-content bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden">
+			<!-- Modal Header -->
+			<div class="flex items-center justify-between p-5 lg:p-6 border-b border-gray-100 bg-gradient-to-r from-primary/5 to-transparent flex-shrink-0">
+				<div class="flex items-center gap-3">
+					<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary flex items-center justify-center shadow-lg shadow-primary/25">
+						<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+						</svg>
+					</div>
+					<h3 id="modalTitle" class="text-lg font-bold text-gray-900">Ajukan Peminjaman</h3>
+				</div>
+				<button type="button" class="p-2.5 hover:bg-gray-100 rounded-xl transition-all duration-200 hover:rotate-90" data-close>
 					<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
 					</svg>
 				</button>
 			</div>
-			<form id="bookingForm" class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+			
+			<!-- Modal Body -->
+			<div class="p-5 lg:p-6 overflow-y-auto flex-1 custom-scrollbar">
+				<form id="bookingForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
 				<input type="hidden" id="formMode" value="create">
 				<input type="hidden" id="bookingId" value="">
 
@@ -271,44 +330,54 @@
 					<input id="picPhone" class="form-input" placeholder="08xxxxxxxxxx" required>
 				</div>
 
-				<div class="md:col-span-2 flex items-center justify-end gap-2 pt-2">
-					<button type="button" class="btn-secondary" data-close>Batal</button>
-					<button type="submit" class="btn-primary" id="btnSubmit">Simpan</button>
+				<!-- Form Error -->
+				<div id="formError" class="hidden md:col-span-2 mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+					<p class="text-sm text-red-600" id="formErrorText"></p>
 				</div>
-			</form>
+
+				<!-- Submit Buttons -->
+				<div class="md:col-span-2 flex gap-3 pt-2">
+					<button type="button" class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors" data-close>
+						Batal
+					</button>
+					<button type="submit" class="flex-1 px-4 py-2.5 bg-primary text-white rounded-xl font-medium hover:bg-primary-dark transition-colors shadow-lg shadow-primary/25" id="btnSubmit">
+						<span id="submitBtnText">Simpan</span>
+					</button>
+				</div>
+				</form>
+			</div>
 		</div>
 	</div>
 
 	<!-- Modal: Delete Confirmation -->
-	<div id="deleteModal" class="fixed inset-0 hidden items-center justify-center p-4 z-50">
-		<div class="absolute inset-0 bg-black/60 backdrop-blur-sm" data-close-delete></div>
-		<div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-			<div class="flex items-center justify-between p-4 border-b bg-gradient-to-r from-red-50 to-transparent">
+	<div id="deleteModal" class="modal-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+		<div class="modal-content bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
+			<div class="flex items-center justify-between p-5 lg:p-6 border-b border-gray-100 bg-gradient-to-r from-red-50 to-transparent flex-shrink-0">
 				<div class="flex items-center gap-3">
 					<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/25">
 						<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
 						</svg>
 					</div>
-					<h3 class="font-bold text-gray-900">Hapus Peminjaman</h3>
+					<h3 class="text-lg font-bold text-gray-900">Hapus Peminjaman</h3>
 				</div>
-				<button class="p-2 rounded-lg hover:bg-gray-100 transition-colors" data-close-delete>
+				<button type="button" class="p-2.5 hover:bg-gray-100 rounded-xl transition-all duration-200 hover:rotate-90" data-close-delete>
 					<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
 					</svg>
 				</button>
 			</div>
-			<div class="p-5">
-				<p class="text-gray-600 text-center">Apakah Anda yakin ingin menghapus peminjaman ini?</p>
-				<p class="text-sm text-gray-500 text-center mt-2">Tindakan ini tidak dapat dibatalkan.</p>
-			</div>
-			<div class="flex gap-3 p-4 border-t bg-gray-50">
-				<button type="button" class="flex-1 px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-colors" data-close-delete>
-					Batal
-				</button>
-				<button type="button" class="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors" id="confirmDeleteBtn">
-					Ya, Hapus
-				</button>
+			<div class="p-5 lg:p-6">
+				<p class="text-gray-600 text-center mb-6">Apakah Anda yakin ingin menghapus peminjaman ini?</p>
+				<p class="text-sm text-gray-500 text-center mb-6">Tindakan ini tidak dapat dibatalkan.</p>
+				<div class="flex gap-3">
+					<button type="button" class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors" data-close-delete>
+						Batal
+					</button>
+					<button type="button" class="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 transition-all shadow-lg shadow-red-500/25" id="confirmDeleteBtn">
+						Ya, Hapus
+					</button>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -346,6 +415,14 @@
             </div>
         </div>
     </div>
+
+	<!-- Toast Notification -->
+	<div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-full opacity-0 transition-all duration-300">
+		<div class="flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg" id="toastContent">
+			<svg class="w-5 h-5" id="toastIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24"></svg>
+			<span class="text-sm font-medium" id="toastMessage"></span>
+		</div>
+	</div>
 
 	<script>
 		window.__USER_API__ = {
