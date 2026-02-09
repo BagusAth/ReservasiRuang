@@ -292,6 +292,34 @@
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
 						</svg>
 					</div>
+					<!-- Room Capacity Info -->
+					<div id="roomCapacityInfo" class="hidden mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+						<div class="flex items-center gap-2 text-sm text-blue-700">
+							<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+							</svg>
+							<span>Kapasitas ruangan: <strong id="roomCapacityValue">-</strong> orang</span>
+						</div>
+					</div>
+				</div>
+				<div>
+					<label class="form-label">Jumlah Peserta <span class="text-red-500">*</span></label>
+					<div class="relative">
+						<input id="participantCount" type="number" min="1" class="form-input" placeholder="Jumlah orang yang akan hadir" required>
+						<div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+							<span class="text-gray-400 text-sm">orang</span>
+						</div>
+					</div>
+					<p class="text-xs text-gray-500 mt-1">Minimal 1 orang, tidak boleh melebihi kapasitas ruangan</p>
+					<!-- Capacity Validation Error -->
+					<div id="capacityError" class="hidden mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+						<div class="flex items-center gap-2 text-sm text-red-600">
+							<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+							</svg>
+							<span id="capacityErrorText"></span>
+						</div>
+					</div>
 				</div>
 				<div class="grid grid-cols-2 gap-2">
 					<div>

@@ -265,6 +265,7 @@ class UserController extends Controller{
                 'time_display' => $startTime . ' - ' . $endTime,
                 'pic_name' => $booking->pic_name,
                 'pic_phone' => $booking->pic_phone,
+                'participant_count' => $booking->participant_count,
                 'status' => $booking->status,
                 'rejection_reason' => $booking->rejection_reason,
                 'room' => [
@@ -312,6 +313,7 @@ class UserController extends Controller{
                     'agenda_detail' => $b->agenda_detail,
                     'pic_name' => $b->pic_name,
                     'pic_phone' => $b->pic_phone,
+                    'participant_count' => $b->participant_count,
                     'status' => $b->status,
                     'rejection_reason' => $b->rejection_reason,  // Include rejection reason
                     'is_rescheduled' => $b->is_rescheduled ?? false,  // Include reschedule flag
@@ -319,6 +321,7 @@ class UserController extends Controller{
                     'room' => [
                         'id' => $b->room->id,
                         'name' => $b->room->room_name,
+                        'capacity' => $b->room->capacity,
                     ],
                     'building' => [
                         'id' => $b->room->building->id,
@@ -355,6 +358,7 @@ class UserController extends Controller{
             'agenda_detail' => 'nullable|string',
             'pic_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z\s]+$/', 'min:2'],
             'pic_phone' => ['required', 'string', 'max:20', 'regex:/^[0-9]+$/', 'min:9'],
+            'participant_count' => 'required|integer|min:1',
         ], [
             'pic_name.regex' => 'Nama PIC hanya boleh berisi huruf.',
             'pic_name.min' => 'Nama PIC minimal 2 karakter.',
@@ -362,6 +366,9 @@ class UserController extends Controller{
             'pic_phone.min' => 'Nomor telepon minimal 9 digit.',
             'start_date.after_or_equal' => 'Tanggal mulai tidak boleh tanggal yang sudah lewat. Silakan pilih tanggal hari ini atau yang akan datang.',
             'end_date.after_or_equal' => 'Tanggal selesai tidak boleh lebih awal dari tanggal mulai.',
+            'participant_count.required' => 'Jumlah peserta wajib diisi.',
+            'participant_count.integer' => 'Jumlah peserta harus berupa angka.',
+            'participant_count.min' => 'Jumlah peserta minimal 1 orang.',
         ]);
 
         // Additional back date validation with custom error message
@@ -473,6 +480,20 @@ class UserController extends Controller{
                     'message' => 'Untuk peminjaman multi-hari, jam selesai (' . $validated['end_time'] . ') harus lebih besar dari jam mulai (' . $validated['start_time'] . '). Silakan ubah jam selesai.'
                 ], 422);
             }
+        }
+
+        // Validate participant count against room capacity
+        if ($room->capacity && $validated['participant_count'] > $room->capacity) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jumlah peserta (' . $validated['participant_count'] . ' orang) melebihi kapasitas ruangan "' . $room->room_name . '" yang hanya dapat menampung ' . $room->capacity . ' orang. Silakan kurangi jumlah peserta atau pilih ruangan yang lebih besar.',
+                'error_type' => 'capacity_exceeded',
+                'capacity_data' => [
+                    'room_name' => $room->room_name,
+                    'room_capacity' => $room->capacity,
+                    'participant_count' => $validated['participant_count'],
+                ]
+            ], 422);
         }
 
         // Check for conflicting approved bookings
@@ -509,6 +530,7 @@ class UserController extends Controller{
         $booking->agenda_detail = $validated['agenda_detail'] ?? '';
         $booking->pic_name = $validated['pic_name'];
         $booking->pic_phone = $validated['pic_phone'];
+        $booking->participant_count = $validated['participant_count'];
         $booking->status = Booking::STATUS_PENDING;
         $booking->save();
 
@@ -543,6 +565,7 @@ class UserController extends Controller{
             'agenda_detail' => 'nullable|string',
             'pic_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z\s]+$/', 'min:2'],
             'pic_phone' => ['required', 'string', 'max:20', 'regex:/^[0-9]+$/', 'min:9'],
+            'participant_count' => 'required|integer|min:1',
         ], [
             'pic_name.regex' => 'Nama PIC hanya boleh berisi huruf.',
             'pic_name.min' => 'Nama PIC minimal 2 karakter.',
@@ -550,6 +573,9 @@ class UserController extends Controller{
             'pic_phone.min' => 'Nomor telepon minimal 9 digit.',
             'start_date.after_or_equal' => 'Tanggal mulai tidak boleh tanggal yang sudah lewat. Silakan pilih tanggal hari ini atau yang akan datang.',
             'end_date.after_or_equal' => 'Tanggal selesai tidak boleh lebih awal dari tanggal mulai.',
+            'participant_count.required' => 'Jumlah peserta wajib diisi.',
+            'participant_count.integer' => 'Jumlah peserta harus berupa angka.',
+            'participant_count.min' => 'Jumlah peserta minimal 1 orang.',
         ]);
 
         // Additional back date validation with custom error message
@@ -661,6 +687,20 @@ class UserController extends Controller{
                     'message' => 'Untuk peminjaman multi-hari, jam selesai (' . $validated['end_time'] . ') harus lebih besar dari jam mulai (' . $validated['start_time'] . '). Silakan ubah jam selesai.'
                 ], 422);
             }
+        }
+
+        // Validate participant count against room capacity
+        if ($room->capacity && $validated['participant_count'] > $room->capacity) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jumlah peserta (' . $validated['participant_count'] . ' orang) melebihi kapasitas ruangan "' . $room->room_name . '" yang hanya dapat menampung ' . $room->capacity . ' orang. Silakan kurangi jumlah peserta atau pilih ruangan yang lebih besar.',
+                'error_type' => 'capacity_exceeded',
+                'capacity_data' => [
+                    'room_name' => $room->room_name,
+                    'room_capacity' => $room->capacity,
+                    'participant_count' => $validated['participant_count'],
+                ]
+            ], 422);
         }
 
         // Check for conflicting approved bookings (exclude current booking)

@@ -512,9 +512,18 @@ function resetForm() {
 	// reset dependent dropdowns
 	document.getElementById('buildingId').innerHTML = '<option value="">Pilih Gedung</option>';
 	document.getElementById('roomId').innerHTML = '<option value="">Pilih Ruangan</option>';
-	// hide room info
-	hideRoomInfo();
+	// hide room capacity info
+	hideRoomCapacityInfo();
 	roomsData = [];
+	currentRoomCapacity = null;
+	
+	// Reset participant count
+	const participantInput = document.getElementById('participantCount');
+	if (participantInput) {
+		participantInput.value = '';
+		participantInput.removeAttribute('max');
+		participantInput.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+	}
 }
 function fillForm(r) {
 	document.getElementById('bookingId').value = r.id;
@@ -527,13 +536,8 @@ function fillForm(r) {
 		document.getElementById('buildingId').value = buildingId;
 		onBuildingChange().then(() => {
 			document.getElementById('roomId').value = roomId;
-			// Show room info if available
-			if (r.room) {
-				showRoomInfo({
-					capacity: r.room.capacity,
-					room_location: r.room.room_location
-				});
-			}
+			// Trigger room change to show capacity info
+			onRoomChange();
 		})
 	});
 	document.getElementById('startDate').value = r.start_date;
@@ -544,6 +548,11 @@ function fillForm(r) {
 	document.getElementById('agendaDetail').value = r.agenda_detail || '';
 	document.getElementById('picName').value = r.pic_name || '';
 	document.getElementById('picPhone').value = r.pic_phone || '';
+	// Set participant count
+	const participantInput = document.getElementById('participantCount');
+	if (participantInput) {
+		participantInput.value = r.participant_count || '';
+	}
 }
 
 async function onUnitChange() {
@@ -555,7 +564,8 @@ async function onUnitChange() {
 	setDropdownLoading(buildingWrapper, true);
 	buildingSel.innerHTML = '<option value="">Memuat...</option>';
 	document.getElementById('roomId').innerHTML = '<option value="">Pilih Ruangan</option>';
-	hideRoomInfo();
+	hideRoomCapacityInfo();
+	currentRoomCapacity = null;
 	
 	if (!unitId) {
 		setDropdownLoading(buildingWrapper, false);
@@ -586,7 +596,8 @@ async function onBuildingChange() {
 	// Set loading state
 	setDropdownLoading(roomWrapper, true);
 	roomSel.innerHTML = '<option value="">Memuat...</option>';
-	hideRoomInfo();
+	hideRoomCapacityInfo();
+	currentRoomCapacity = null;
 	roomsData = [];
 	
 	if (!buildingId) { 
@@ -622,37 +633,137 @@ async function onBuildingChange() {
 	}
 }
 
+// Store current selected room capacity for validation
+let currentRoomCapacity = null;
+
 function onRoomChange() {
 	const roomId = document.getElementById('roomId').value;
 	if (!roomId) {
-		hideRoomInfo();
+		hideRoomCapacityInfo();
+		currentRoomCapacity = null;
 		return;
 	}
 	
 	const selectedRoom = roomsData.find(r => r.id == roomId);
 	if (selectedRoom) {
-		showRoomInfo(selectedRoom);
+		showRoomCapacityInfo(selectedRoom);
+		currentRoomCapacity = selectedRoom.capacity || null;
+		
+		// Set max value on participant count input
+		const participantInput = document.getElementById('participantCount');
+		if (participantInput && currentRoomCapacity) {
+			participantInput.setAttribute('max', currentRoomCapacity);
+		}
+		
+		// Validate participant count if already filled
+		validateParticipantCount();
 	} else {
-		hideRoomInfo();
+		hideRoomCapacityInfo();
+		currentRoomCapacity = null;
 	}
 }
 
-function showRoomInfo(room) {
-	const capacityEl = document.getElementById('roomCapacity');
-	const locationEl = document.getElementById('roomLocation');
+function showRoomCapacityInfo(room) {
+	const infoPanel = document.getElementById('roomCapacityInfo');
+	const capacityValue = document.getElementById('roomCapacityValue');
 	
-	if (panel && capacityEl && locationEl) {
-		capacityEl.textContent = room.capacity ? `${room.capacity} orang` : '-';
-		locationEl.textContent = room.room_location || '-';
-		panel.classList.remove('hidden');
+	if (infoPanel && capacityValue) {
+		capacityValue.textContent = room.capacity ? room.capacity : '-';
+		infoPanel.classList.remove('hidden');
 	}
 }
 
-function hideRoomInfo() {
-	const panel = document.getElementById('roomInfoPanel');
-	if (panel) {
-		panel.classList.add('hidden');
+function hideRoomCapacityInfo() {
+	const infoPanel = document.getElementById('roomCapacityInfo');
+	if (infoPanel) {
+		infoPanel.classList.add('hidden');
 	}
+	
+	// Also hide capacity error
+	const capacityError = document.getElementById('capacityError');
+	if (capacityError) {
+		capacityError.classList.add('hidden');
+	}
+	
+	// Remove max attribute
+	const participantInput = document.getElementById('participantCount');
+	if (participantInput) {
+		participantInput.removeAttribute('max');
+	}
+}
+
+/**
+ * Validate participant count against room capacity
+ * @returns {boolean} True if valid, false otherwise
+ */
+function validateParticipantCount() {
+	const participantInput = document.getElementById('participantCount');
+	const capacityError = document.getElementById('capacityError');
+	const capacityErrorText = document.getElementById('capacityErrorText');
+	
+	if (!participantInput || !capacityError || !capacityErrorText) return true;
+	
+	const participantCount = parseInt(participantInput.value) || 0;
+	
+	// Clear previous error state
+	participantInput.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+	capacityError.classList.add('hidden');
+	
+	// Skip validation if no value yet
+	if (!participantInput.value) return true;
+	
+	// Validation: minimum 1 person
+	if (participantCount < 1) {
+		participantInput.classList.add('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+		capacityErrorText.textContent = 'Jumlah peserta minimal 1 orang.';
+		capacityError.classList.remove('hidden');
+		return false;
+	}
+	
+	// Validation: cannot exceed room capacity
+	if (currentRoomCapacity && participantCount > currentRoomCapacity) {
+		participantInput.classList.add('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+		capacityErrorText.textContent = `Jumlah peserta (${participantCount}) melebihi kapasitas ruangan (${currentRoomCapacity} orang). Silakan kurangi jumlah peserta atau pilih ruangan yang lebih besar.`;
+		capacityError.classList.remove('hidden');
+		return false;
+	}
+	
+	return true;
+}
+
+/**
+ * Show capacity exceeded alert modal
+ */
+function showCapacityExceededAlert(participantCount, roomCapacity, roomName) {
+	showValidationAlert(
+		'Kapasitas Ruangan Tidak Mencukupi',
+		`<div class="space-y-3">
+			<p class="text-gray-700">Jumlah peserta yang Anda masukkan melebihi kapasitas ruangan yang dipilih.</p>
+			<div class="bg-red-50 border border-red-200 rounded-lg p-4">
+				<div class="flex items-start gap-3">
+					<svg class="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+					</svg>
+					<div>
+						<p class="font-medium text-red-800">Detail:</p>
+						<ul class="mt-2 space-y-1 text-red-700">
+							<li>Ruangan: <strong>${escapeHtml(roomName)}</strong></li>
+							<li>Kapasitas ruangan: <strong>${roomCapacity} orang</strong></li>
+							<li>Jumlah peserta diinput: <strong>${participantCount} orang</strong></li>
+							<li>Kelebihan: <strong>${participantCount - roomCapacity} orang</strong></li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+				<p class="text-sm text-blue-800"><strong>Saran:</strong></p>
+				<ul class="text-sm text-blue-700 mt-1 list-disc list-inside">
+					<li>Kurangi jumlah peserta menjadi maksimal <strong>${roomCapacity} orang</strong></li>
+					<li>Atau pilih ruangan lain dengan kapasitas yang lebih besar</li>
+				</ul>
+			</div>
+		</div>`
+	);
 }
 
 async function submitForm(e) {
@@ -778,6 +889,26 @@ async function submitForm(e) {
 		}
 	}
 	
+	// Validate participant count
+	const participantCount = parseInt(document.getElementById('participantCount')?.value) || 0;
+	if (participantCount < 1) {
+		showToast('Jumlah peserta minimal 1 orang.', 'error');
+		document.getElementById('participantCount')?.focus();
+		return;
+	}
+	
+	// Get selected room name for alert
+	const roomSelect = document.getElementById('roomId');
+	const selectedRoomOption = roomSelect?.options[roomSelect.selectedIndex];
+	const roomName = selectedRoomOption?.textContent?.split(' — ')[0] || 'Ruangan';
+	
+	// Check if participant count exceeds room capacity
+	if (currentRoomCapacity && participantCount > currentRoomCapacity) {
+		showCapacityExceededAlert(participantCount, currentRoomCapacity, roomName);
+		document.getElementById('participantCount')?.focus();
+		return;
+	}
+	
 	// Disable button and show loading state
 	submitBtn.disabled = true;
 	submitBtn.textContent = 'Menyimpan...';
@@ -793,6 +924,7 @@ async function submitForm(e) {
 		agenda_detail: document.getElementById('agendaDetail').value,
 		pic_name: picName,
 		pic_phone: picPhone,
+		participant_count: participantCount,
 	};
 
 	try {
@@ -1304,6 +1436,28 @@ function initFormValidation() {
 			this.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
 			const errorDiv = this.parentNode.querySelector('.validation-error');
 			if (errorDiv) errorDiv.remove();
+		});
+	}
+	
+	// Add participant count validation
+	const participantCountField = document.getElementById('participantCount');
+	if (participantCountField) {
+		participantCountField.addEventListener('input', function() {
+			// Only allow positive integers
+			const cleaned = this.value.replace(/[^0-9]/g, '');
+			if (cleaned !== this.value) {
+				this.value = cleaned;
+			}
+			
+			// Clear error state on input
+			this.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+			
+			// Real-time capacity validation
+			validateParticipantCount();
+		});
+		
+		participantCountField.addEventListener('change', function() {
+			validateParticipantCount();
 		});
 	}
 }

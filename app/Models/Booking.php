@@ -19,6 +19,7 @@ class Booking extends Model
         'agenda_name',
         'pic_name',
         'pic_phone',
+        'participant_count',
         'agenda_detail',
         'status',
         'rejection_reason',
@@ -34,6 +35,7 @@ class Booking extends Model
         'approved_at' => 'datetime',
         'schedule_changed_data' => 'array',
         'is_rescheduled' => 'boolean',
+        'participant_count' => 'integer',
     ];
 
     /**
