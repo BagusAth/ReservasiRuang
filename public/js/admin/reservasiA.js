@@ -121,17 +121,9 @@ function initLogoutModal() {
 // Filter Panel Functions
 // ============================================
 function initFilterPanel() {
-    const filterBtn = document.getElementById('filterBtn');
-    const filterPanel = document.getElementById('filterPanel');
     const filterStatus = document.getElementById('filterStatus');
     const filterBuilding = document.getElementById('filterBuilding');
     const resetFilterBtn = document.getElementById('resetFilterBtn');
-
-    if (filterBtn && filterPanel) {
-        filterBtn.addEventListener('click', () => {
-            filterPanel.classList.toggle('hidden');
-        });
-    }
 
     if (filterStatus) {
         filterStatus.addEventListener('change', () => {

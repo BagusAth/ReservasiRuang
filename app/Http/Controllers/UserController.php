@@ -91,8 +91,8 @@ class UserController extends Controller{
 
     /**
      * Get bookings for calendar (API endpoint).
-     * Shows ALL bookings (Disetujui and Menunggu) like guest page.
-     * Supports filtering by unit, building, room, and time.
+     * Shows bookings from user's own unit and neighbor units only.
+     * Supports filtering by building, room, and time.
      */
     public function getBookings(Request $request): JsonResponse
     {
@@ -101,40 +101,48 @@ class UserController extends Controller{
             'year' => 'nullable|integer|min:2020|max:2100',
             'start_time' => 'nullable|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i',
-            'unit_id' => 'nullable|integer|exists:units,id',
             'building_id' => 'nullable|integer|exists:buildings,id',
             'room_id' => 'nullable|integer|exists:rooms,id',
         ]);
 
+        $user = Auth::user();
         $month = $request->input('month', now()->month);
         $year = $request->input('year', now()->year);
         
         $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
         $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
 
-        // Query ALL bookings (not just user's), same as guest page
+        // Get accessible unit IDs for user (own unit + neighbor units)
+        $accessibleUnits = $user->getAccessibleUnits();
+        $accessibleUnitIds = $accessibleUnits->pluck('id')->toArray();
+
+        // Query bookings only from accessible units
         $query = Booking::with(['room.building.unit'])
             ->whereIn('status', [Booking::STATUS_APPROVED, Booking::STATUS_PENDING])
             ->where('start_date', '<=', $endDate)
-            ->where('end_date', '>=', $startDate);
-
-        // Filter berdasarkan unit
-        if ($request->filled('unit_id')) {
-            $query->whereHas('room.building', function ($q) use ($request) {
-                $q->where('unit_id', $request->unit_id);
+            ->where('end_date', '>=', $startDate)
+            ->whereHas('room.building', function ($q) use ($accessibleUnitIds) {
+                $q->whereIn('unit_id', $accessibleUnitIds);
             });
-        }
 
         // Filter berdasarkan gedung
         if ($request->filled('building_id')) {
-            $query->whereHas('room', function ($q) use ($request) {
-                $q->where('building_id', $request->building_id);
-            });
+            // Validate that building belongs to accessible units
+            $building = Building::find($request->building_id);
+            if ($building && in_array($building->unit_id, $accessibleUnitIds)) {
+                $query->whereHas('room', function ($q) use ($request) {
+                    $q->where('building_id', $request->building_id);
+                });
+            }
         }
 
         // Filter berdasarkan ruangan
         if ($request->filled('room_id')) {
-            $query->where('room_id', $request->room_id);
+            // Validate that room belongs to accessible units
+            $room = Room::with('building')->find($request->room_id);
+            if ($room && $room->building && in_array($room->building->unit_id, $accessibleUnitIds)) {
+                $query->where('room_id', $request->room_id);
+            }
         }
 
         // Filter berdasarkan rentang waktu (only if both are provided)
@@ -702,5 +710,84 @@ class UserController extends Controller{
 
         $booking->delete();
         return response()->json(['success' => true, 'message' => 'Data berhasil dihapus']);
+    }
+
+    /**
+     * Get accessible buildings for calendar filter (API endpoint).
+     * Returns buildings from user's own unit and neighbor units.
+     */
+    public function getAccessibleBuildingsForCalendar(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        
+        // Get accessible unit IDs for user (own unit + neighbor units)
+        $accessibleUnits = $user->getAccessibleUnits();
+        $accessibleUnitIds = $accessibleUnits->pluck('id')->toArray();
+        
+        // Get buildings from accessible units
+        $buildings = Building::whereIn('unit_id', $accessibleUnitIds)
+            ->where('is_active', true)
+            ->with('unit:id,unit_name')
+            ->orderBy('building_name')
+            ->get()
+            ->map(function ($building) {
+                return [
+                    'id' => $building->id,
+                    'building_name' => $building->building_name,
+                    'unit_id' => $building->unit_id,
+                    'unit_name' => $building->unit->unit_name ?? '-',
+                ];
+            });
+        
+        return response()->json([
+            'success' => true,
+            'data' => $buildings,
+        ]);
+    }
+
+    /**
+     * Get accessible rooms for calendar filter (API endpoint).
+     * Returns rooms from specific building (validated against accessible units).
+     */
+    public function getAccessibleRoomsForCalendar(Request $request): JsonResponse
+    {
+        $request->validate([
+            'building_id' => 'required|integer|exists:buildings,id',
+        ]);
+
+        $user = Auth::user();
+        
+        // Get accessible unit IDs for user (own unit + neighbor units)
+        $accessibleUnits = $user->getAccessibleUnits();
+        $accessibleUnitIds = $accessibleUnits->pluck('id')->toArray();
+        
+        // Validate building belongs to accessible units
+        $building = Building::find($request->building_id);
+        if (!$building || !in_array($building->unit_id, $accessibleUnitIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gedung tidak tersedia untuk unit Anda.',
+                'data' => [],
+            ], 403);
+        }
+        
+        // Get rooms from the building
+        $rooms = Room::where('building_id', $request->building_id)
+            ->where('is_active', true)
+            ->orderBy('room_name')
+            ->get()
+            ->map(function ($room) {
+                return [
+                    'id' => $room->id,
+                    'room_name' => $room->room_name,
+                    'capacity' => $room->capacity,
+                    'location' => $room->location,
+                ];
+            });
+        
+        return response()->json([
+            'success' => true,
+            'data' => $rooms,
+        ]);
     }
 }

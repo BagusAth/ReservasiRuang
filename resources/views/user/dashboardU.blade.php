@@ -158,24 +158,15 @@
                     <div class="xl:col-span-2 space-y-6">
                         <!-- Time Filter & Calendar -->
                         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                            <!-- Location Filter Header -->
+                        <!-- Location Filter Header -->
                             <div class="p-4 lg:p-6 border-b border-gray-100">
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                                    <!-- Unit Filter -->
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-500 mb-1">Unit</label>
-                                        <select id="filterUnit" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors">
-                                            <option value="">Semua Unit</option>
-                                            @foreach(\App\Models\Unit::active()->orderBy('unit_name')->get() as $unit)
-                                                <option value="{{ $unit->id }}">{{ $unit->unit_name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                                     <!-- Building Filter -->
                                     <div>
                                         <label class="block text-xs font-medium text-gray-500 mb-1">Gedung</label>
-                                        <select id="filterBuilding" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors" disabled>
+                                        <select id="filterBuilding" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors">
                                             <option value="">Semua Gedung</option>
+                                            <!-- Buildings will be loaded dynamically -->
                                         </select>
                                     </div>
                                     <!-- Room Filter -->
@@ -426,8 +417,9 @@
     <script>
         window.__DASHBOARD_API__ = {
             bookings: '{{ route('user.api.bookings') }}',
-            buildings: '{{ route('guest.api.buildings') }}',
-            rooms: '{{ route('guest.api.rooms') }}'
+            buildings: '{{ route('user.api.accessibleBuildings') }}',
+            rooms: '{{ route('user.api.accessibleRooms') }}',
+            bookingDetail: '{{ route('user.api.booking.detail', ['id' => '__ID__']) }}'
         };
     </script>
     

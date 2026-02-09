@@ -30,9 +30,8 @@ let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
 let bookingsCache = [];
 
-// Filter state
+// Filter state (no unit filter - backend handles unit restriction)
 let currentFilters = {
-    unit_id: '',
     building_id: '',
     room_id: ''
 };
@@ -210,7 +209,8 @@ function renderCalendar() {
 async function loadBookings() {
     try {
         // Build URL with query parameters
-        let url = `/api/user/bookings?month=${currentMonth + 1}&year=${currentYear}`;
+        const apiUrl = window.__DASHBOARD_API__?.bookings || '/api/user/bookings';
+        let url = `${apiUrl}?month=${currentMonth + 1}&year=${currentYear}`;
         
         // Add time filters if both are set
         const startTimeInput = document.getElementById('startTime');
@@ -220,10 +220,7 @@ async function loadBookings() {
             url += `&start_time=${startTimeInput.value}&end_time=${endTimeInput.value}`;
         }
 
-        // Add location filters
-        if (currentFilters.unit_id) {
-            url += `&unit_id=${currentFilters.unit_id}`;
-        }
+        // Add location filters (no unit filter - backend handles unit restriction)
         if (currentFilters.building_id) {
             url += `&building_id=${currentFilters.building_id}`;
         }
@@ -257,29 +254,11 @@ async function loadBookings() {
    Location Filter Functions
    ============================================ */
 function initLocationFilters() {
-    const unitSelect = document.getElementById('filterUnit');
     const buildingSelect = document.getElementById('filterBuilding');
     const roomSelect = document.getElementById('filterRoom');
 
-    if (unitSelect) {
-        unitSelect.addEventListener('change', async () => {
-            currentFilters.unit_id = unitSelect.value;
-            currentFilters.building_id = '';
-            currentFilters.room_id = '';
-            
-            // Reset and disable building & room selects
-            buildingSelect.innerHTML = '<option value="">Semua Gedung</option>';
-            buildingSelect.disabled = !unitSelect.value;
-            roomSelect.innerHTML = '<option value="">Semua Ruangan</option>';
-            roomSelect.disabled = true;
-            
-            if (unitSelect.value) {
-                await loadBuildings(unitSelect.value);
-            }
-            
-            loadBookings();
-        });
-    }
+    // Load accessible buildings on init
+    loadAccessibleBuildings();
 
     if (buildingSelect) {
         buildingSelect.addEventListener('change', async () => {
@@ -291,7 +270,7 @@ function initLocationFilters() {
             roomSelect.disabled = !buildingSelect.value;
             
             if (buildingSelect.value) {
-                await loadRooms(buildingSelect.value);
+                await loadAccessibleRooms(buildingSelect.value);
             }
             
             loadBookings();
@@ -306,16 +285,22 @@ function initLocationFilters() {
     }
 }
 
-async function loadBuildings(unitId) {
+/**
+ * Load accessible buildings for the current user (own unit + neighbor units)
+ */
+async function loadAccessibleBuildings() {
     const buildingSelect = document.getElementById('filterBuilding');
     if (!buildingSelect) return;
     
     try {
         buildingSelect.innerHTML = '<option value="">Memuat...</option>';
         
-        const url = window.__DASHBOARD_API__?.buildings || '/api/guest/buildings';
-        const response = await fetch(`${url}?unit_id=${unitId}`, {
-            headers: { 'Accept': 'application/json' }
+        const url = window.__DASHBOARD_API__?.buildings || '/api/user/accessible-buildings';
+        const response = await fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
         });
         
         const data = await response.json();
@@ -323,29 +308,38 @@ async function loadBuildings(unitId) {
         let options = '<option value="">Semua Gedung</option>';
         if (data.success && data.data) {
             data.data.forEach(building => {
-                options += `<option value="${building.id}">${escapeHtml(building.building_name)}</option>`;
+                const displayName = building.unit_name 
+                    ? `${escapeHtml(building.building_name)} (${escapeHtml(building.unit_name)})`
+                    : escapeHtml(building.building_name);
+                options += `<option value="${building.id}">${displayName}</option>`;
             });
         }
         
         buildingSelect.innerHTML = options;
         buildingSelect.disabled = false;
     } catch (error) {
-        console.error('Error loading buildings:', error);
+        console.error('Error loading accessible buildings:', error);
         buildingSelect.innerHTML = '<option value="">Semua Gedung</option>';
         buildingSelect.disabled = false;
     }
 }
 
-async function loadRooms(buildingId) {
+/**
+ * Load accessible rooms from a specific building
+ */
+async function loadAccessibleRooms(buildingId) {
     const roomSelect = document.getElementById('filterRoom');
     if (!roomSelect) return;
     
     try {
         roomSelect.innerHTML = '<option value="">Memuat...</option>';
         
-        const url = window.__DASHBOARD_API__?.rooms || '/api/guest/rooms';
+        const url = window.__DASHBOARD_API__?.rooms || '/api/user/accessible-rooms';
         const response = await fetch(`${url}?building_id=${buildingId}`, {
-            headers: { 'Accept': 'application/json' }
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
         });
         
         const data = await response.json();
@@ -360,11 +354,13 @@ async function loadRooms(buildingId) {
         roomSelect.innerHTML = options;
         roomSelect.disabled = false;
     } catch (error) {
-        console.error('Error loading rooms:', error);
+        console.error('Error loading accessible rooms:', error);
         roomSelect.innerHTML = '<option value="">Semua Ruangan</option>';
         roomSelect.disabled = false;
     }
 }
+
+// Legacy functions removed - now using loadAccessibleBuildings and loadAccessibleRooms
 
 function renderBookingsOnCalendar(bookings) {
     // Clear all booking containers
