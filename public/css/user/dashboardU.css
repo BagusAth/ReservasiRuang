@@ -371,6 +371,16 @@
     color: #C41E24;
 }
 
+.status-badge.expired {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.15) 0%, rgba(75, 85, 99, 0.1) 100%);
+    color: #4B5563;
+}
+
+.badge-expired {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.15) 0%, rgba(75, 85, 99, 0.1) 100%);
+    color: #4B5563;
+}
+
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(180deg, #0095A8 0%, #008799 100%);
 }

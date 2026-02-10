@@ -298,7 +298,8 @@ function getStatusBadge(status) {
     const statusMap = {
         'Disetujui': { class: 'status-disetujui', label: 'Disetujui' },
         'Ditolak': { class: 'status-ditolak', label: 'Ditolak' },
-        'Menunggu': { class: 'status-menunggu', label: 'Menunggu' }
+        'Menunggu': { class: 'status-menunggu', label: 'Menunggu' },
+        'Kadaluarsa': { class: 'status-kadaluarsa', label: 'Kadaluarsa' }
     };
 
     const config = statusMap[status] || statusMap['Menunggu'];
@@ -310,11 +311,12 @@ function getStatusBadge(status) {
 // ============================================
 function getActionButtons(booking) {
     const isPending = booking.status === 'Menunggu';
+    const isExpired = booking.status === 'Kadaluarsa';
     
     let buttons = '';
     
-    // Approve/Reject buttons only for pending status
-    if (isPending) {
+    // Approve/Reject buttons only for pending status (not for expired)
+    if (isPending && !isExpired) {
         buttons += `
             <button type="button" class="action-btn approve" title="Setujui" onclick="openApproveModal(${booking.id})">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -332,27 +334,31 @@ function getActionButtons(booking) {
         `;
     }
     
-    // Alternative schedule button
-    buttons += `
-        <button type="button" class="action-btn alternative" title="Pindahkan Jadwal" onclick="openRescheduleModal(${booking.id})">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M15 10l-4 4-2-2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </button>
-    `;
+    // Alternative schedule button (not for expired bookings)
+    if (!isExpired) {
+        buttons += `
+            <button type="button" class="action-btn alternative" title="Pindahkan Jadwal" onclick="openRescheduleModal(${booking.id})">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M15 10l-4 4-2-2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        `;
+    }
     
-    // Edit button (change status)
-    buttons += `
-        <button type="button" class="action-btn edit" title="Ubah Status" onclick="openEditStatusModal(${booking.id})">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </button>
-    `;
+    // Edit button (change status) - not for expired bookings
+    if (!isExpired) {
+        buttons += `
+            <button type="button" class="action-btn edit" title="Ubah Status" onclick="openEditStatusModal(${booking.id})">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        `;
+    }
     
-    // Delete button
+    // Delete button (always available)
     buttons += `
         <button type="button" class="action-btn delete" title="Hapus" onclick="openDeleteModal(${booking.id})">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

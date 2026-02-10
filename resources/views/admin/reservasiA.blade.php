@@ -177,6 +177,7 @@
                                 <option value="Menunggu">Menunggu</option>
                                 <option value="Disetujui">Disetujui</option>
                                 <option value="Ditolak">Ditolak</option>
+                                <option value="Kadaluarsa">Kadaluarsa</option>
                             </select>
                         </div>
                         

@@ -103,6 +103,10 @@ class AdminController extends Controller
     private function getAdminBookingStats($user): array
     {
         $today = Carbon::today();
+        
+        // Expire overdue bookings before counting
+        Booking::expireOverdueBookings();
+        
         $query = $this->getAdminBookingsQuery($user);
         
         // Total peminjaman dalam scope admin
@@ -122,6 +126,11 @@ class AdminController extends Controller
         $rejectedBookings = (clone $query)
             ->where('status', Booking::STATUS_REJECTED)
             ->count();
+
+        // Peminjaman kadaluarsa
+        $expiredBookings = (clone $query)
+            ->where('status', Booking::STATUS_EXPIRED)
+            ->count();
         
         // Peminjaman hari ini
         $todayBookings = (clone $query)
@@ -135,6 +144,7 @@ class AdminController extends Controller
             'pending' => $pendingBookings,
             'approved' => $approvedBookings,
             'rejected' => $rejectedBookings,
+            'expired' => $expiredBookings,
             'today' => $todayBookings,
         ];
     }
@@ -171,6 +181,9 @@ class AdminController extends Controller
     {
         $user = Auth::user();
         
+        // Expire overdue bookings before fetching
+        Booking::expireOverdueBookings();
+
         $request->validate([
             'month' => 'nullable|integer|min:1|max:12',
             'year' => 'nullable|integer|min:2020|max:2100',
@@ -192,7 +205,7 @@ class AdminController extends Controller
         $query = $this->getAdminBookingsQuery($user);
         
         $query->with(['room.building'])
-            ->whereIn('status', [Booking::STATUS_APPROVED, Booking::STATUS_PENDING, Booking::STATUS_REJECTED])
+            ->whereIn('status', [Booking::STATUS_APPROVED, Booking::STATUS_PENDING, Booking::STATUS_REJECTED, Booking::STATUS_EXPIRED])
             ->where('start_date', '<=', $endDate)
             ->where('end_date', '>=', $startDate);
 
@@ -355,10 +368,13 @@ class AdminController extends Controller
     {
         $user = Auth::user();
         
+        // Expire overdue bookings before fetching
+        Booking::expireOverdueBookings();
+
         $request->validate([
             'page' => 'nullable|integer|min:1',
             'per_page' => 'nullable|integer|min:1|max:100',
-            'status' => 'nullable|string|in:all,Menunggu,Disetujui,Ditolak',
+            'status' => 'nullable|string|in:all,Menunggu,Disetujui,Ditolak,Kadaluarsa',
             'building_id' => 'nullable|integer',
         ]);
 
@@ -631,6 +647,18 @@ class AdminController extends Controller
                 'success' => false,
                 'message' => 'Reservasi tidak ditemukan atau tidak dalam cakupan Anda'
             ], 404);
+        }
+
+        // Check if booking is expired or should expire
+        if ($booking->isExpired() || $booking->shouldExpire()) {
+            // Mark as expired if not already
+            if (!$booking->isExpired()) {
+                $booking->markAsExpired();
+            }
+            return response()->json([
+                'success' => false,
+                'message' => 'Reservasi tidak dapat disetujui karena sudah melewati waktu yang dijadwalkan (Kadaluarsa).'
+            ], 422);
         }
 
         // Check if unit is active - cannot approve bookings for inactive units

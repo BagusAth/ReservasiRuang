@@ -480,6 +480,11 @@
     color: #D97706;
 }
 
+.notification-status-badge.expired {
+    background: rgba(107, 114, 128, 0.1);
+    color: #4B5563;
+}
+
 /* ============================================
    Responsive Adjustments
    ============================================ */

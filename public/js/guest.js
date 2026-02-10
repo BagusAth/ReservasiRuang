@@ -844,6 +844,7 @@
             case 'Disetujui': return 'status-approved';
             case 'Ditolak': return 'status-rejected';
             case 'Menunggu': return 'status-pending';
+            case 'Kadaluarsa': return 'status-expired';
             default: return 'status-pending';
         }
     }
@@ -860,7 +861,8 @@
         const statusLabels = {
             'Disetujui': 'approved',
             'Menunggu': 'pending',
-            'Ditolak': 'rejected'
+            'Ditolak': 'rejected',
+            'Kadaluarsa': 'expired'
         };
         const statusClass = statusLabels[booking.status] || 'pending';
 
@@ -1354,6 +1356,7 @@
         if (statusLower === 'disetujui') return 'badge-approved';
         if (statusLower === 'menunggu') return 'badge-pending';
         if (statusLower === 'ditolak') return 'badge-rejected';
+        if (statusLower === 'kadaluarsa') return 'badge-expired';
         return 'badge-pending';
     }
 

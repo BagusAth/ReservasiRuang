@@ -873,6 +873,8 @@ function getBadgeClass(status) {
             return 'badge-rejected';
         case 'Menunggu':
             return 'badge-pending';
+        case 'Kadaluarsa':
+            return 'badge-expired';
         default:
             return 'badge-pending';
     }

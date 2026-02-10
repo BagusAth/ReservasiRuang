@@ -13,6 +13,8 @@
 	--status-rejected-bg: #FED5CF;
 	--status-pending-text: #B17610;
 	--status-pending-bg: #FFE6B7;
+	--status-expired-text: #4B5563;
+	--status-expired-bg: #E5E7EB;
 }
 
 body {
@@ -135,6 +137,11 @@ body {
 .status-pending {
 	color: var(--status-pending-text);
 	background: var(--status-pending-bg);
+}
+
+.status-expired {
+	color: var(--status-expired-text);
+	background: var(--status-expired-bg);
 }
 
 /* ============================================

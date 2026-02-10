@@ -8,6 +8,7 @@
  * - Approved: #00AEEF / Green
  * - Rejected: #ED1C24
  * - Pending: #FFF200 / Amber
+ * - Expired: #6B7280 / Gray
  */
 
 /* ============================================
@@ -24,6 +25,8 @@
     --status-rejected-bg: #FED5CF;
     --status-pending-text: #B17610;
     --status-pending-bg: #FFE6B7;
+    --status-expired-text: #4B5563;
+    --status-expired-bg: #E5E7EB;
 }
 
 /* ============================================
@@ -257,6 +260,12 @@ body {
 .status-menunggu {
     color: var(--status-pending-text);
     background: var(--status-pending-bg);
+}
+
+.status-expired,
+.status-kadaluarsa {
+    color: var(--status-expired-text);
+    background: var(--status-expired-bg);
 }
 
 /* ============================================

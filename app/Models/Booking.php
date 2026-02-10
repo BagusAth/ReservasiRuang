@@ -44,8 +44,7 @@ class Booking extends Model
     const STATUS_PENDING = 'Menunggu';
     const STATUS_APPROVED = 'Disetujui';
     const STATUS_REJECTED = 'Ditolak';
-    
-
+    const STATUS_EXPIRED = 'Kadaluarsa';
 
     /**
      * Get the user who made this booking.
@@ -111,6 +110,46 @@ class Booking extends Model
     }
 
     /**
+     * Check if booking is expired.
+     */
+    public function isExpired(): bool
+    {
+        return $this->status === self::STATUS_EXPIRED;
+    }
+
+    /**
+     * Check if booking should be marked as expired.
+     * A booking should expire if:
+     * - End date or end time has passed
+     * - Status is still 'Menunggu' (pending)
+     */
+    public function shouldExpire(): bool
+    {
+        if ($this->status !== self::STATUS_PENDING) {
+            return false;
+        }
+
+        $now = now();
+        $endDate = $this->end_date->copy();
+        
+        // Parse end_time and set it on end_date
+        $endTimeParts = explode(':', $this->end_time);
+        $endDateTime = $endDate->setTime((int)$endTimeParts[0], (int)$endTimeParts[1], 0);
+
+        return $now->gt($endDateTime);
+    }
+
+    /**
+     * Mark booking as expired.
+     */
+    public function markAsExpired(): bool
+    {
+        return $this->update([
+            'status' => self::STATUS_EXPIRED,
+        ]);
+    }
+
+    /**
      * Approve this booking.
      */
     public function approve(User $approver): bool
@@ -166,6 +205,29 @@ class Booking extends Model
     public function scopeRejected($query)
     {
         return $query->where('status', self::STATUS_REJECTED);
+    }
+
+    /**
+     * Scope untuk booking yang expired.
+     */
+    public function scopeExpired($query)
+    {
+        return $query->where('status', self::STATUS_EXPIRED);
+    }
+
+    /**
+     * Scope untuk booking yang should expire (pending & end time passed).
+     */
+    public function scopeShouldExpire($query)
+    {
+        return $query->where('status', self::STATUS_PENDING)
+                     ->where(function ($q) {
+                         $q->where('end_date', '<', now()->toDateString())
+                           ->orWhere(function ($q2) {
+                               $q2->where('end_date', '=', now()->toDateString())
+                                  ->where('end_time', '<', now()->format('H:i:s'));
+                           });
+                     });
     }
 
     /**
@@ -336,5 +398,49 @@ class Booking extends Model
             'is_rescheduled' => true,
             'schedule_changed_data' => $oldScheduleData,
         ]);
+    }
+
+    /**
+     * Check and update expired status if needed.
+     * This is used for real-time checking when data is being retrieved.
+     * Returns true if the booking was updated to expired.
+     */
+    public function checkAndExpire(): bool
+    {
+        if ($this->shouldExpire()) {
+            return $this->markAsExpired();
+        }
+        return false;
+    }
+
+    /**
+     * Static method to expire all pending bookings that should expire.
+     * This can be called before fetching bookings to ensure data is up-to-date.
+     */
+    public static function expireOverdueBookings(): int
+    {
+        return self::where('status', self::STATUS_PENDING)
+            ->where(function ($q) {
+                $q->where('end_date', '<', now()->toDateString())
+                  ->orWhere(function ($q2) {
+                      $q2->where('end_date', '=', now()->toDateString())
+                         ->where('end_time', '<', now()->format('H:i:s'));
+                  });
+            })
+            ->update([
+                'status' => self::STATUS_EXPIRED,
+            ]);
+    }
+
+    /**
+     * Get effective status (checking for expired in real-time).
+     * This returns the current status or 'Kadaluarsa' if the booking should expire.
+     */
+    public function getEffectiveStatus(): string
+    {
+        if ($this->shouldExpire()) {
+            return self::STATUS_EXPIRED;
+        }
+        return $this->status;
     }
 }

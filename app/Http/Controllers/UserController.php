@@ -105,6 +105,9 @@ class UserController extends Controller{
             'room_id' => 'nullable|integer|exists:rooms,id',
         ]);
 
+        // Expire overdue bookings before fetching
+        Booking::expireOverdueBookings();
+
         $user = Auth::user();
         $month = $request->input('month', now()->month);
         $year = $request->input('year', now()->year);
@@ -116,9 +119,9 @@ class UserController extends Controller{
         $accessibleUnits = $user->getAccessibleUnits();
         $accessibleUnitIds = $accessibleUnits->pluck('id')->toArray();
 
-        // Query bookings only from accessible units
+        // Query bookings only from accessible units (include expired status)
         $query = Booking::with(['room.building.unit'])
-            ->whereIn('status', [Booking::STATUS_APPROVED, Booking::STATUS_PENDING])
+            ->whereIn('status', [Booking::STATUS_APPROVED, Booking::STATUS_PENDING, Booking::STATUS_EXPIRED])
             ->where('start_date', '<=', $endDate)
             ->where('end_date', '>=', $startDate)
             ->whereHas('room.building', function ($q) use ($accessibleUnitIds) {
@@ -294,6 +297,9 @@ class UserController extends Controller{
     public function listMyBookings(Request $request): JsonResponse
     {
         $user = Auth::user();
+
+        // Expire overdue bookings before fetching
+        Booking::expireOverdueBookings();
 
         $bookings = Booking::with(['room.building.unit'])
             ->where('user_id', $user->id)

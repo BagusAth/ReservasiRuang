@@ -825,6 +825,14 @@ body {
     border-left-color: #ED1C24;
 }
 
+/* Expired - Gray */
+.booking-item.status-expired,
+.booking-item.expired {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.15) 0%, rgba(75, 85, 99, 0.1) 100%);
+    color: #4B5563;
+    border-left-color: #6B7280;
+}
+
 /* ============================================
    Week View Event Items
    ============================================ */
@@ -1488,6 +1496,11 @@ body {
 .day-booking-item.status-rejected {
     background: linear-gradient(135deg, rgba(237, 28, 36, 0.08) 0%, rgba(217, 25, 32, 0.05) 100%);
     border-left-color: #ED1C24;
+}
+
+.day-booking-item.status-expired {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.1) 0%, rgba(75, 85, 99, 0.06) 100%);
+    border-left-color: #6B7280;
 }
 
 .day-booking-title {
@@ -2723,6 +2736,16 @@ body {
     color: #C41E24;
 }
 
+.status-badge.expired {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.15) 0%, rgba(75, 85, 99, 0.1) 100%);
+    color: #4B5563;
+}
+
+.badge-expired {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.15) 0%, rgba(75, 85, 99, 0.1) 100%);
+    color: #4B5563;
+}
+
 /* Utility classes for modal */
 .space-y-1 > * + * {
     margin-top: 0.25rem;
@@ -3271,6 +3294,10 @@ input[type="password"]::-ms-reveal {
     background: linear-gradient(180deg, #ED1C24 0%, #DC2626 100%);
 }
 
+.search-result-status.status-expired {
+    background: linear-gradient(180deg, #6B7280 0%, #4B5563 100%);
+}
+
 /* Search Result Content */
 .search-result-content {
     flex: 1;
@@ -3506,6 +3533,15 @@ input[type="password"]::-ms-reveal {
 
 .day-booking-item.status-rejected:hover {
     background: linear-gradient(135deg, #FECACA 0%, #FCA5A5 100%);
+}
+
+.day-booking-item.status-expired {
+    background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);
+    border-left-color: #6B7280;
+}
+
+.day-booking-item.status-expired:hover {
+    background: linear-gradient(135deg, #E5E7EB 0%, #D1D5DB 100%);
 }
 
 .day-booking-header {

@@ -373,6 +373,10 @@ class UserNotificationManager {
                 badgeClass = 'pending';
                 statusText = 'Menunggu';
                 break;
+            case 'Kadaluarsa':
+                badgeClass = 'expired';
+                statusText = 'Kadaluarsa';
+                break;
             default:
                 return '';
         }

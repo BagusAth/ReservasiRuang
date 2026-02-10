@@ -396,6 +396,7 @@ function statusBadge(status) {
 		'Disetujui': 'status-approved',
 		'Ditolak': 'status-rejected',
 		'Menunggu': 'status-pending',
+		'Kadaluarsa': 'status-expired',
 	};
 	const cls = map[status] || 'status-pending';
 	return `<span class="status-badge ${cls}">${status}</span>`;

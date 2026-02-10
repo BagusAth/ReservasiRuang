@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('agenda_name');
             $table->string('pic_name');
             $table->string('pic_phone');
+            $table->unsignedInteger('participant_count')->comment('Jumlah peserta yang akan menggunakan ruangan');
             $table->text('agenda_detail');
             $table->enum('status', ['Menunggu', 'Disetujui', 'Ditolak', 'Kadaluarsa'])->default('Menunggu');
             $table->text('rejection_reason')->nullable();
