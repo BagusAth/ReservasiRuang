@@ -210,9 +210,15 @@
                                         <!-- Room Filter -->
                                         <div class="flex-1">
                                             <label for="roomFilter" class="block text-xs font-medium text-gray-600 mb-2">Ruangan</label>
+                                            @if($adminType === 'admin_unit')
+                                            <select id="roomFilter" class="calendar-filter-select w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary transition-all" disabled>
+                                                <option value="">Pilih gedung terlebih dahulu</option>
+                                            </select>
+                                            @else
                                             <select id="roomFilter" class="calendar-filter-select w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-primary focus:border-primary transition-all">
                                                 <option value="">Semua Ruangan</option>
                                             </select>
+                                            @endif
                                         </div>
                                         
                                         <!-- Clear Filters Button -->

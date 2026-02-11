@@ -169,12 +169,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function populateRoomFilter() {
         const currentValue = roomFilterSelect.value;
-        roomFilterSelect.innerHTML = '<option value="">Semua Ruangan</option>';
+        const isBuildingSelected = buildingFilter && buildingFilter !== '';
+        
+        // For Admin Unit: Enable/disable based on building selection
+        if (buildingFilterSelect) {
+            if (isBuildingSelected) {
+                roomFilterSelect.disabled = false;
+                roomFilterSelect.innerHTML = '<option value="">Semua Ruangan</option>';
+            } else {
+                roomFilterSelect.disabled = true;
+                roomFilterSelect.innerHTML = '<option value="">Pilih gedung terlebih dahulu</option>';
+                return; // Don't populate rooms if no building selected
+            }
+        } else {
+            // Admin Gedung: Always enabled
+            roomFilterSelect.innerHTML = '<option value="">Semua Ruangan</option>';
+        }
         
         rooms.forEach(room => {
             const option = document.createElement('option');
             option.value = room.id;
-            option.textContent = room.display_name;
+            // Only show room name without building name
+            option.textContent = room.room_name;
             roomFilterSelect.appendChild(option);
         });
         
@@ -827,11 +843,14 @@ document.addEventListener('DOMContentLoaded', function() {
             buildingFilter = e.target.value;
             roomFilter = ''; // Reset room filter when building changes
             
-            // Fetch rooms for the selected building
+            // Update room filter state based on building selection
             if (buildingFilter) {
+                // Fetch rooms for the selected building
                 fetchRooms(buildingFilter);
             } else {
-                fetchRooms(); // Fetch all rooms in the unit
+                // Reset room filter to disabled state with placeholder
+                rooms = [];
+                populateRoomFilter();
             }
             
             fetchBookings();
@@ -860,16 +879,20 @@ document.addEventListener('DOMContentLoaded', function() {
             if (buildingFilterSelect) {
                 buildingFilterSelect.value = '';
                 buildingFilter = '';
-            }
-            
-            // Reset room filter
-            if (roomFilterSelect) {
-                roomFilterSelect.value = '';
+                
+                // Reset room filter to disabled state
+                rooms = [];
                 roomFilter = '';
+                populateRoomFilter();
+            } else {
+                // Admin Gedung: Just reset room filter value
+                if (roomFilterSelect) {
+                    roomFilterSelect.value = '';
+                    roomFilter = '';
+                }
+                // Reload all rooms for Admin Gedung
+                fetchRooms();
             }
-            
-            // Reload all rooms
-            fetchRooms();
             
             // Refresh calendar
             fetchBookings();
@@ -928,7 +951,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load initial data
     if (buildingFilterSelect) {
         fetchBuildings(); // Only for Admin Unit
+        // Don't fetch rooms initially for Admin Unit - wait for building selection
+        // Initialize room filter in disabled state
+        populateRoomFilter();
+    } else {
+        // Admin Gedung: Load rooms immediately
+        fetchRooms();
     }
-    fetchRooms(); // Load rooms
     fetchBookings(); // Load calendar
 });
