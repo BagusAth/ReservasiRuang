@@ -45,6 +45,7 @@ class Booking extends Model
     const STATUS_APPROVED = 'Disetujui';
     const STATUS_REJECTED = 'Ditolak';
     const STATUS_EXPIRED = 'Kadaluarsa';
+    const STATUS_CANCELLED_BY_USER = 'Dibatalkan oleh User';
 
     /**
      * Get the user who made this booking.
@@ -115,6 +116,38 @@ class Booking extends Model
     public function isExpired(): bool
     {
         return $this->status === self::STATUS_EXPIRED;
+    }
+
+    /**
+     * Check if booking is cancelled by user.
+     */
+    public function isCancelledByUser(): bool
+    {
+        return $this->status === self::STATUS_CANCELLED_BY_USER;
+    }
+
+    /**
+     * Cancel this booking by user.
+     */
+    public function cancelByUser(): bool
+    {
+        return $this->update([
+            'status' => self::STATUS_CANCELLED_BY_USER,
+        ]);
+    }
+
+    /**
+     * Check if booking can be cancelled by user.
+     * Users can cancel pending or approved reservations that haven't ended yet.
+     */
+    public function canBeCancelledByUser(): bool
+    {
+        // Already cancelled or rejected/expired cannot be cancelled again
+        if ($this->isCancelledByUser() || $this->isRejected() || $this->isExpired()) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -213,6 +246,14 @@ class Booking extends Model
     public function scopeExpired($query)
     {
         return $query->where('status', self::STATUS_EXPIRED);
+    }
+
+    /**
+     * Scope untuk booking yang dibatalkan oleh user.
+     */
+    public function scopeCancelledByUser($query)
+    {
+        return $query->where('status', self::STATUS_CANCELLED_BY_USER);
     }
 
     /**

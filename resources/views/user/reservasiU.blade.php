@@ -168,6 +168,7 @@
 								<option value="pending">Menunggu</option>
 								<option value="approved">Disetujui</option>
 								<option value="rejected">Ditolak</option>
+								<option value="cancelled">Dibatalkan</option>
 							</select>
 						</div>
 
@@ -377,17 +378,17 @@
 		</div>
 	</div>
 
-	<!-- Modal: Delete Confirmation -->
+	<!-- Modal: Cancel Reservation Confirmation -->
 	<div id="deleteModal" class="modal-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
 		<div class="modal-content bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
 			<div class="flex items-center justify-between p-5 lg:p-6 border-b border-gray-100 bg-gradient-to-r from-red-50 to-transparent flex-shrink-0">
 				<div class="flex items-center gap-3">
 					<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/25">
 						<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
 						</svg>
 					</div>
-					<h3 class="text-lg font-bold text-gray-900">Hapus Peminjaman</h3>
+					<h3 class="text-lg font-bold text-gray-900">Batalkan Reservasi</h3>
 				</div>
 				<button type="button" class="p-2.5 hover:bg-gray-100 rounded-xl transition-all duration-200 hover:rotate-90" data-close-delete>
 					<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -396,14 +397,21 @@
 				</button>
 			</div>
 			<div class="p-5 lg:p-6">
-				<p class="text-gray-600 text-center mb-6">Apakah Anda yakin ingin menghapus peminjaman ini?</p>
-				<p class="text-sm text-gray-500 text-center mb-6">Tindakan ini tidak dapat dibatalkan.</p>
+				<div class="flex items-center justify-center mb-4">
+					<div class="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+						<svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+						</svg>
+					</div>
+				</div>
+				<p class="text-gray-700 text-center font-medium mb-2">Apakah Anda yakin ingin membatalkan reservasi ini?</p>
+				<p class="text-sm text-gray-500 text-center mb-6">Status reservasi akan berubah menjadi <span class="font-semibold text-red-600">"Dibatalkan oleh User"</span> dan tidak dapat diaktifkan kembali.</p>
 				<div class="flex gap-3">
 					<button type="button" class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors" data-close-delete>
-						Batal
+						Tidak, Kembali
 					</button>
 					<button type="button" class="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 transition-all shadow-lg shadow-red-500/25" id="confirmDeleteBtn">
-						Ya, Hapus
+						Ya, Batalkan
 					</button>
 				</div>
 			</div>

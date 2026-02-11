@@ -178,6 +178,7 @@
                                 <option value="Disetujui">Disetujui</option>
                                 <option value="Ditolak">Ditolak</option>
                                 <option value="Kadaluarsa">Kadaluarsa</option>
+                                <option value="Dibatalkan oleh User">Dibatalkan</option>
                             </select>
                         </div>
                         

@@ -130,7 +130,8 @@ function applyFilters() {
 			const statusMap = {
 				'pending': 'Menunggu',
 				'approved': 'Disetujui',
-				'rejected': 'Ditolak'
+				'rejected': 'Ditolak',
+				'cancelled': 'Dibatalkan oleh User'
 			};
 			if (item.status !== statusMap[statusValue]) {
 				return false;
@@ -316,7 +317,7 @@ function renderTable() {
 				${r.status === 'Menunggu' ? `<button class=\"action-btn edit\" title=\"Edit\" onclick=\"editBooking(${r.id})\">` : `<button class=\"action-btn edit opacity-40 cursor-not-allowed\" title=\"Edit nonaktif\" disabled>`}
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
 				</button>
-				${r.status === 'Menunggu' ? `<button class=\"action-btn delete\" title=\"Hapus\" onclick=\"deleteBooking(${r.id})\">` : `<button class=\"action-btn delete opacity-40 cursor-not-allowed\" title=\"Hapus nonaktif\" disabled>`}
+				${(r.status === 'Menunggu' || r.status === 'Disetujui') ? `<button class=\"action-btn delete\" title=\"Batalkan Reservasi\" onclick=\"deleteBooking(${r.id})\">` : `<button class=\"action-btn delete opacity-40 cursor-not-allowed\" title=\"Tidak dapat dibatalkan\" disabled>`}
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
 				</button>
 			</td>`;
@@ -397,6 +398,7 @@ function statusBadge(status) {
 		'Ditolak': 'status-rejected',
 		'Menunggu': 'status-pending',
 		'Kadaluarsa': 'status-expired',
+		'Dibatalkan oleh User': 'status-cancelled',
 	};
 	const cls = map[status] || 'status-pending';
 	return `<span class="status-badge ${cls}">${status}</span>`;
@@ -1524,7 +1526,7 @@ async function confirmDeleteBooking(id) {
 		// Show loading state
 		if (confirmBtn) {
 			confirmBtn.disabled = true;
-			confirmBtn.textContent = 'Menghapus...';
+			confirmBtn.textContent = 'Membatalkan...';
 		}
 		
 		const res = await fetch(window.__USER_API__.delete(id), { 
@@ -1539,21 +1541,21 @@ async function confirmDeleteBooking(id) {
 		closeDeleteModal();
 		
 		if (!res.ok || !data.success) {
-			showToast(data.message || 'Gagal menghapus data', 'error');
+			showToast(data.message || 'Gagal membatalkan reservasi', 'error');
 			return;
 		}
 		
-		showToast('Data berhasil dihapus', 'success');
+		showToast('Reservasi berhasil dibatalkan', 'success');
 		await tableState.load();
 	} catch (error) {
-		console.error('Delete error:', error);
+		console.error('Cancel error:', error);
 		closeDeleteModal();
 		showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
 	} finally {
 		// Re-enable button
 		if (confirmBtn) {
 			confirmBtn.disabled = false;
-			confirmBtn.textContent = originalText || 'Ya, Hapus';
+			confirmBtn.textContent = originalText || 'Ya, Batalkan';
 		}
 	}
 }

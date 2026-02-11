@@ -741,21 +741,44 @@ class UserController extends Controller{
     }
 
     /**
-     * API: Hapus booking milik user (hanya jika status Menunggu).
+     * API: Batalkan booking milik user.
+     * User dapat membatalkan reservasi yang masih Menunggu atau sudah Disetujui.
+     * Status akan berubah menjadi "Dibatalkan oleh User".
      */
     public function deleteBooking(int $id): JsonResponse
     {
         $user = Auth::user();
         $booking = Booking::where('user_id', $user->id)->find($id);
+        
         if (!$booking) {
-            return response()->json(['success' => false, 'message' => 'Data tidak ditemukan'], 404);
+            return response()->json([
+                'success' => false, 
+                'message' => 'Data tidak ditemukan atau Anda tidak memiliki akses untuk membatalkan reservasi ini.'
+            ], 404);
         }
-        if ($booking->status !== Booking::STATUS_PENDING) {
-            return response()->json(['success' => false, 'message' => 'Hanya data dengan status Menunggu yang dapat dihapus'], 422);
+        
+        // Check if reservation can be cancelled
+        if (!$booking->canBeCancelledByUser()) {
+            $statusMessage = match($booking->status) {
+                Booking::STATUS_CANCELLED_BY_USER => 'Reservasi ini sudah dibatalkan sebelumnya.',
+                Booking::STATUS_REJECTED => 'Reservasi yang ditolak tidak dapat dibatalkan.',
+                Booking::STATUS_EXPIRED => 'Reservasi yang sudah kadaluarsa tidak dapat dibatalkan.',
+                default => 'Reservasi ini tidak dapat dibatalkan.',
+            };
+            
+            return response()->json([
+                'success' => false, 
+                'message' => $statusMessage
+            ], 422);
         }
 
-        $booking->delete();
-        return response()->json(['success' => true, 'message' => 'Data berhasil dihapus']);
+        // Cancel the booking (change status to "Dibatalkan oleh User")
+        $booking->cancelByUser();
+        
+        return response()->json([
+            'success' => true, 
+            'message' => 'Reservasi berhasil dibatalkan.'
+        ]);
     }
 
     /**

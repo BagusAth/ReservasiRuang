@@ -27,6 +27,8 @@
     --status-pending-bg: #FFE6B7;
     --status-expired-text: #4B5563;
     --status-expired-bg: #E5E7EB;
+    --status-cancelled-text: #6B21A8;
+    --status-cancelled-bg: #F3E8FF;
 }
 
 /* ============================================
@@ -266,6 +268,12 @@ body {
 .status-kadaluarsa {
     color: var(--status-expired-text);
     background: var(--status-expired-bg);
+}
+
+.status-cancelled,
+.status-dibatalkan {
+    color: var(--status-cancelled-text);
+    background: var(--status-cancelled-bg);
 }
 
 /* ============================================

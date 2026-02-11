@@ -299,7 +299,8 @@ function getStatusBadge(status) {
         'Disetujui': { class: 'status-disetujui', label: 'Disetujui' },
         'Ditolak': { class: 'status-ditolak', label: 'Ditolak' },
         'Menunggu': { class: 'status-menunggu', label: 'Menunggu' },
-        'Kadaluarsa': { class: 'status-kadaluarsa', label: 'Kadaluarsa' }
+        'Kadaluarsa': { class: 'status-kadaluarsa', label: 'Kadaluarsa' },
+        'Dibatalkan oleh User': { class: 'status-dibatalkan', label: 'Dibatalkan' }
     };
 
     const config = statusMap[status] || statusMap['Menunggu'];

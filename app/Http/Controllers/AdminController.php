@@ -205,7 +205,7 @@ class AdminController extends Controller
         $query = $this->getAdminBookingsQuery($user);
         
         $query->with(['room.building'])
-            ->whereIn('status', [Booking::STATUS_APPROVED, Booking::STATUS_PENDING, Booking::STATUS_REJECTED, Booking::STATUS_EXPIRED])
+            ->whereIn('status', [Booking::STATUS_APPROVED, Booking::STATUS_PENDING, Booking::STATUS_REJECTED, Booking::STATUS_EXPIRED, Booking::STATUS_CANCELLED_BY_USER])
             ->where('start_date', '<=', $endDate)
             ->where('end_date', '>=', $startDate);
 
@@ -374,7 +374,7 @@ class AdminController extends Controller
         $request->validate([
             'page' => 'nullable|integer|min:1',
             'per_page' => 'nullable|integer|min:1|max:100',
-            'status' => 'nullable|string|in:all,Menunggu,Disetujui,Ditolak,Kadaluarsa',
+            'status' => 'nullable|string|in:all,Menunggu,Disetujui,Ditolak,Kadaluarsa,Dibatalkan oleh User',
             'building_id' => 'nullable|integer',
         ]);
 
