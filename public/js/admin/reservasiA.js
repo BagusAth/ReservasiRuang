@@ -1347,4 +1347,542 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // ============================================
+    // Initialize Admin Booking Creation Modal
+    // ============================================
+    initAdminBookingModal();
 });
+
+// ============================================
+// ADMIN BOOKING CREATION FUNCTIONS
+// ============================================
+
+// Store room data for capacity validation
+let createBookingRoomsData = [];
+let createBookingCurrentCapacity = null;
+
+/**
+ * Initialize admin booking modal
+ */
+function initAdminBookingModal() {
+    const openBtn = document.getElementById('btnOpenCreate');
+    const closeBtn = document.getElementById('closeCreateBookingModal');
+    const cancelBtn = document.getElementById('cancelCreateBooking');
+    const form = document.getElementById('createBookingForm');
+    const buildingSelect = document.getElementById('createBuildingId');
+    const roomSelect = document.getElementById('createRoomId');
+    const participantInput = document.getElementById('createParticipantCount');
+    const modalOverlay = document.getElementById('createBookingModal');
+
+    // Open button
+    if (openBtn) {
+        openBtn.addEventListener('click', openCreateBookingModal);
+    }
+
+    // Close buttons
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeCreateBookingModal);
+    }
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeCreateBookingModal);
+    }
+
+    // Close on overlay click
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                closeCreateBookingModal();
+            }
+        });
+    }
+
+    // Form submit
+    if (form) {
+        form.addEventListener('submit', handleCreateBookingSubmit);
+    }
+
+    // Building change - load rooms (Admin Unit only)
+    if (buildingSelect) {
+        buildingSelect.addEventListener('change', onCreateBuildingChange);
+    }
+
+    // Room change - show capacity info
+    if (roomSelect) {
+        roomSelect.addEventListener('change', onCreateRoomChange);
+    }
+
+    // Participant count validation
+    if (participantInput) {
+        participantInput.addEventListener('input', validateCreateParticipantCount);
+    }
+
+    // Date/Time validation
+    const startDateInput = document.getElementById('createStartDate');
+    const endDateInput = document.getElementById('createEndDate');
+    const startTimeInput = document.getElementById('createStartTime');
+    const endTimeInput = document.getElementById('createEndTime');
+
+    [startDateInput, endDateInput, startTimeInput, endTimeInput].forEach(input => {
+        if (input) {
+            input.addEventListener('change', validateCreateTimeInputs);
+        }
+    });
+}
+
+/**
+ * Open create booking modal
+ */
+function openCreateBookingModal() {
+    resetCreateBookingForm();
+    setCreateMinimumDateToday();
+    loadBuildingsForCreate();
+    
+    // For Admin Gedung, automatically load rooms
+    if (window.__ADMIN_TYPE__ === 'admin_gedung') {
+        loadRoomsForCreate();
+    }
+    
+    openModal('createBookingModal');
+}
+
+/**
+ * Close create booking modal
+ */
+function closeCreateBookingModal() {
+    closeModal('createBookingModal');
+}
+
+/**
+ * Reset the create booking form
+ */
+function resetCreateBookingForm() {
+    const form = document.getElementById('createBookingForm');
+    if (form) {
+        form.reset();
+    }
+
+    // Reset building dropdown (Admin Unit)
+    const buildingSelect = document.getElementById('createBuildingId');
+    if (buildingSelect) {
+        buildingSelect.innerHTML = '<option value="">Pilih Gedung</option>';
+    }
+
+    // Reset room dropdown
+    const roomSelect = document.getElementById('createRoomId');
+    if (roomSelect) {
+        roomSelect.innerHTML = '<option value="">Pilih Ruangan</option>';
+    }
+
+    // Hide room capacity info
+    hideCreateRoomCapacityInfo();
+    
+    // Reset stored data
+    createBookingRoomsData = [];
+    createBookingCurrentCapacity = null;
+
+    // Hide error messages
+    const errorDiv = document.getElementById('createFormError');
+    if (errorDiv) {
+        errorDiv.classList.add('hidden');
+    }
+
+    const capacityError = document.getElementById('createCapacityError');
+    if (capacityError) {
+        capacityError.classList.add('hidden');
+    }
+}
+
+/**
+ * Set minimum date to today
+ */
+function setCreateMinimumDateToday() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+
+    const startDateInput = document.getElementById('createStartDate');
+    const endDateInput = document.getElementById('createEndDate');
+
+    if (startDateInput) {
+        startDateInput.setAttribute('min', todayStr);
+    }
+    if (endDateInput) {
+        endDateInput.setAttribute('min', todayStr);
+    }
+}
+
+/**
+ * Load buildings for create form (Admin Unit only)
+ */
+async function loadBuildingsForCreate() {
+    const buildingSelect = document.getElementById('createBuildingId');
+    if (!buildingSelect) return; // Admin Gedung doesn't have this
+
+    const wrapper = buildingSelect.closest('.select-wrapper');
+    if (wrapper) wrapper.classList.add('loading');
+    buildingSelect.innerHTML = '<option value="">Memuat gedung...</option>';
+
+    try {
+        const response = await fetch(window.__ADMIN_API__.bookingBuildings, {
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to load buildings');
+
+        const result = await response.json();
+        if (result.success && result.data) {
+            let html = '<option value="">Pilih Gedung</option>';
+            result.data.forEach(b => {
+                html += `<option value="${b.id}">${escapeHtml(b.building_name)}</option>`;
+            });
+            buildingSelect.innerHTML = html;
+        }
+    } catch (error) {
+        console.error('Error loading buildings:', error);
+        buildingSelect.innerHTML = '<option value="">Gagal memuat gedung</option>';
+    } finally {
+        if (wrapper) wrapper.classList.remove('loading');
+    }
+}
+
+/**
+ * Load rooms for create form
+ */
+async function loadRoomsForCreate(buildingId = null) {
+    const roomSelect = document.getElementById('createRoomId');
+    if (!roomSelect) return;
+
+    const wrapper = roomSelect.closest('.select-wrapper');
+    if (wrapper) wrapper.classList.add('loading');
+    roomSelect.innerHTML = '<option value="">Memuat ruangan...</option>';
+
+    // Hide capacity info while loading
+    hideCreateRoomCapacityInfo();
+    createBookingRoomsData = [];
+    createBookingCurrentCapacity = null;
+
+    try {
+        let url = window.__ADMIN_API__.bookingRooms;
+        if (buildingId) {
+            url += `?building_id=${buildingId}`;
+        }
+
+        const response = await fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to load rooms');
+
+        const result = await response.json();
+        if (result.success && result.data) {
+            createBookingRoomsData = result.data;
+
+            let html = '<option value="">Pilih Ruangan</option>';
+            result.data.forEach(room => {
+                const capacityText = room.capacity ? `${room.capacity} orang` : 'Kapasitas tidak tersedia';
+                const locationText = room.location || 'Lokasi tidak tersedia';
+                const displayText = `${escapeHtml(room.room_name)} — ${capacityText} • ${locationText}`;
+                html += `<option value="${room.id}" data-capacity="${room.capacity || ''}" data-location="${escapeHtml(room.location || '')}">${displayText}</option>`;
+            });
+            roomSelect.innerHTML = html;
+        }
+    } catch (error) {
+        console.error('Error loading rooms:', error);
+        roomSelect.innerHTML = '<option value="">Gagal memuat ruangan</option>';
+    } finally {
+        if (wrapper) wrapper.classList.remove('loading');
+    }
+}
+
+/**
+ * Handle building change (Admin Unit)
+ */
+function onCreateBuildingChange() {
+    const buildingId = document.getElementById('createBuildingId')?.value;
+    loadRoomsForCreate(buildingId || null);
+}
+
+/**
+ * Handle room change - show capacity info
+ */
+function onCreateRoomChange() {
+    const roomId = document.getElementById('createRoomId')?.value;
+    
+    if (!roomId) {
+        hideCreateRoomCapacityInfo();
+        createBookingCurrentCapacity = null;
+        return;
+    }
+
+    const selectedRoom = createBookingRoomsData.find(r => r.id == roomId);
+    if (selectedRoom) {
+        showCreateRoomCapacityInfo(selectedRoom);
+        createBookingCurrentCapacity = selectedRoom.capacity || null;
+
+        // Set max value on participant count input
+        const participantInput = document.getElementById('createParticipantCount');
+        if (participantInput && createBookingCurrentCapacity) {
+            participantInput.setAttribute('max', createBookingCurrentCapacity);
+        }
+
+        // Validate participant count if already filled
+        validateCreateParticipantCount();
+    } else {
+        hideCreateRoomCapacityInfo();
+        createBookingCurrentCapacity = null;
+    }
+}
+
+/**
+ * Show room capacity info
+ */
+function showCreateRoomCapacityInfo(room) {
+    const infoPanel = document.getElementById('createRoomCapacityInfo');
+    const capacityValue = document.getElementById('createRoomCapacityValue');
+
+    if (infoPanel && capacityValue) {
+        capacityValue.textContent = room.capacity ? room.capacity : '-';
+        infoPanel.classList.remove('hidden');
+    }
+}
+
+/**
+ * Hide room capacity info
+ */
+function hideCreateRoomCapacityInfo() {
+    const infoPanel = document.getElementById('createRoomCapacityInfo');
+    if (infoPanel) {
+        infoPanel.classList.add('hidden');
+    }
+
+    // Also hide capacity error
+    const capacityError = document.getElementById('createCapacityError');
+    if (capacityError) {
+        capacityError.classList.add('hidden');
+    }
+
+    // Remove max attribute
+    const participantInput = document.getElementById('createParticipantCount');
+    if (participantInput) {
+        participantInput.removeAttribute('max');
+    }
+}
+
+/**
+ * Validate participant count against room capacity
+ */
+function validateCreateParticipantCount() {
+    const participantInput = document.getElementById('createParticipantCount');
+    const participantCount = parseInt(participantInput?.value);
+    const capacityError = document.getElementById('createCapacityError');
+    const capacityErrorText = document.getElementById('createCapacityErrorText');
+
+    if (!participantInput || !participantCount || !createBookingCurrentCapacity) {
+        if (capacityError) capacityError.classList.add('hidden');
+        participantInput?.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+        return true;
+    }
+
+    if (participantCount > createBookingCurrentCapacity) {
+        if (capacityError && capacityErrorText) {
+            capacityErrorText.textContent = `Jumlah peserta (${participantCount}) melebihi kapasitas ruangan (${createBookingCurrentCapacity} orang)`;
+            capacityError.classList.remove('hidden');
+        }
+        participantInput.classList.add('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+        return false;
+    } else {
+        if (capacityError) capacityError.classList.add('hidden');
+        participantInput.classList.remove('border-red-500', 'focus:ring-red-500', 'focus:border-red-500');
+        return true;
+    }
+}
+
+/**
+ * Validate time inputs
+ */
+function validateCreateTimeInputs() {
+    const startDate = document.getElementById('createStartDate')?.value;
+    const endDate = document.getElementById('createEndDate')?.value;
+    const startTime = document.getElementById('createStartTime')?.value;
+    const endTime = document.getElementById('createEndTime')?.value;
+
+    // Auto-set end date if not set
+    if (startDate && !endDate) {
+        document.getElementById('createEndDate').value = startDate;
+    }
+
+    // Validate end date is not before start date
+    if (startDate && endDate && endDate < startDate) {
+        document.getElementById('createEndDate').value = startDate;
+    }
+
+    // Validate time for same-day booking
+    if (startDate && endDate && startDate === endDate && startTime && endTime) {
+        if (endTime <= startTime) {
+            // Don't auto-correct, just show visual feedback
+            document.getElementById('createEndTime')?.classList.add('border-red-500');
+        } else {
+            document.getElementById('createEndTime')?.classList.remove('border-red-500');
+        }
+    }
+}
+
+/**
+ * Show form error
+ */
+function showCreateFormError(message) {
+    const errorDiv = document.getElementById('createFormError');
+    const errorText = document.getElementById('createFormErrorText');
+    
+    if (errorDiv && errorText) {
+        errorText.textContent = message;
+        errorDiv.classList.remove('hidden');
+        // Scroll to error
+        errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+/**
+ * Hide form error
+ */
+function hideCreateFormError() {
+    const errorDiv = document.getElementById('createFormError');
+    if (errorDiv) {
+        errorDiv.classList.add('hidden');
+    }
+}
+
+/**
+ * Handle create booking form submit
+ */
+async function handleCreateBookingSubmit(e) {
+    e.preventDefault();
+
+    hideCreateFormError();
+
+    // Get form values
+    const roomId = document.getElementById('createRoomId')?.value;
+    const startDate = document.getElementById('createStartDate')?.value;
+    const endDate = document.getElementById('createEndDate')?.value;
+    const startTime = document.getElementById('createStartTime')?.value;
+    const endTime = document.getElementById('createEndTime')?.value;
+    const agendaName = document.getElementById('createAgendaName')?.value?.trim();
+    const agendaDetail = document.getElementById('createAgendaDetail')?.value?.trim();
+    const picName = document.getElementById('createPicName')?.value?.trim();
+    const picPhone = document.getElementById('createPicPhone')?.value?.trim();
+    const participantCount = document.getElementById('createParticipantCount')?.value;
+
+    // Basic validation
+    if (!roomId || !startDate || !endDate || !startTime || !endTime || !agendaName || !picName || !picPhone || !participantCount) {
+        showCreateFormError('Mohon lengkapi semua field yang wajib diisi.');
+        return;
+    }
+
+    // PIC name validation (letters only)
+    if (!/^[a-zA-Z\s]+$/.test(picName)) {
+        showCreateFormError('Nama PIC hanya boleh berisi huruf.');
+        return;
+    }
+
+    if (picName.length < 2) {
+        showCreateFormError('Nama PIC minimal 2 karakter.');
+        return;
+    }
+
+    // Phone validation (numbers only)
+    if (!/^[0-9]+$/.test(picPhone)) {
+        showCreateFormError('Nomor telepon hanya boleh berisi angka.');
+        return;
+    }
+
+    if (picPhone.length < 9) {
+        showCreateFormError('Nomor telepon minimal 9 digit.');
+        return;
+    }
+
+    // Participant count validation
+    if (!validateCreateParticipantCount()) {
+        showCreateFormError('Jumlah peserta melebihi kapasitas ruangan.');
+        return;
+    }
+
+    // Date validation
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (start < today) {
+        showCreateFormError('Tanggal mulai tidak boleh tanggal yang sudah lewat.');
+        return;
+    }
+
+    if (end < start) {
+        showCreateFormError('Tanggal selesai tidak boleh lebih awal dari tanggal mulai.');
+        return;
+    }
+
+    // Time validation for same date
+    if (startDate === endDate && endTime <= startTime) {
+        showCreateFormError('Jam selesai harus lebih besar dari jam mulai untuk peminjaman di hari yang sama.');
+        return;
+    }
+
+    // Submit the form
+    const submitBtn = document.getElementById('submitCreateBooking');
+    const submitText = document.getElementById('submitBtnText');
+    const originalText = submitText?.textContent || 'Simpan Reservasi';
+
+    if (submitBtn) submitBtn.disabled = true;
+    if (submitText) submitText.textContent = 'Menyimpan...';
+
+    try {
+        const payload = {
+            room_id: parseInt(roomId),
+            start_date: startDate,
+            end_date: endDate,
+            start_time: startTime,
+            end_time: endTime,
+            agenda_name: agendaName,
+            agenda_detail: agendaDetail || '',
+            pic_name: picName,
+            pic_phone: picPhone,
+            participant_count: parseInt(participantCount),
+        };
+
+        const response = await fetch(window.__ADMIN_API__.createBooking, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            closeCreateBookingModal();
+            showToast(result.message || 'Reservasi berhasil dibuat', 'success');
+            tableState.load(); // Reload table
+        } else {
+            showCreateFormError(result.message || 'Gagal membuat reservasi.');
+        }
+    } catch (error) {
+        console.error('Error creating booking:', error);
+        showCreateFormError('Terjadi kesalahan saat menyimpan reservasi.');
+    } finally {
+        if (submitBtn) submitBtn.disabled = false;
+        if (submitText) submitText.textContent = originalText;
+    }
+}

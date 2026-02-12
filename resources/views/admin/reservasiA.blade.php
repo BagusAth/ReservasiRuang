@@ -161,9 +161,15 @@
             
             <!-- Page Content -->
             <section class="p-4 lg:p-8">
-                <!-- Page Title -->
-                <div class="flex items-center justify-between mb-6">
+                <!-- Page Title + Actions -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                     <h1 class="text-xl lg:text-2xl font-bold text-gray-900">Peminjaman</h1>
+                    <button id="btnOpenCreate" class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-xl font-medium transition-colors shadow-lg shadow-primary/25">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        <span>Tambah Reservasi</span>
+                    </button>
                 </div>
                 
                 <!-- Filter Panel (Always visible) -->
@@ -764,6 +770,162 @@
         </div>
     </div>
 
+    <!-- Admin Create Booking Modal -->
+    <div id="createBookingModal" class="modal-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="modal-content bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-5 lg:p-6 border-b border-gray-100 bg-gradient-to-r from-primary/5 to-transparent flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg shadow-primary/25">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900">Tambah Reservasi</h3>
+                        <p class="text-xs text-gray-500">Reservasi akan langsung disetujui</p>
+                    </div>
+                </div>
+                <button type="button" class="p-2.5 hover:bg-gray-100 rounded-xl transition-all duration-200 hover:rotate-90" id="closeCreateBookingModal">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="p-5 lg:p-6 overflow-y-auto flex-1 custom-scrollbar">
+                <form id="createBookingForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Building Selection (Admin Unit only) or hidden for Admin Gedung -->
+                    @if($adminType === 'admin_unit')
+                    <div>
+                        <label class="form-label">Gedung <span class="text-red-500">*</span></label>
+                        <div class="select-wrapper">
+                            <select id="createBuildingId" class="form-input" required>
+                                <option value="">Pilih Gedung</option>
+                            </select>
+                            <svg class="dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    @endif
+                    
+                    <!-- Room Selection -->
+                    <div class="{{ $adminType === 'admin_unit' ? '' : 'md:col-span-2' }}">
+                        <label class="form-label">Ruangan <span class="text-red-500">*</span></label>
+                        <div class="select-wrapper">
+                            <select id="createRoomId" class="form-input" required>
+                                <option value="">Pilih Ruangan</option>
+                            </select>
+                            <svg class="dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                        <!-- Room Capacity Info -->
+                        <div id="createRoomCapacityInfo" class="hidden mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div class="flex items-center gap-2 text-sm text-blue-700">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                                <span>Kapasitas ruangan: <strong id="createRoomCapacityValue">-</strong> orang</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Participant Count -->
+                    <div>
+                        <label class="form-label">Jumlah Peserta <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <input id="createParticipantCount" type="number" min="1" class="form-input" placeholder="Jumlah orang yang akan hadir" required>
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <span class="text-gray-400 text-sm">orang</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Minimal 1 orang, tidak boleh melebihi kapasitas</p>
+                        <!-- Capacity Validation Error -->
+                        <div id="createCapacityError" class="hidden mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+                            <div class="flex items-center gap-2 text-sm text-red-600">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                                <span id="createCapacityErrorText"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Date Range -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="form-label">Tgl Mulai <span class="text-red-500">*</span></label>
+                            <input id="createStartDate" type="date" class="form-input" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Tgl Selesai <span class="text-red-500">*</span></label>
+                            <input id="createEndDate" type="date" class="form-input" required>
+                        </div>
+                    </div>
+
+                    <!-- Time Range -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="form-label">Jam Mulai <span class="text-red-500">*</span></label>
+                            <input id="createStartTime" type="time" class="form-input" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Jam Selesai <span class="text-red-500">*</span></label>
+                            <input id="createEndTime" type="time" class="form-input" required>
+                        </div>
+                    </div>
+
+                    <!-- Agenda Name -->
+                    <div class="md:col-span-2">
+                        <label class="form-label">Agenda <span class="text-red-500">*</span></label>
+                        <input id="createAgendaName" class="form-input" placeholder="Judul/nama agenda" required>
+                    </div>
+
+                    <!-- Agenda Detail -->
+                    <div class="md:col-span-2">
+                        <label class="form-label">Detail Agenda</label>
+                        <textarea id="createAgendaDetail" class="form-input" rows="3" placeholder="Deskripsi kegiatan (opsional)"></textarea>
+                    </div>
+
+                    <!-- PIC Name -->
+                    <div>
+                        <label class="form-label">Nama PIC <span class="text-red-500">*</span></label>
+                        <input id="createPicName" class="form-input" placeholder="Nama penanggung jawab" required>
+                    </div>
+
+                    <!-- PIC Phone -->
+                    <div>
+                        <label class="form-label">No. HP PIC <span class="text-red-500">*</span></label>
+                        <input id="createPicPhone" class="form-input" placeholder="08xxxxxxxxxx" required>
+                    </div>
+
+                    <!-- Form Error Message -->
+                    <div id="createFormError" class="hidden md:col-span-2 p-3 bg-red-50 border border-red-200 rounded-xl">
+                        <div class="flex items-start gap-2">
+                            <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            <p class="text-sm text-red-600" id="createFormErrorText"></p>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="md:col-span-2 flex gap-3 pt-2">
+                        <button type="button" class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors" id="cancelCreateBooking">
+                            Batal
+                        </button>
+                        <button type="submit" class="flex-1 px-4 py-2.5 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl font-medium hover:from-primary-dark hover:to-primary transition-all shadow-lg shadow-primary/25" id="submitCreateBooking">
+                            <span id="submitBtnText">Simpan Reservasi</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-4 right-4 z-[60] transform translate-y-full opacity-0 transition-all duration-300">
         <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-4 flex items-center gap-3 min-w-[300px]">
@@ -790,6 +952,10 @@
             alternatives: function(id) { return '{{ url('/api/admin/bookings') }}/' + id + '/alternatives'; },
             rescheduleData: function(id) { return '{{ url('/api/admin/bookings') }}/' + id + '/reschedule-data'; },
             reschedule: function(id) { return '{{ url('/api/admin/bookings') }}/' + id + '/reschedule'; },
+            // Admin booking creation APIs
+            bookingBuildings: '{{ route('admin.api.bookingBuildings') }}',
+            bookingRooms: '{{ route('admin.api.bookingRooms') }}',
+            createBooking: '{{ route('admin.api.booking.create') }}',
         };
         window.__ADMIN_TYPE__ = '{{ $adminType }}';
     </script>

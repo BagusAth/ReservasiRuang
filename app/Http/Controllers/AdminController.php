@@ -1324,4 +1324,304 @@ class AdminController extends Controller
             ]
         ]);
     }
+
+    // ============================================
+    // ADMIN BOOKING CREATION METHODS
+    // ============================================
+
+    /**
+     * Get buildings for admin booking form (based on admin scope).
+     */
+    public function getBuildingsForBooking(): JsonResponse
+    {
+        $user = Auth::user();
+        
+        if ($user->isAdminUnit()) {
+            // Admin Unit: Get all buildings in their unit
+            $buildings = Building::where('unit_id', $user->unit_id)
+                ->orderBy('building_name')
+                ->get(['id', 'building_name']);
+        } else {
+            // Admin Gedung: Only their building
+            $buildings = Building::where('id', $user->building_id)
+                ->get(['id', 'building_name']);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $buildings
+        ]);
+    }
+
+    /**
+     * Get rooms for admin booking form (based on admin scope and optional building filter).
+     */
+    public function getRoomsForBooking(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        
+        $request->validate([
+            'building_id' => 'nullable|integer|exists:buildings,id',
+        ]);
+
+        $buildingId = $request->input('building_id');
+        
+        if ($user->isAdminUnit()) {
+            // Admin Unit: Get rooms from buildings in their unit
+            $query = Room::where('is_active', true)
+                ->whereHas('building', function ($q) use ($user) {
+                    $q->where('unit_id', $user->unit_id);
+                });
+            
+            // If building filter is provided, filter by that building
+            if ($buildingId) {
+                // Verify building belongs to admin's unit
+                $building = Building::where('id', $buildingId)
+                    ->where('unit_id', $user->unit_id)
+                    ->first();
+                    
+                if ($building) {
+                    $query->where('building_id', $buildingId);
+                }
+            }
+            
+            $rooms = $query->with('building:id,building_name')
+                ->orderBy('building_id')
+                ->orderBy('room_name')
+                ->get(['id', 'room_name', 'capacity', 'location', 'building_id']);
+        } else {
+            // Admin Gedung: Only rooms in their building
+            $rooms = Room::where('building_id', $user->building_id)
+                ->where('is_active', true)
+                ->with('building:id,building_name')
+                ->orderBy('room_name')
+                ->get(['id', 'room_name', 'capacity', 'location', 'building_id']);
+        }
+
+        // Transform data to include building name
+        $transformedRooms = $rooms->map(function ($room) use ($user) {
+            $displayName = $room->room_name;
+            if ($user->isAdminUnit() && $room->building) {
+                $displayName = $room->room_name . ' (' . $room->building->building_name . ')';
+            }
+            
+            return [
+                'id' => $room->id,
+                'room_name' => $room->room_name,
+                'capacity' => $room->capacity,
+                'location' => $room->location,
+                'building_id' => $room->building_id,
+                'building_name' => $room->building->building_name ?? null,
+                'display_name' => $displayName,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $transformedRooms
+        ]);
+    }
+
+    /**
+     * Create booking by Admin (auto-approved).
+     * Admin can only create bookings for rooms within their scope.
+     */
+    public function createBooking(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'room_id' => 'required|exists:rooms,id',
+            'start_date' => 'required|date|after_or_equal:today',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i',
+            'agenda_name' => 'required|string|max:255',
+            'agenda_detail' => 'nullable|string',
+            'pic_name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z\s]+$/', 'min:2'],
+            'pic_phone' => ['required', 'string', 'max:20', 'regex:/^[0-9]+$/', 'min:9'],
+            'participant_count' => 'required|integer|min:1',
+        ], [
+            'pic_name.regex' => 'Nama PIC hanya boleh berisi huruf.',
+            'pic_name.min' => 'Nama PIC minimal 2 karakter.',
+            'pic_phone.regex' => 'Nomor telepon hanya boleh berisi angka.',
+            'pic_phone.min' => 'Nomor telepon minimal 9 digit.',
+            'start_date.after_or_equal' => 'Tanggal mulai tidak boleh tanggal yang sudah lewat.',
+            'end_date.after_or_equal' => 'Tanggal selesai tidak boleh lebih awal dari tanggal mulai.',
+            'participant_count.required' => 'Jumlah peserta wajib diisi.',
+            'participant_count.integer' => 'Jumlah peserta harus berupa angka.',
+            'participant_count.min' => 'Jumlah peserta minimal 1 orang.',
+        ]);
+
+        // Validate dates
+        $today = Carbon::today();
+        $startDate = Carbon::parse($validated['start_date']);
+        $endDate = Carbon::parse($validated['end_date']);
+        
+        if ($startDate->lt($today)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tanggal mulai tidak boleh tanggal yang sudah lewat.',
+            ], 422);
+        }
+        
+        if ($endDate->lt($today)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tanggal selesai tidak boleh tanggal yang sudah lewat.',
+            ], 422);
+        }
+        
+        // Validate start time for today's bookings
+        if ($startDate->isToday()) {
+            $now = Carbon::now();
+            $startDateTime = Carbon::parse($validated['start_date'] . ' ' . $validated['start_time']);
+            
+            if ($startDateTime->lt($now)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jam mulai tidak boleh sebelum waktu saat ini (' . $now->format('H:i') . ').',
+                ], 422);
+            }
+        }
+
+        // Validate room and verify it's within admin's scope
+        $room = Room::with('building.unit')->find($validated['room_id']);
+        
+        if (!$room || !$room->building || !$room->building->unit) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ruangan tidak valid atau tidak terkait dengan unit manapun.'
+            ], 422);
+        }
+
+        // Check if room is active
+        if (!$room->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ruangan "' . $room->room_name . '" sedang tidak aktif. Silakan pilih ruangan lain.'
+            ], 422);
+        }
+        
+        // Check if unit is active
+        if (!$room->building->unit->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unit "' . $room->building->unit->unit_name . '" sedang tidak aktif. Reservasi tidak dapat dilakukan.'
+            ], 422);
+        }
+
+        // Verify room is within admin's scope
+        if ($user->isAdminUnit()) {
+            if ($room->building->unit_id !== $user->unit_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ruangan tidak dalam cakupan unit Anda.'
+                ], 403);
+            }
+        } elseif ($user->isAdminGedung()) {
+            if ($room->building_id !== $user->building_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ruangan tidak dalam cakupan gedung Anda.'
+                ], 403);
+            }
+        }
+
+        // Time validation for same-day bookings
+        if ($validated['start_date'] === $validated['end_date'] && $validated['end_time'] <= $validated['start_time']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jam selesai harus lebih besar dari jam mulai untuk peminjaman di hari yang sama.'
+            ], 422);
+        }
+        
+        // Time validation for multi-day bookings
+        if ($startDate->ne($endDate)) {
+            $startDateTime = Carbon::parse($validated['start_date'] . ' ' . $validated['start_time']);
+            $endDateTime = Carbon::parse($validated['end_date'] . ' ' . $validated['end_time']);
+            
+            if ($endDateTime->lte($startDateTime)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Waktu selesai harus setelah waktu mulai.'
+                ], 422);
+            }
+            
+            // For multi-day bookings, end time should be greater than start time
+            $startTimeParts = explode(':', $validated['start_time']);
+            $endTimeParts = explode(':', $validated['end_time']);
+            $startTimeMinutes = (int)$startTimeParts[0] * 60 + (int)$startTimeParts[1];
+            $endTimeMinutes = (int)$endTimeParts[0] * 60 + (int)$endTimeParts[1];
+            
+            if ($endTimeMinutes <= $startTimeMinutes) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Untuk peminjaman multi-hari, jam selesai (' . $validated['end_time'] . ') harus lebih besar dari jam mulai (' . $validated['start_time'] . ').'
+                ], 422);
+            }
+        }
+
+        // Validate participant count against room capacity
+        if ($room->capacity && $validated['participant_count'] > $room->capacity) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jumlah peserta (' . $validated['participant_count'] . ' orang) melebihi kapasitas ruangan "' . $room->room_name . '" yang hanya dapat menampung ' . $room->capacity . ' orang.',
+                'error_type' => 'capacity_exceeded',
+                'capacity_data' => [
+                    'room_name' => $room->room_name,
+                    'room_capacity' => $room->capacity,
+                    'participant_count' => $validated['participant_count'],
+                ]
+            ], 422);
+        }
+
+        // Check for conflicting approved bookings
+        $conflict = Booking::findConflict(
+            $validated['room_id'],
+            $validated['start_date'],
+            $validated['end_date'],
+            $validated['start_time'],
+            $validated['end_time']
+        );
+
+        if ($conflict) {
+            return response()->json([
+                'success' => false,
+                'message' => Booking::getConflictMessage($conflict),
+                'error_type' => 'booking_conflict',
+                'conflict_data' => [
+                    'room' => $conflict->room->room_name ?? '-',
+                    'building' => $conflict->room->building->building_name ?? '-',
+                    'date' => $conflict->start_date->format('d/m/Y'),
+                    'time' => substr($conflict->start_time, 0, 5) . ' - ' . substr($conflict->end_time, 0, 5),
+                ]
+            ], 422);
+        }
+
+        // Create booking with auto-approved status
+        $booking = new Booking();
+        $booking->user_id = $user->id;
+        $booking->room_id = $validated['room_id'];
+        $booking->start_date = $validated['start_date'];
+        $booking->end_date = $validated['end_date'];
+        $booking->start_time = $validated['start_time'];
+        $booking->end_time = $validated['end_time'];
+        $booking->agenda_name = $validated['agenda_name'];
+        $booking->agenda_detail = $validated['agenda_detail'] ?? '';
+        $booking->pic_name = $validated['pic_name'];
+        $booking->pic_phone = $validated['pic_phone'];
+        $booking->participant_count = $validated['participant_count'];
+        // Auto-approve for admin bookings
+        $booking->status = Booking::STATUS_APPROVED;
+        $booking->approved_by = $user->id;
+        $booking->approved_at = now();
+        $booking->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Reservasi berhasil dibuat dan langsung disetujui.',
+            'data' => [ 'id' => $booking->id ]
+        ], 201);
+    }
 }

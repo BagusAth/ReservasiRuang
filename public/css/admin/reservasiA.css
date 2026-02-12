@@ -632,3 +632,163 @@ body {
     }
 }
 
+/* ============================================
+   Admin Booking Form Styles
+   ============================================ */
+
+/* Form Label */
+.form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Form Input */
+.form-input {
+    width: 100%;
+    border: 1px solid #00A2B9;
+    background: #fff;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #111827;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #008799;
+    box-shadow: 0 0 0 3px rgba(0, 162, 185, 0.25);
+}
+
+.form-input::placeholder {
+    color: #9ca3af;
+}
+
+.form-input:disabled {
+    background-color: #f9fafb;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Select Wrapper with Custom Dropdown Icon */
+.select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.select-wrapper select {
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 42px;
+    cursor: pointer;
+    background-color: #fff;
+    transition: all 0.2s ease;
+}
+
+.select-wrapper select:hover:not(:disabled) {
+    border-color: #008799;
+}
+
+.select-wrapper select:active {
+    transform: scale(0.995);
+}
+
+.select-wrapper .dropdown-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    width: 20px;
+    height: 20px;
+    color: #6b7280;
+    transition: transform 0.3s ease, color 0.2s ease;
+}
+
+.select-wrapper select:focus + .dropdown-icon {
+    color: #00A2B9;
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.select-wrapper select:hover:not(:disabled) + .dropdown-icon {
+    color: #008799;
+}
+
+.select-wrapper select:disabled + .dropdown-icon {
+    color: #d1d5db;
+}
+
+/* Loading State for Select */
+.select-wrapper.loading select {
+    background-image: 
+        linear-gradient(90deg, transparent 0%, transparent 40%, rgba(0, 162, 185, 0.1) 50%, transparent 60%, transparent 100%);
+    background-size: 200% 100%;
+    animation: form-shimmer 1.5s infinite;
+}
+
+@keyframes form-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.select-wrapper.loading .dropdown-icon {
+    animation: form-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes form-pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+/* Focus Visible for Keyboard Navigation */
+.select-wrapper select:focus-visible {
+    outline: 2px solid #00A2B9;
+    outline-offset: 2px;
+}
+
+/* Form input validation states - use primary color instead of red */
+.form-input.is-invalid,
+.form-input:invalid:not(:placeholder-shown) {
+    border-color: #00A2B9;
+}
+
+.form-input.is-invalid:focus {
+    box-shadow: 0 0 0 3px rgba(0, 162, 185, 0.25);
+}
+
+/* Override browser default invalid styling */
+.form-input:invalid {
+    border-color: #00A2B9;
+    box-shadow: none;
+}
+
+/* Admin booking form responsive */
+@media (max-width: 768px) {
+    #createBookingForm .grid-cols-2 {
+        grid-template-columns: 1fr;
+    }
+    
+    #createBookingForm .md\:col-span-2 {
+        grid-column: span 1;
+    }
+}
+
+/* Number input hide spinner for Firefox */
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* Number input hide spinner for Chrome/Safari/Edge */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}

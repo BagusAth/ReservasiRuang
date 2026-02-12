@@ -102,6 +102,11 @@ Route::middleware(['role:admin_unit,admin_gedung'])->group(function () {
         Route::get('/bookings/{id}/reschedule-data', [AdminController::class, 'getRescheduleData'])->name('booking.rescheduleData');
         Route::post('/bookings/{id}/reschedule', [AdminController::class, 'rescheduleBooking'])->name('booking.reschedule');
 
+        // Admin booking creation endpoints
+        Route::get('/booking-buildings', [AdminController::class, 'getBuildingsForBooking'])->name('bookingBuildings');
+        Route::get('/booking-rooms', [AdminController::class, 'getRoomsForBooking'])->name('bookingRooms');
+        Route::post('/bookings', [AdminController::class, 'createBooking'])->name('booking.create');
+
         // Room Management endpoints
         Route::get('/rooms/list', [AdminController::class, 'listRooms'])->name('rooms.list');
         Route::get('/rooms/{id}', [AdminController::class, 'getRoomDetail'])->name('rooms.detail');
