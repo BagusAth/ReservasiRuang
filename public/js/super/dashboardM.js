@@ -397,7 +397,7 @@ async function loadUsers(page = 1) {
     // Show loading state
     tableBody.innerHTML = `
         <tr class="loading-row">
-            <td colspan="5" class="px-5 py-8 text-center">
+            <td colspan="6" class="px-5 py-8 text-center">
                 <div class="flex items-center justify-center gap-3">
                     <div class="loading-spinner"></div>
                     <span class="text-gray-500 text-sm">Memuat data...</span>
@@ -454,6 +454,9 @@ function renderUsers(users) {
                 <span class="text-sm text-gray-900">${escapeHtml(user.email)}</span>
             </td>
             <td class="px-5 py-4">
+                <span class="text-sm text-gray-600">${user.nip ? escapeHtml(user.nip) : '-'}</span>
+            </td>
+            <td class="px-5 py-4">
                 <span class="text-sm font-medium text-gray-900">${escapeHtml(user.name)}</span>
             </td>
             <td class="px-5 py-4">
@@ -495,7 +498,7 @@ function showEmptyState(message) {
     const tableBody = document.getElementById('usersTableBody');
     tableBody.innerHTML = `
         <tr>
-            <td colspan="5" class="px-5 py-8">
+            <td colspan="6" class="px-5 py-8">
                 <div class="empty-state">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
@@ -738,6 +741,7 @@ function openAddModal() {
     document.getElementById('modalTitle').textContent = 'Tambah Akun Baru';
     document.getElementById('userForm').reset();
     document.getElementById('userId').value = '';
+    document.getElementById('userNip').value = '';
     document.getElementById('passwordFields').classList.remove('hidden');
     document.getElementById('userPassword').required = true;
     document.getElementById('userPasswordConfirm').required = true;
@@ -769,6 +773,7 @@ async function openEditModal(userId) {
             document.getElementById('modalTitle').textContent = 'Edit Akun';
             document.getElementById('userId').value = user.id;
             document.getElementById('userName').value = user.name;
+            document.getElementById('userNip').value = user.nip || '';
             document.getElementById('userEmail').value = user.email;
             document.getElementById('userRole').value = user.role;
             
@@ -953,6 +958,7 @@ async function handleUserSubmit(e) {
         const formData = {
             name: document.getElementById('userName').value.trim(),
             email: document.getElementById('userEmail').value.trim().toLowerCase(),
+            nip: document.getElementById('userNip').value.trim() || null,
             role: document.getElementById('userRole').value,
             unit_id: document.getElementById('userUnit').value || null,
             building_id: document.getElementById('userBuilding').value || null,
@@ -990,6 +996,7 @@ async function handleUserSubmit(e) {
                 Object.keys(data.errors).forEach(field => {
                     const fieldMapping = {
                         'name': 'userName',
+                        'nip': 'userNip',
                         'email': 'userEmail',
                         'password': 'userPassword',
                         'role': 'userRole',
@@ -1016,6 +1023,7 @@ async function handleUserSubmit(e) {
    ============================================ */
 function validateUserForm(isEdit) {
     const name = document.getElementById('userName').value.trim();
+    const nip = document.getElementById('userNip').value.trim();
     const email = document.getElementById('userEmail').value.trim();
     const role = document.getElementById('userRole').value;
     const password = document.getElementById('userPassword').value;
@@ -1032,6 +1040,14 @@ function validateUserForm(isEdit) {
     }
     if (!/^[a-zA-Z\s]+$/.test(name)) {
         return { valid: false, field: 'userName', message: 'Nama hanya boleh mengandung huruf dan spasi.' };
+    }
+
+    // Validate NIP (optional, but if filled must be numeric)
+    if (nip && !/^[0-9]+$/.test(nip)) {
+        return { valid: false, field: 'userNip', message: 'NIP hanya boleh mengandung angka.' };
+    }
+    if (nip && nip.length > 20) {
+        return { valid: false, field: 'userNip', message: 'NIP maksimal 20 karakter.' };
     }
 
     // Validate email

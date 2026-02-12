@@ -702,6 +702,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Super Admin',
             'email' => 'superadmin@gmail.com',
+            'nip' => '19800101000001',
             'password' => Hash::make('super123'),
             'role_id' => 1,
             'unit_id' => null,
@@ -713,6 +714,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Super Admin1',
             'email' => 'superadmin1@gmail.com',
+            'nip' => '19800101000002',
             'password' => Hash::make('super123'),
             'role_id' => 1,
             'unit_id' => null,
@@ -724,6 +726,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Admin Unit Pusat',
             'email' => 'admin.unitpusat@gmail.com',
+            'nip' => '19850315100001',
             'password' => Hash::make('admin123'),
             'role_id' => 2, 
             'unit_id' => 1,
@@ -735,6 +738,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Admin Unit Engineering',
             'email' => 'admin.unitengineering@gmail.com',
+            'nip' => '19850420200001',
             'password' => Hash::make('admin123'),
             'role_id' => 2,
             'unit_id' => 2, 
@@ -746,6 +750,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Admin Unit Operasi',
             'email' => 'admin.unitoperasi@gmail.com',
+            'nip' => '19860510300001',
             'password' => Hash::make('admin123'),
             'role_id' => 2,
             'unit_id' => 3, 
@@ -757,6 +762,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Admin Unit Admin',
             'email' => 'admin.unitadmin@gmail.com',
+            'nip' => '19870615400001',
             'password' => Hash::make('admin123'),
             'role_id' => 2,
             'unit_id' => 4, 
@@ -768,6 +774,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Admin Gedung TDC',
             'email' => 'admin.tdc@gmail.com',
+            'nip' => '19880720110001',
             'password' => Hash::make('admin123'),
             'role_id' => 3, 
             'unit_id' => null,
@@ -779,6 +786,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Admin Gedung Engineering 1',
             'email' => 'admin.engineering1@gmail.com',
+            'nip' => '19890825220001',
             'password' => Hash::make('admin123'),
             'role_id' => 3, 
             'unit_id' => null,
@@ -790,6 +798,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Admin Gedung Engineering 2',
             'email' => 'admin.engineering2@gmail.com',
+            'nip' => '19900930230001',
             'password' => Hash::make('admin123'),
             'role_id' => 3, 
             'unit_id' => null,
@@ -801,6 +810,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Admin Engineering Terpadu',
             'email' => 'admin.engineeringterpadu@gmail.com',
+            'nip' => '19911015240001',
             'password' => Hash::make('admin123'),
             'role_id' => 3,
             'unit_id' => null,
@@ -812,6 +822,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Admin Operasi Utama',
             'email' => 'admin.operasiutama@gmail.com',
+            'nip' => '19921120350001',
             'password' => Hash::make('admin123'),
             'role_id' => 3,
             'unit_id' => null,
@@ -823,6 +834,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Admin Operasi Pendukung',
             'email' => 'admin.operasipendukung@gmail.com',
+            'nip' => '19931225360001',
             'password' => Hash::make('admin123'),
             'role_id' => 3,
             'unit_id' => null,
@@ -834,6 +846,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Admin Operasi Terpadu',
             'email' => 'admin.operasiterpadu@gmail.com',
+            'nip' => '19940130370001',
             'password' => Hash::make('admin123'),
             'role_id' => 3,
             'unit_id' => null,
@@ -845,6 +858,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Admin Administrasi Utama',
             'email' => 'admin.adminutama@gmail.com',
+            'nip' => '19950205480001',
             'password' => Hash::make('admin123'),
             'role_id' => 3,
             'unit_id' => null,
@@ -856,6 +870,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Admin SDM & Umum',
             'email' => 'admin.sdm@gmail.com',
+            'nip' => '19960310490001',
             'password' => Hash::make('admin123'),
             'role_id' => 3,
             'unit_id' => null,
@@ -867,6 +882,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Admin Manajemen',
             'email' => 'admin.manajemen@gmail.com',
+            'nip' => '19970415500001',
             'password' => Hash::make('admin123'),
             'role_id' => 3,
             'unit_id' => null,
@@ -877,6 +893,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Budi Santoso',
             'email' => 'budi@gmail.com',
+            'nip' => '24060101100001',
             'password' => Hash::make('user1234'),
             'role_id' => 4,
             'unit_id' => null,
@@ -887,6 +904,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Siti Aminah',
             'email' => 'siti@gmail.com',
+            'nip' => '24060215200002',
             'password' => Hash::make('user1234'),
             'role_id' => 4, 
             'unit_id' => null,
@@ -897,6 +915,7 @@ class DatabaseSeeder extends Seeder
         User::create([
             'name' => 'Andi Wijaya',
             'email' => 'andi@gmail.com',
+            'nip' => '24060320300003',
             'password' => Hash::make('user1234'),
             'role_id' => 4,
             'unit_id' => null,
@@ -961,6 +980,7 @@ class DatabaseSeeder extends Seeder
                 'agenda_name' => 'Rapat bulanan',
                 'pic_name' => 'Budi Wijaya',
                 'pic_phone' => '08223344556',
+                'participant_count' => 10,
                 'agenda_detail' => 'Rapat tiap bulan.',
                 'status' => 'Disetujui',
                 'rejection_reason' => null,
@@ -979,6 +999,7 @@ class DatabaseSeeder extends Seeder
                 'agenda_name' => 'Coba reject',
                 'pic_name' => 'Andi Wijaya',
                 'pic_phone' => '08223344556',
+                'participant_count' => 8,
                 'agenda_detail' => 'Coba coba coba.',
                 'status' => 'Ditolak',
                 'rejection_reason' => 'ruangan sudah dipesan',
@@ -997,6 +1018,7 @@ class DatabaseSeeder extends Seeder
                 'agenda_name' => 'Coba coba',
                 'pic_name' => 'Andi Wijaya',
                 'pic_phone' => '08223344556',
+                'participant_count' => 12,
                 'agenda_detail' => 'Coba coba coba.',
                 'status' => 'Menunggu',
                 'rejection_reason' => null,
@@ -1015,6 +1037,7 @@ class DatabaseSeeder extends Seeder
                 'agenda_name' => 'test agenda',
                 'pic_name' => 'Siti Aminah',
                 'pic_phone' => '08223987556',
+                'participant_count' => 15,
                 'agenda_detail' => 'test test11.',
                 'status' => 'Menunggu',
                 'rejection_reason' => null,
@@ -1033,6 +1056,7 @@ class DatabaseSeeder extends Seeder
                 'agenda_name' => 'test test agenda',
                 'pic_name' => 'Siti Aminah',
                 'pic_phone' => '08223987556',
+                'participant_count' => 20,
                 'agenda_detail' => 'test111 test11.',
                 'status' => 'Disetujui',
                 'rejection_reason' => null,
@@ -1051,6 +1075,7 @@ class DatabaseSeeder extends Seeder
                 'agenda_name' => 'test test agenda',
                 'pic_name' => 'Andi Wijaya',
                 'pic_phone' => '08223987556',
+                'participant_count' => 25,
                 'agenda_detail' => 'test111 test11.',
                 'status' => 'Ditolak',
                 'rejection_reason' => 'test ditolak',

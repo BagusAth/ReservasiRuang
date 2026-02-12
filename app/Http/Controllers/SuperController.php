@@ -101,7 +101,8 @@ class SuperController extends Controller
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%");
+                      ->orWhere('email', 'like', "%{$search}%")
+                      ->orWhere('nip', 'like', "%{$search}%");
                 });
             }
 
@@ -133,6 +134,7 @@ class SuperController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'nip' => $user->nip,
                     'role' => $user->role->role_name ?? 'N/A',
                     'role_display' => $this->getRoleDisplayName($user->role->role_name ?? ''),
                     'unit' => $user->unit->unit_name ?? null,
@@ -185,6 +187,7 @@ class SuperController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'nip' => $user->nip,
                     'role_id' => $user->role_id,
                     'role' => $user->role->role_name ?? 'N/A',
                     'role_display' => $this->getRoleDisplayName($user->role->role_name ?? ''),
@@ -224,6 +227,10 @@ class SuperController extends Controller
             'email.email' => 'Format email tidak valid. Contoh: nama@email.com',
             'email.unique' => 'Email sudah terdaftar dalam sistem. Silakan gunakan email lain.',
             'email.max' => 'Email maksimal 255 karakter.',
+            'nip.string' => 'NIP harus berupa teks.',
+            'nip.max' => 'NIP maksimal 20 karakter.',
+            'nip.unique' => 'NIP sudah terdaftar dalam sistem. Silakan gunakan NIP lain.',
+            'nip.regex' => 'NIP hanya boleh mengandung angka.',
             'password.required' => 'Password wajib diisi.',
             'password.min' => 'Password minimal 8 karakter.',
             'password.confirmed' => 'Konfirmasi password tidak cocok dengan password.',
@@ -239,6 +246,7 @@ class SuperController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'min:3', 'max:255', 'regex:/^[a-zA-Z\s]+$/'],
             'email' => 'required|email|max:255|unique:users,email',
+            'nip' => ['nullable', 'string', 'max:20', 'unique:users,nip', 'regex:/^[0-9]+$/'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'role' => 'required|string|in:user,admin_unit,admin_gedung',
             'unit_id' => 'nullable|exists:units,id|required_if:role,admin_unit,user',
@@ -288,6 +296,7 @@ class SuperController extends Controller
             $user = User::create([
                 'name' => trim($request->name),
                 'email' => strtolower(trim($request->email)),
+                'nip' => $request->nip ? trim($request->nip) : null,
                 'password' => Hash::make($request->password),
                 'role_id' => $role->id,
                 'unit_id' => ($request->role === 'admin_unit' || $request->role === 'user') ? $request->unit_id : null,
@@ -302,6 +311,7 @@ class SuperController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'nip' => $user->nip,
                     'role' => $request->role,
                 ]
             ], 201);
@@ -357,6 +367,10 @@ class SuperController extends Controller
                 'email.required' => 'Email wajib diisi.',
                 'email.email' => 'Format email tidak valid. Contoh: nama@email.com',
                 'email.unique' => 'Email sudah terdaftar dalam sistem. Silakan gunakan email lain.',
+                'nip.string' => 'NIP harus berupa teks.',
+                'nip.max' => 'NIP maksimal 20 karakter.',
+                'nip.unique' => 'NIP sudah terdaftar dalam sistem. Silakan gunakan NIP lain.',
+                'nip.regex' => 'NIP hanya boleh mengandung angka.',
                 'role.required' => 'Role wajib dipilih.',
                 'role.in' => 'Role tidak valid.',
                 'unit_id.exists' => 'Unit yang dipilih tidak ditemukan.',
@@ -368,6 +382,7 @@ class SuperController extends Controller
             $validator = Validator::make($request->all(), [
                 'name' => ['sometimes', 'required', 'string', 'min:3', 'max:255', 'regex:/^[a-zA-Z\s]+$/'],
                 'email' => ['sometimes', 'required', 'email', 'max:255', Rule::unique('users')->ignore($id)],
+                'nip' => ['nullable', 'string', 'max:20', Rule::unique('users')->ignore($id), 'regex:/^[0-9]+$/'],
                 'role' => 'sometimes|required|string|in:user,admin_unit,admin_gedung',
                 'unit_id' => 'nullable|exists:units,id',
                 'building_id' => 'nullable|exists:buildings,id',
@@ -418,6 +433,9 @@ class SuperController extends Controller
             if ($request->has('email')) {
                 $user->email = strtolower(trim($request->email));
             }
+            if ($request->has('nip')) {
+                $user->nip = $request->nip ? trim($request->nip) : null;
+            }
             if ($request->has('role')) {
                 $roleModel = Role::where('role_name', $request->role)->first();
                 if ($roleModel) {
@@ -447,6 +465,7 @@ class SuperController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'nip' => $user->nip,
                     'role' => $user->role->role_name ?? 'N/A',
                     'role_display' => $this->getRoleDisplayName($user->role->role_name ?? ''),
                 ]
