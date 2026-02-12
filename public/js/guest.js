@@ -7,6 +7,7 @@
  * - Filter functionality
  * - Booking data fetching
  * - Modal interactions
+ * - Reservation tooltip on hover
  */
 
 (function() {
@@ -25,8 +26,15 @@
         DAYS_SHORT: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
         MAX_EVENTS_DISPLAY: 3,
         HOUR_START: 7,  // Start at 07:00
-        HOUR_END: 22    // End at 22:00
+        HOUR_END: 22,   // End at 22:00
+        // Height per hour slot in pixels (must match CSS)
+        WEEK_HOUR_HEIGHT: 52,
+        DAY_HOUR_HEIGHT: 64,
+        // Tooltip delay in ms
+        TOOLTIP_DELAY: 150,
+        TOOLTIP_HIDE_DELAY: 100
     };
+
 
     // ============================================
     // State Management
@@ -50,7 +58,12 @@
         // Search state
         searchQuery: '',
         searchResults: [],
-        isSearching: false
+        isSearching: false,
+        // Tooltip state
+        tooltipVisible: false,
+        tooltipTimeout: null,
+        tooltipHideTimeout: null,
+        activeBookingElement: null
     };
 
     // ============================================
@@ -487,6 +500,9 @@
         // Always reset container before rendering to ensure clean state
         resetCalendarContainer();
         
+        // Hide tooltip before re-rendering
+        hideTooltip();
+        
         switch (state.currentView) {
             case 'week':
                 renderWeekView();
@@ -502,6 +518,12 @@
         // Add event listeners to booking items
         document.querySelectorAll('.booking-item').forEach(item => {
             item.addEventListener('click', handleEventClick);
+            
+            // Add tooltip event listeners for week and day views
+            if (item.classList.contains('week-event') || item.classList.contains('day-event')) {
+                item.addEventListener('mouseenter', handleBookingMouseEnter);
+                item.addEventListener('mouseleave', handleBookingMouseLeave);
+            }
         });
         
         // Add event listeners to "more bookings" items
@@ -569,6 +591,7 @@
     /**
      * Render week view
      * Displays a weekly calendar with hourly time slots
+     * Enhanced with better event positioning and tooltip support
      */
     function renderWeekView() {
         const weekDates = getWeekDates(state.currentWeekStart);
@@ -597,8 +620,6 @@
         elements.calendarGrid.className = 'calendar-grid week-view';
 
         // Calculate time constants
-        // Total hours displayed: HOUR_START to HOUR_END (inclusive labels)
-        // This represents time from HOUR_START:00 to (HOUR_END+1):00
         const totalHours = CONFIG.HOUR_END - CONFIG.HOUR_START + 1;
         const dayStartMinutes = CONFIG.HOUR_START * 60;
         const totalMinutes = totalHours * 60;
@@ -620,6 +641,9 @@
             // Filter bookings that cover this date (including multi-day bookings)
             const dayBookings = state.bookings.filter(b => isDateInBookingRange(dateStr, b));
             
+            // Calculate overlapping groups for horizontal positioning
+            const positionedEvents = calculateEventPositions(dayBookings);
+            
             html += `<div class="week-day-column ${isTodayDate ? 'today-column' : ''}" data-date="${dateStr}">`;
             
             // Grid lines for hours
@@ -632,10 +656,12 @@
             // Events layer - positioned absolutely
             html += '<div class="week-events-layer">';
             
-            dayBookings.forEach(booking => {
+            positionedEvents.forEach(event => {
+                const booking = event.booking;
                 const statusClass = getStatusClass(booking.status);
                 const startMinutes = timeToMinutes(booking.start_time);
                 const endMinutes = timeToMinutes(booking.end_time);
+                const durationMinutes = endMinutes - startMinutes;
                 
                 // Calculate position as percentage
                 const topPercent = ((startMinutes - dayStartMinutes) / totalMinutes) * 100;
@@ -644,13 +670,29 @@
                 const formattedEndTime = formatTime(booking.end_time);
                 const multiDayClass = booking.is_multi_day ? ' multi-day-event' : '';
                 
+                // Add compact class for events less than 45 minutes
+                const compactClass = durationMinutes < 45 ? ' compact-event' : '';
+                
+                // Calculate horizontal position for overlapping events
+                const leftPercent = event.column * (100 / event.totalColumns);
+                const widthPercent = 100 / event.totalColumns - 1; // -1 for gap
+                
+                // Get room and unit info for tooltip
+                const roomName = booking.room ? (booking.room.name || booking.room.room_name || '') : '';
+                const unitName = booking.unit ? (booking.unit.name || booking.unit.unit_name || '') : '';
+                
                 html += `
-                    <div class="booking-item week-event ${statusClass}${multiDayClass}" 
-                         data-booking-id="${booking.id}" 
-                         style="top: ${topPercent}%; height: ${heightPercent}%;"
-                         title="${booking.agenda_name} (${formattedStartTime} - ${formattedEndTime})${booking.is_multi_day ? '' : ''}">
+                    <div class="booking-item week-event ${statusClass}${multiDayClass}${compactClass}" 
+                         data-booking-id="${booking.id}"
+                         data-agenda="${escapeHtml(booking.agenda_name)}"
+                         data-start-time="${formattedStartTime}"
+                         data-end-time="${formattedEndTime}"
+                         data-room="${escapeHtml(roomName)}"
+                         data-unit="${escapeHtml(unitName)}"
+                         data-status="${booking.status}"
+                         style="top: ${topPercent}%; height: ${heightPercent}%; left: ${leftPercent}%; width: ${widthPercent}%;">
                         <span class="event-time">${formattedStartTime}</span>
-                        <span class="event-title">${booking.agenda_name}</span>
+                        <span class="event-title">${escapeHtml(booking.agenda_name)}</span>
                     </div>
                 `;
             });
@@ -659,6 +701,74 @@
         });
 
         elements.calendarGrid.innerHTML = html;
+    }
+
+    /**
+     * Calculate horizontal positions for overlapping events
+     * Returns array of { booking, column, totalColumns }
+     */
+    function calculateEventPositions(bookings) {
+        if (bookings.length === 0) return [];
+        
+        // Sort by start time, then by duration (longer first)
+        const sortedBookings = [...bookings].sort((a, b) => {
+            const aStart = timeToMinutes(a.start_time);
+            const bStart = timeToMinutes(b.start_time);
+            if (aStart !== bStart) return aStart - bStart;
+            
+            const aDuration = timeToMinutes(a.end_time) - aStart;
+            const bDuration = timeToMinutes(b.end_time) - bStart;
+            return bDuration - aDuration;
+        });
+        
+        const result = [];
+        const columns = []; // Array of { end: minutes, column: number }
+        
+        sortedBookings.forEach(booking => {
+            const startMinutes = timeToMinutes(booking.start_time);
+            const endMinutes = timeToMinutes(booking.end_time);
+            
+            // Find available column
+            let column = 0;
+            for (let i = 0; i < columns.length; i++) {
+                if (columns[i].end <= startMinutes) {
+                    column = i;
+                    break;
+                }
+                column = i + 1;
+            }
+            
+            // Update or create column
+            if (column < columns.length) {
+                columns[column].end = endMinutes;
+            } else {
+                columns.push({ end: endMinutes, column: column });
+            }
+            
+            result.push({
+                booking,
+                column,
+                totalColumns: 1 // Will be updated later
+            });
+        });
+        
+        // Calculate total columns for overlapping groups
+        result.forEach(event => {
+            const startMinutes = timeToMinutes(event.booking.start_time);
+            const endMinutes = timeToMinutes(event.booking.end_time);
+            
+            // Find all overlapping events
+            const overlapping = result.filter(other => {
+                const otherStart = timeToMinutes(other.booking.start_time);
+                const otherEnd = timeToMinutes(other.booking.end_time);
+                return startMinutes < otherEnd && endMinutes > otherStart;
+            });
+            
+            // Get max column + 1 as total columns
+            event.totalColumns = Math.max(...overlapping.map(o => o.column)) + 1;
+        });
+        
+        return result;
     }
 
     /**
@@ -731,17 +841,23 @@
             const heightPercent = ((endMinutes - startMinutes) / totalMinutes) * 100;
             const formattedStartTime = formatTime(booking.start_time);
             const formattedEndTime = formatTime(booking.end_time);
-            const roomName = booking.room ? (booking.room.name || booking.room.room_name) : '';
+            const roomName = booking.room ? (booking.room.name || booking.room.room_name || '') : '';
+            const unitName = booking.unit ? (booking.unit.name || booking.unit.unit_name || '') : '';
             
             html += `
                 <div class="booking-item day-event ${statusClass}" 
-                     data-booking-id="${booking.id}" 
-                     style="top: ${topPercent}%; height: ${heightPercent}%;"
-                     title="${booking.agenda_name} (${formattedStartTime} - ${formattedEndTime})">
+                     data-booking-id="${booking.id}"
+                     data-agenda="${escapeHtml(booking.agenda_name)}"
+                     data-start-time="${formattedStartTime}"
+                     data-end-time="${formattedEndTime}"
+                     data-room="${escapeHtml(roomName)}"
+                     data-unit="${escapeHtml(unitName)}"
+                     data-status="${booking.status}"
+                     style="top: ${topPercent}%; height: ${heightPercent}%;">
                     <div class="day-event-content">
                         <span class="event-time">${formattedStartTime} - ${formattedEndTime}</span>
-                        <span class="event-title">${booking.agenda_name}</span>
-                        ${roomName ? `<span class="event-room">${roomName}</span>` : ''}
+                        <span class="event-title">${escapeHtml(booking.agenda_name)}</span>
+                        ${roomName ? `<span class="event-room">${escapeHtml(roomName)}</span>` : ''}
                     </div>
                 </div>
             `;
@@ -846,6 +962,243 @@
             case 'Menunggu': return 'status-pending';
             case 'Kadaluarsa': return 'status-expired';
             default: return 'status-pending';
+        }
+    }
+
+    // ============================================
+    // Tooltip Functions
+    // ============================================
+
+    /**
+     * Create tooltip element if not exists
+     */
+    function createTooltipElement() {
+        let tooltip = document.getElementById('reservationTooltip');
+        if (!tooltip) {
+            tooltip = document.createElement('div');
+            tooltip.id = 'reservationTooltip';
+            tooltip.className = 'reservation-tooltip';
+            tooltip.innerHTML = `
+                <div class="tooltip-content">
+                    <div class="tooltip-header">
+                        <div class="tooltip-title"></div>
+                        <span class="tooltip-status"></span>
+                    </div>
+                    <div class="tooltip-details">
+                        <div class="tooltip-detail-item">
+                            <div class="tooltip-detail-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </div>
+                            <div class="tooltip-detail-content">
+                                <span class="tooltip-detail-label">Waktu</span>
+                                <span class="tooltip-detail-value tooltip-time"></span>
+                            </div>
+                        </div>
+                        <div class="tooltip-detail-item">
+                            <div class="tooltip-detail-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                </svg>
+                            </div>
+                            <div class="tooltip-detail-content">
+                                <span class="tooltip-detail-label">Ruangan</span>
+                                <span class="tooltip-detail-value tooltip-room"></span>
+                            </div>
+                        </div>
+                        <div class="tooltip-detail-item tooltip-unit-item" style="display: none;">
+                            <div class="tooltip-detail-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                </svg>
+                            </div>
+                            <div class="tooltip-detail-content">
+                                <span class="tooltip-detail-label">Unit</span>
+                                <span class="tooltip-detail-value tooltip-unit"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(tooltip);
+        }
+        return tooltip;
+    }
+
+    /**
+     * Get tooltip color based on status
+     */
+    function getTooltipColors(status) {
+        switch (status) {
+            case 'Disetujui':
+                return { color: '#00AEEF', colorEnd: '#0095A8' };
+            case 'Ditolak':
+                return { color: '#ED1C24', colorEnd: '#C41E24' };
+            case 'Menunggu':
+                return { color: '#F59E0B', colorEnd: '#D97706' };
+            case 'Kadaluarsa':
+                return { color: '#6B7280', colorEnd: '#4B5563' };
+            default:
+                return { color: '#00A2B9', colorEnd: '#0095A8' };
+        }
+    }
+
+    /**
+     * Show tooltip for a booking element
+     */
+    function showTooltip(element) {
+        // Don't show tooltip on mobile
+        if (window.innerWidth <= 768) return;
+        
+        // Clear any pending hide timeout
+        if (state.tooltipHideTimeout) {
+            clearTimeout(state.tooltipHideTimeout);
+            state.tooltipHideTimeout = null;
+        }
+        
+        const tooltip = createTooltipElement();
+        
+        // Get booking data from element
+        const agenda = element.dataset.agenda || '';
+        const startTime = element.dataset.startTime || '';
+        const endTime = element.dataset.endTime || '';
+        const room = element.dataset.room || '-';
+        const unit = element.dataset.unit || '';
+        const status = element.dataset.status || 'Menunggu';
+        
+        // Update tooltip content
+        tooltip.querySelector('.tooltip-title').textContent = agenda;
+        tooltip.querySelector('.tooltip-time').textContent = `${startTime} - ${endTime} WIB`;
+        tooltip.querySelector('.tooltip-room').textContent = room || '-';
+        
+        // Update status badge
+        const statusBadge = tooltip.querySelector('.tooltip-status');
+        statusBadge.textContent = status;
+        statusBadge.className = 'tooltip-status ' + getStatusClass(status);
+        
+        // Show/hide unit
+        const unitItem = tooltip.querySelector('.tooltip-unit-item');
+        if (unit) {
+            unitItem.style.display = 'flex';
+            tooltip.querySelector('.tooltip-unit').textContent = unit;
+        } else {
+            unitItem.style.display = 'none';
+        }
+        
+        // Set tooltip colors based on status
+        const colors = getTooltipColors(status);
+        tooltip.style.setProperty('--tooltip-color', colors.color);
+        tooltip.style.setProperty('--tooltip-color-end', colors.colorEnd);
+        
+        // Position tooltip
+        positionTooltip(tooltip, element);
+        
+        // Show tooltip with animation
+        tooltip.classList.add('visible');
+        state.tooltipVisible = true;
+        state.activeBookingElement = element;
+    }
+
+    /**
+     * Position tooltip near the element
+     */
+    function positionTooltip(tooltip, element) {
+        const rect = element.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const padding = 12;
+        
+        // Default position: to the right of the element
+        let left = rect.right + padding;
+        let top = rect.top;
+        
+        // Check if tooltip would overflow right edge
+        if (left + tooltipRect.width > viewportWidth - padding) {
+            // Position to the left of the element
+            left = rect.left - tooltipRect.width - padding;
+        }
+        
+        // If still overflows left, center it
+        if (left < padding) {
+            left = Math.max(padding, (viewportWidth - tooltipRect.width) / 2);
+        }
+        
+        // Check if tooltip would overflow bottom
+        if (top + tooltipRect.height > viewportHeight - padding) {
+            top = viewportHeight - tooltipRect.height - padding;
+        }
+        
+        // Check if tooltip would overflow top
+        if (top < padding) {
+            top = padding;
+        }
+        
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top = `${top}px`;
+    }
+
+    /**
+     * Hide tooltip
+     */
+    function hideTooltip() {
+        const tooltip = document.getElementById('reservationTooltip');
+        if (tooltip) {
+            tooltip.classList.remove('visible');
+        }
+        state.tooltipVisible = false;
+        state.activeBookingElement = null;
+    }
+
+    /**
+     * Handle mouse enter on booking item (for tooltip)
+     */
+    function handleBookingMouseEnter(e) {
+        const bookingElement = e.target.closest('.booking-item.week-event, .booking-item.day-event');
+        if (!bookingElement) return;
+        
+        // Clear any pending timeouts
+        if (state.tooltipTimeout) {
+            clearTimeout(state.tooltipTimeout);
+        }
+        if (state.tooltipHideTimeout) {
+            clearTimeout(state.tooltipHideTimeout);
+            state.tooltipHideTimeout = null;
+        }
+        
+        // Delay before showing tooltip
+        state.tooltipTimeout = setTimeout(() => {
+            showTooltip(bookingElement);
+        }, CONFIG.TOOLTIP_DELAY);
+    }
+
+    /**
+     * Handle mouse leave on booking item (for tooltip)
+     */
+    function handleBookingMouseLeave(e) {
+        // Clear show timeout
+        if (state.tooltipTimeout) {
+            clearTimeout(state.tooltipTimeout);
+            state.tooltipTimeout = null;
+        }
+        
+        // Delay before hiding tooltip
+        state.tooltipHideTimeout = setTimeout(() => {
+            hideTooltip();
+        }, CONFIG.TOOLTIP_HIDE_DELAY);
+    }
+
+    /**
+     * Handle mouse move for tooltip repositioning
+     */
+    function handleBookingMouseMove(e) {
+        if (state.tooltipVisible && state.activeBookingElement) {
+            const tooltip = document.getElementById('reservationTooltip');
+            if (tooltip) {
+                positionTooltip(tooltip, state.activeBookingElement);
+            }
         }
     }
 
@@ -2114,6 +2467,17 @@
 
         // Keyboard events
         document.addEventListener('keydown', handleKeydown);
+        
+        // Tooltip hide on scroll/resize (using passive for better performance)
+        const debouncedHideTooltip = debounce(hideTooltip, 50);
+        window.addEventListener('scroll', debouncedHideTooltip, { passive: true });
+        window.addEventListener('resize', debouncedHideTooltip, { passive: true });
+        
+        // Also hide tooltip when calendar container is scrolled
+        const calendarContainer = document.querySelector('.calendar-container');
+        if (calendarContainer) {
+            calendarContainer.addEventListener('scroll', debouncedHideTooltip, { passive: true });
+        }
     }
 
     /**

@@ -834,38 +834,42 @@ body {
 }
 
 /* ============================================
-   Week View Event Items
+   Week View Event Items (Enhanced)
    ============================================ */
 .booking-item.week-event {
     position: absolute;
     left: 0;
     right: 0;
-    padding: 6px 8px;
+    padding: 5px 8px;
     margin: 0;
     border-radius: 6px;
     font-size: 10px;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
     overflow: hidden;
     z-index: 5;
     border-left: 3px solid;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+                box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                z-index 0s;
+    will-change: transform, box-shadow;
 }
 
 .booking-item.week-event:hover {
-    transform: translateX(1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 15;
+    transform: scale(1.02) translateX(1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
+    z-index: 20;
 }
 
 .booking-item.week-event .event-time {
     font-size: 9px;
     font-weight: 700;
-    opacity: 0.85;
+    opacity: 0.9;
     letter-spacing: 0.2px;
+    line-height: 1.2;
 }
 
 .booking-item.week-event .event-title {
@@ -874,7 +878,158 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.3;
+    line-height: 1.2;
+}
+
+/* Small event (less than 1 hour) - compact display */
+.booking-item.week-event.compact-event {
+    padding: 3px 6px;
+    gap: 0;
+}
+
+.booking-item.week-event.compact-event .event-title {
+    display: none;
+}
+
+/* ============================================
+   Reservation Tooltip (Floating Card)
+   ============================================ */
+.reservation-tooltip {
+    position: fixed;
+    z-index: 9999;
+    min-width: 240px;
+    max-width: 320px;
+    background: #FFFFFF;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 
+                0 8px 16px rgba(0, 0, 0, 0.1),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.reservation-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.reservation-tooltip::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--tooltip-color, #00A2B9) 0%, var(--tooltip-color-end, #0095A8) 100%);
+}
+
+.tooltip-content {
+    padding: 16px;
+}
+
+.tooltip-header {
+    margin-bottom: 12px;
+}
+
+.tooltip-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1E293B;
+    line-height: 1.4;
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.tooltip-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.tooltip-status.status-approved {
+    background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+    color: #1E40AF;
+}
+
+.tooltip-status.status-pending {
+    background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+    color: #92400E;
+}
+
+.tooltip-status.status-rejected {
+    background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+    color: #991B1B;
+}
+
+.tooltip-status.status-expired {
+    background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+    color: #4B5563;
+}
+
+.tooltip-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tooltip-detail-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.tooltip-detail-icon {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
+}
+
+.tooltip-detail-icon svg {
+    width: 14px;
+    height: 14px;
+    color: #64748B;
+}
+
+.tooltip-detail-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.tooltip-detail-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #94A3B8;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 1px;
+}
+
+.tooltip-detail-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* ============================================
@@ -956,45 +1111,59 @@ body {
 }
 
 /* ============================================
-   Week View - Grid Layout
+   Week View - Grid Layout (Enhanced)
    ============================================ */
 .calendar-grid.week-view {
     display: grid;
-    grid-template-columns: 80px repeat(7, 1fr);
-    border: 1px solid #E5E7EB;
-    border-radius: 12px;
+    grid-template-columns: 72px repeat(7, 1fr);
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
     overflow: hidden;
     background: #FFFFFF;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 /* Week Time Column */
 .week-time-column {
     display: flex;
     flex-direction: column;
-    background: linear-gradient(135deg, #FAFBFC 0%, #F5F7F9 100%);
-    border-right: 2px solid #E5E7EB;
-    height: calc(16 * 56px); /* Match week-grid-lines height */
+    background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+    border-right: 1px solid #E2E8F0;
+    height: calc(16 * 52px);
 }
 
 .week-time-label {
     display: flex;
     align-items: flex-start;
     justify-content: flex-end;
-    padding: 8px 12px;
-    font-size: 12px;
+    padding: 6px 10px;
+    font-size: 11px;
     font-weight: 600;
-    color: #94A3B8;
-    height: 56px;
-    min-height: 56px;
+    color: #64748B;
+    height: 52px;
+    min-height: 52px;
     flex-shrink: 0;
     box-sizing: border-box;
-    border-bottom: 1px solid #F1F5F9;
+    position: relative;
+}
+
+/* Only show border for first hour of each block */
+.week-time-label::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 10px;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, #E2E8F0 0%, transparent 100%);
 }
 
 /* Week Day Column */
 .week-day-column {
     position: relative;
     border-right: 1px solid #F1F5F9;
+    background: #FFFFFF;
+    transition: background-color 0.2s ease;
 }
 
 .week-day-column:last-child {
@@ -1002,39 +1171,66 @@ body {
 }
 
 .week-day-column.today-column {
-    background: linear-gradient(180deg, rgba(0, 162, 185, 0.04) 0%, rgba(0, 162, 185, 0.02) 100%);
+    background: linear-gradient(180deg, rgba(0, 162, 185, 0.03) 0%, rgba(0, 162, 185, 0.01) 100%);
+}
+
+.week-day-column.today-column::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #00A2B9 0%, #0095A8 100%);
+    z-index: 10;
 }
 
 .week-grid-lines {
     display: flex;
     flex-direction: column;
-    /* Ensure consistent height calculation */
-    height: calc(16 * 56px); /* 16 hours (7-22) * 56px per hour */
+    height: calc(16 * 52px);
 }
 
 .week-grid-line {
-    height: 56px;
-    min-height: 56px;
+    height: 52px;
+    min-height: 52px;
     flex-shrink: 0;
-    border-bottom: 1px solid #F1F5F9;
+    border-bottom: 1px solid #F8FAFC;
     transition: background-color 0.15s ease;
+    position: relative;
+}
+
+/* Subtle hour marker */
+.week-grid-line::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #F1F5F9;
 }
 
 .week-grid-line:hover {
-    background-color: rgba(0, 162, 185, 0.03);
+    background-color: rgba(0, 162, 185, 0.02);
 }
 
 .week-grid-line:last-child {
     border-bottom: none;
 }
 
+.week-grid-line:last-child::before {
+    display: none;
+}
+
 .week-events-layer {
     position: absolute;
     top: 0;
-    left: 3px;
-    right: 3px;
-    height: calc(16 * 56px); /* Must match week-grid-lines height exactly */
+    left: 2px;
+    right: 2px;
+    height: calc(16 * 52px);
     pointer-events: none;
+    z-index: 5;
 }
 
 .week-events-layer .booking-item {
@@ -1043,9 +1239,9 @@ body {
 
 .calendar-weekdays.week-view-header {
     display: grid;
-    grid-template-columns: 80px repeat(7, 1fr);
-    background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
-    border-bottom: 2px solid #E5E7EB;
+    grid-template-columns: 72px repeat(7, 1fr);
+    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+    border-bottom: 1px solid #E2E8F0;
     position: sticky;
     top: 0;
     z-index: 20;
@@ -1056,9 +1252,10 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 16px 8px;
-    border-right: 1px solid #E5E7EB;
-    gap: 6px;
+    padding: 14px 8px;
+    border-right: 1px solid #F1F5F9;
+    gap: 4px;
+    transition: background-color 0.2s ease;
 }
 
 .calendar-weekdays.week-view-header .weekday:last-child {
@@ -1066,8 +1263,8 @@ body {
 }
 
 .calendar-weekdays.week-view-header .weekday.time-column {
-    background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
-    font-size: 11px;
+    background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+    font-size: 10px;
     font-weight: 700;
     color: #64748B;
     text-transform: uppercase;
@@ -1075,58 +1272,60 @@ body {
 }
 
 .calendar-weekdays.week-view-header .weekday.today-header {
-    background: linear-gradient(135deg, rgba(0, 162, 185, 0.08) 0%, rgba(0, 149, 168, 0.05) 100%);
+    background: linear-gradient(180deg, rgba(0, 162, 185, 0.06) 0%, rgba(0, 149, 168, 0.03) 100%);
 }
 
 .calendar-weekdays.week-view-header .weekday-name {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    color: #64748B;
+    color: #94A3B8;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .calendar-weekdays.week-view-header .weekday-date {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
-    color: #1E293B;
+    color: #334155;
     line-height: 1;
 }
 
 .calendar-weekdays.week-view-header .weekday-date.today-date {
     background: linear-gradient(135deg, #00A2B9 0%, #0095A8 100%);
     color: #FFFFFF;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 8px rgba(0, 162, 185, 0.35);
+    box-shadow: 0 2px 8px rgba(0, 162, 185, 0.3);
+    font-size: 15px;
 }
 
 /* Custom scrollbar for week view grid */
 .calendar-container:has(.week-view) {
-    max-height: 650px;
+    max-height: 620px;
     overflow-y: auto;
+    scroll-behavior: smooth;
 }
 
 .calendar-container:has(.week-view)::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
 }
 
 .calendar-container:has(.week-view)::-webkit-scrollbar-track {
     background: #F8FAFC;
-    border-radius: 4px;
+    border-radius: 3px;
 }
 
 .calendar-container:has(.week-view)::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #CBD5E1 0%, #94A3B8 100%);
-    border-radius: 4px;
+    background: linear-gradient(180deg, #CBD5E1 0%, #94A3B8 100%);
+    border-radius: 3px;
 }
 
 .calendar-container:has(.week-view)::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, #94A3B8 0%, #64748B 100%);
+    background: linear-gradient(180deg, #94A3B8 0%, #64748B 100%);
 }
 
 /* ============================================
@@ -2203,11 +2402,11 @@ body {
 
     /* Week View Responsive - Tablet */
     .calendar-grid.week-view {
-        grid-template-columns: 70px repeat(7, 1fr);
+        grid-template-columns: 64px repeat(7, 1fr);
     }
 
     .calendar-weekdays.week-view-header {
-        grid-template-columns: 70px repeat(7, 1fr);
+        grid-template-columns: 64px repeat(7, 1fr);
     }
 
     .calendar-weekdays.week-view-header .weekday {
@@ -2215,21 +2414,35 @@ body {
     }
 
     .calendar-weekdays.week-view-header .weekday-name {
-        font-size: 10px;
+        font-size: 9px;
     }
 
     .calendar-weekdays.week-view-header .weekday-date {
-        font-size: 16px;
+        font-size: 15px;
+    }
+
+    .week-time-column {
+        height: calc(16 * 48px);
     }
 
     .week-time-label {
-        padding: 6px 10px;
-        font-size: 11px;
-        height: 52px;
+        padding: 5px 8px;
+        font-size: 10px;
+        height: 48px;
+        min-height: 48px;
+    }
+
+    .week-grid-lines {
+        height: calc(16 * 48px);
     }
 
     .week-grid-line {
-        height: 52px;
+        height: 48px;
+        min-height: 48px;
+    }
+
+    .week-events-layer {
+        height: calc(16 * 48px);
     }
 
     .booking-item.week-event {
@@ -2242,6 +2455,24 @@ body {
 
     .booking-item.week-event .event-title {
         font-size: 9px;
+    }
+
+    /* Tooltip Responsive - Tablet */
+    .reservation-tooltip {
+        min-width: 220px;
+        max-width: 280px;
+    }
+
+    .tooltip-content {
+        padding: 14px;
+    }
+
+    .tooltip-title {
+        font-size: 13px;
+    }
+
+    .tooltip-detail-value {
+        font-size: 12px;
     }
 
     /* Day View Responsive - Tablet */
@@ -2354,52 +2585,75 @@ body {
 
     /* Week View Responsive - Mobile */
     .calendar-grid.week-view {
-        grid-template-columns: 60px repeat(7, 1fr);
+        grid-template-columns: 52px repeat(7, 1fr);
     }
 
     .calendar-weekdays.week-view-header {
-        grid-template-columns: 60px repeat(7, 1fr);
+        grid-template-columns: 52px repeat(7, 1fr);
     }
 
     .calendar-weekdays.week-view-header .weekday {
         padding: 10px 4px;
-        gap: 4px;
+        gap: 3px;
     }
 
     .calendar-weekdays.week-view-header .weekday-name {
-        font-size: 9px;
+        font-size: 8px;
     }
 
     .calendar-weekdays.week-view-header .weekday-date {
-        font-size: 14px;
+        font-size: 13px;
     }
 
     .calendar-weekdays.week-view-header .weekday-date.today-date {
-        width: 28px;
-        height: 28px;
-        font-size: 12px;
+        width: 26px;
+        height: 26px;
+        font-size: 11px;
+    }
+
+    .week-time-column {
+        height: calc(16 * 44px);
     }
 
     .week-time-label {
-        padding: 4px 6px;
-        font-size: 10px;
-        height: 48px;
+        padding: 3px 5px;
+        font-size: 9px;
+        height: 44px;
+        min-height: 44px;
+    }
+
+    .week-grid-lines {
+        height: calc(16 * 44px);
     }
 
     .week-grid-line {
-        height: 48px;
+        height: 44px;
+        min-height: 44px;
+    }
+
+    .week-events-layer {
+        height: calc(16 * 44px);
+        left: 1px;
+        right: 1px;
     }
 
     .booking-item.week-event {
-        padding: 3px 4px;
+        padding: 2px 4px;
+        border-left-width: 2px;
+        border-radius: 4px;
     }
 
     .booking-item.week-event .event-time {
-        font-size: 8px;
+        font-size: 7px;
     }
 
     .booking-item.week-event .event-title {
         font-size: 8px;
+    }
+
+    /* Hide tooltip on mobile, use native touch interaction */
+    .reservation-tooltip {
+        display: none;
     }
 
     /* Day View Responsive - Mobile */
@@ -3321,6 +3575,7 @@ input[type="password"]::-ms-reveal {
     text-overflow: ellipsis;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
 }
 
@@ -3358,6 +3613,7 @@ input[type="password"]::-ms-reveal {
     text-overflow: ellipsis;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
 }
 
