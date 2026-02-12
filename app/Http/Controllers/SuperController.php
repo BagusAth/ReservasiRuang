@@ -800,6 +800,7 @@ class SuperController extends Controller
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
                     $q->where('unit_name', 'like', "%{$search}%")
+                      ->orWhere('kode_unit', 'like', "%{$search}%")
                       ->orWhere('description', 'like', "%{$search}%");
                 });
             }
@@ -822,6 +823,7 @@ class SuperController extends Controller
                 return [
                     'id' => $unit->id,
                     'unit_name' => $unit->unit_name,
+                    'kode_unit' => $unit->kode_unit,
                     'description' => $unit->description,
                     'is_active' => $unit->is_active,
                     'buildings_count' => $unit->buildings()->count(),
@@ -866,6 +868,7 @@ class SuperController extends Controller
                 'data' => [
                     'id' => $unit->id,
                     'unit_name' => $unit->unit_name,
+                    'kode_unit' => $unit->kode_unit,
                     'description' => $unit->description,
                     'is_active' => $unit->is_active,
                     'buildings_count' => $unit->buildings->count(),
@@ -905,11 +908,16 @@ class SuperController extends Controller
             'unit_name.required' => 'Nama unit wajib diisi.',
             'unit_name.unique' => 'Nama unit sudah digunakan.',
             'unit_name.max' => 'Nama unit maksimal 255 karakter.',
+            'kode_unit.required' => 'Kode unit wajib diisi.',
+            'kode_unit.unique' => 'Kode unit sudah digunakan.',
+            'kode_unit.max' => 'Kode unit maksimal 20 karakter.',
+            'kode_unit.alpha_num' => 'Kode unit hanya boleh berisi huruf dan angka.',
             'description.max' => 'Deskripsi maksimal 1000 karakter.',
         ];
 
         $validator = Validator::make($request->all(), [
             'unit_name' => 'required|string|max:255|unique:units,unit_name',
+            'kode_unit' => 'required|string|max:20|alpha_num|unique:units,kode_unit',
             'description' => 'nullable|string|max:1000',
             'is_active' => 'boolean',
         ], $messages);
@@ -925,6 +933,7 @@ class SuperController extends Controller
         try {
             $unit = Unit::create([
                 'unit_name' => $request->unit_name,
+                'kode_unit' => strtoupper($request->kode_unit),
                 'description' => $request->description,
                 'is_active' => $request->is_active ?? true,
             ]);
@@ -935,6 +944,7 @@ class SuperController extends Controller
                 'data' => [
                     'id' => $unit->id,
                     'unit_name' => $unit->unit_name,
+                    'kode_unit' => $unit->kode_unit,
                     'description' => $unit->description,
                     'is_active' => $unit->is_active,
                 ]
@@ -963,11 +973,16 @@ class SuperController extends Controller
                 'unit_name.required' => 'Nama unit wajib diisi.',
                 'unit_name.unique' => 'Nama unit sudah digunakan.',
                 'unit_name.max' => 'Nama unit maksimal 255 karakter.',
+                'kode_unit.required' => 'Kode unit wajib diisi.',
+                'kode_unit.unique' => 'Kode unit sudah digunakan.',
+                'kode_unit.max' => 'Kode unit maksimal 20 karakter.',
+                'kode_unit.alpha_num' => 'Kode unit hanya boleh berisi huruf dan angka.',
                 'description.max' => 'Deskripsi maksimal 1000 karakter.',
             ];
 
             $validator = Validator::make($request->all(), [
                 'unit_name' => ['required', 'string', 'max:255', Rule::unique('units', 'unit_name')->ignore($id)],
+                'kode_unit' => ['required', 'string', 'max:20', 'alpha_num', Rule::unique('units', 'kode_unit')->ignore($id)],
                 'description' => 'nullable|string|max:1000',
                 'is_active' => 'boolean',
             ], $messages);
@@ -982,6 +997,7 @@ class SuperController extends Controller
 
             $unit->update([
                 'unit_name' => $request->unit_name,
+                'kode_unit' => strtoupper($request->kode_unit),
                 'description' => $request->description ?? $unit->description,
                 'is_active' => $request->has('is_active') ? $request->is_active : $unit->is_active,
             ]);
@@ -992,6 +1008,7 @@ class SuperController extends Controller
                 'data' => [
                     'id' => $unit->id,
                     'unit_name' => $unit->unit_name,
+                    'kode_unit' => $unit->kode_unit,
                     'description' => $unit->description,
                     'is_active' => $unit->is_active,
                 ]

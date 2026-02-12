@@ -11,6 +11,7 @@ class Unit extends Model
 
     protected $fillable = [
         'unit_name',
+        'kode_unit',
         'description',
         'is_active',
     ];

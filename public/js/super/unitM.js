@@ -240,7 +240,7 @@ async function loadUnits(page = currentPage) {
     // Show loading state
     tableBody.innerHTML = `
         <tr class="loading-row">
-            <td colspan="5" class="px-5 py-8 text-center">
+            <td colspan="6" class="px-5 py-8 text-center">
                 <div class="flex items-center justify-center gap-3">
                     <div class="loading-spinner"></div>
                     <span class="text-gray-500 text-sm">Memuat data...</span>
@@ -274,7 +274,7 @@ async function loadUnits(page = currentPage) {
             showAlert('error', data.message || 'Gagal memuat data unit');
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="px-5 py-8 text-center text-red-500">
+                    <td colspan="6" class="px-5 py-8 text-center text-red-500">
                         Gagal memuat data. <button onclick="loadUnits()" class="text-primary underline">Coba lagi</button>
                     </td>
                 </tr>
@@ -285,7 +285,7 @@ async function loadUnits(page = currentPage) {
         showAlert('error', 'Terjadi kesalahan saat memuat data');
         tableBody.innerHTML = `
             <tr>
-                <td colspan="5" class="px-5 py-8 text-center text-red-500">
+                <td colspan="6" class="px-5 py-8 text-center text-red-500">
                     Terjadi kesalahan. <button onclick="loadUnits()" class="text-primary underline">Coba lagi</button>
                 </td>
             </tr>
@@ -311,6 +311,9 @@ function renderUnitsTable(units, pagination) {
 
     tableBody.innerHTML = units.map(unit => `
         <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-5 py-4">
+                <span class="inline-flex items-center px-2.5 py-1 bg-primary/10 text-primary rounded-lg text-xs font-semibold">${escapeHtml(unit.kode_unit || '-')}</span>
+            </td>
             <td class="px-5 py-4">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -489,6 +492,7 @@ function openCreateModal() {
 
     form.reset();
     document.getElementById('unitId').value = '';
+    document.getElementById('kodeUnit').value = '';
     document.getElementById('unitIsActive').checked = true;
     title.textContent = 'Tambah Unit';
     submitBtn.textContent = 'Simpan';
@@ -515,6 +519,7 @@ async function openEditModal(unitId) {
         if (data.success) {
             const unit = data.data;
             document.getElementById('unitId').value = unit.id;
+            document.getElementById('kodeUnit').value = unit.kode_unit || '';
             document.getElementById('unitName').value = unit.unit_name;
             document.getElementById('unitDescription').value = unit.description || '';
             document.getElementById('unitIsActive').checked = unit.is_active;
@@ -548,6 +553,7 @@ async function handleUnitFormSubmit(e) {
 
     const formData = {
         unit_name: document.getElementById('unitName').value,
+        kode_unit: document.getElementById('kodeUnit').value.toUpperCase(),
         description: document.getElementById('unitDescription').value,
         is_active: document.getElementById('unitIsActive').checked
     };

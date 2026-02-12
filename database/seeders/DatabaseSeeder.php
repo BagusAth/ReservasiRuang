@@ -78,6 +78,7 @@ class DatabaseSeeder extends Seeder
         DB::table('units')->insert([
             [
                 'unit_name' => 'Unit Pusat', //id : 1
+                'kode_unit' => 'UX001A',
                 'description' => 'Unit pusat layanan utama organisasi',
                 'is_active' => true,
                 'created_at' => now(),
@@ -85,6 +86,7 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'unit_name' => 'Unit Engineering', //id : 2
+                'kode_unit' => 'UX002B',
                 'description' => 'Unit engljfes',
                 'is_active' => true,
                 'created_at' => now(),
@@ -92,6 +94,7 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'unit_name' => 'Unit Operasi Sistem', //id : 3
+                'kode_unit' => 'UX003C',
                 'description' => 'Unit skajghpw',
                 'is_active' => true,
                 'created_at' => now(),
@@ -99,6 +102,7 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'unit_name' => 'Unit Administrasi & Umum', //id : 4
+                'kode_unit' => 'UX004D',
                 'description' => 'Unit admsufrjn',
                 'is_active' => true,
                 'created_at' => now(),
