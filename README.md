@@ -252,7 +252,7 @@ Edit file `.env` dan sesuaikan konfigurasi database:
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=reservasi_ruang
+DB_DATABASE=reservasiruang
 DB_USERNAME=root
 DB_PASSWORD=
 ```
@@ -262,7 +262,7 @@ DB_PASSWORD=
 ```bash
 # Buat database baru di MySQL
 # mysql -u root -p
-# CREATE DATABASE reservasi_ruang;
+# CREATE DATABASE reservasiruang;
 
 # Jalankan migration dan seeder
 php artisan migrate:fresh --seed
@@ -353,10 +353,10 @@ Setelah menjalankan seeder, gunakan akun berikut untuk testing:
 
 | Role | Email | Password | Dashboard |
 |------|-------|----------|-----------|
-| Super Admin | `super@test.com` | `password` | `/super/dashboard` |
-| Admin Unit | `adminunit@test.com` | `password` | `/admin/dashboard` |
-| Admin Gedung | `admingedung@test.com` | `password` | `/admin/dashboard` |
-| User | `user@test.com` | `password` | `/user/dashboard` |
+| Super Admin | `superadmin@gmail.com` | `super123` | `/super/dashboard` |
+| Admin Unit | `admin.unitengineering@gmail.com` | `admin123` | `/admin/dashboard` |
+| Admin Gedung | `admin.engineering2@gmail.com` | `admin123` | `/admin/dashboard` |
+| User | `andi@gmail.com` | `user1234` | `/user/dashboard` |
 
 > **Catatan**: Untuk akun lengkap, lihat file `DatabaseSeeder.php`
 
@@ -400,77 +400,20 @@ ReservasiRuang/
 ├── routes/
 │   └── web.php                # Route definitions
 └── ...
+
 ```
-
----
-
-## 🔌 API Endpoints Overview
-
-Semua API endpoint menggunakan prefix `/api/{role}/` dan memerlukan autentikasi sesuai role.
-
-### Guest API (Public)
-| Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
-| GET | `/api/guest/buildings` | Daftar gedung |
-| GET | `/api/guest/rooms` | Daftar ruangan |
-| GET | `/api/guest/bookings` | Daftar reservasi publik |
-| GET | `/api/guest/search` | Pencarian reservasi |
-
-### User API
-| Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
-| GET | `/api/user/my-bookings` | Reservasi user sendiri |
-| POST | `/api/user/bookings` | Buat reservasi baru |
-| PUT | `/api/user/bookings/{id}` | Update reservasi |
-| DELETE | `/api/user/bookings/{id}` | Batalkan reservasi |
-
-### Admin API
-| Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
-| GET | `/api/admin/list-bookings` | Daftar booking untuk approval |
-| POST | `/api/admin/bookings/{id}/approve` | Approve booking |
-| POST | `/api/admin/bookings/{id}/reject` | Reject booking |
-| POST | `/api/admin/bookings/{id}/reschedule` | Reschedule booking |
-
-### Super Admin API
-| Method | Endpoint | Deskripsi |
-|--------|----------|-----------|
-| GET | `/api/super/users` | Daftar user |
-| POST | `/api/super/users` | Buat user baru |
-| GET | `/api/super/units/list` | Daftar unit |
-| PUT | `/api/super/units/{id}/neighbors` | Update unit neighbors |
-
----
-
-## 🧪 Testing
-
-```bash
-# Jalankan semua test
-php artisan test
-
-# Atau menggunakan PHPUnit langsung
-./vendor/bin/phpunit
-```
-
----
 
 ## 👨‍💻 Kontributor
 
 | Nama | Role | Tanggung Jawab |
 |------|------|----------------|
-| **Bagus Atha** | Lead Developer | Full-stack development, system architecture |
-
----
-
-## 📄 Lisensi
-
-Project ini dikembangkan untuk keperluan internal organisasi.
+| **Bagus Athallah** | Lead Developer | Full-stack development, system architecture |
 
 ---
 
 ## 📞 Kontak & Support
 
-Untuk pertanyaan atau laporan bug, silakan buat issue di repository ini atau hubungi tim pengembang.
+Untuk pertanyaan atau laporan bug, silakan buat issue di repository ini.
 
 ---
 
