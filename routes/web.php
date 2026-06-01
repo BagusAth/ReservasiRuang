@@ -125,6 +125,21 @@ Route::middleware(['role:admin_unit,admin_gedung'])->group(function () {
     });
 });
 
+// Admin Unit Only Routes (Role: admin_unit)
+Route::middleware(['role:admin_unit'])->group(function () {
+    // Gedung Page
+    Route::get('/admin/gedung', [AdminController::class, 'buildingsPage'])->name('admin.building');
+
+    // API untuk Admin Unit - Building Management
+    Route::prefix('api/admin')->name('admin.api.')->group(function () {
+        Route::get('/buildings/list', [AdminController::class, 'listBuildings'])->name('buildings.list');
+        Route::get('/buildings/{id}', [AdminController::class, 'getBuildingDetail'])->name('buildings.detail');
+        Route::post('/buildings', [AdminController::class, 'createBuilding'])->name('buildings.create');
+        Route::put('/buildings/{id}', [AdminController::class, 'updateBuilding'])->name('buildings.update');
+        Route::put('/buildings/{id}/toggle-status', [AdminController::class, 'toggleBuildingStatus'])->name('buildings.toggleStatus');
+    });
+});
+
 // Super Admin Routes (Role: Super Admin)
 Route::middleware(['role:super_admin'])->group(function () {
     // Dashboard

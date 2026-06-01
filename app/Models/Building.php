@@ -13,6 +13,11 @@ class Building extends Model
         'building_name',
         'unit_id',
         'description',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     /**

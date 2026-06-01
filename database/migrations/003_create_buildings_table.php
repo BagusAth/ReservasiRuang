@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('building_name');
             $table->foreignId('unit_id')->constrained('units')->onDelete('cascade');
             $table->text('description')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->unique(['unit_id', 'building_name']);
         });

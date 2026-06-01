@@ -54,6 +54,23 @@ class AdminController extends Controller
     }
 
     /**
+     * Halaman Manajemen Gedung (khusus Admin Unit).
+     */
+    public function buildingsPage()
+    {
+        $user = Auth::user();
+
+        if (!$user->isAdminUnit()) {
+            abort(403, 'Akses hanya untuk Admin Unit');
+        }
+
+        $adminType = $this->getAdminType($user);
+        $adminScope = $this->getAdminScope($user);
+
+        return view('admin.buildingA', compact('user', 'adminType', 'adminScope'));
+    }
+
+    /**
      * Detect admin type based on role.
      */
     private function getAdminType($user): string
@@ -962,6 +979,331 @@ class AdminController extends Controller
                 'booking_id' => $booking->id,
                 'old_details' => $oldDetails,
                 'new_details' => $newDetails,
+            ]
+        ]);
+    }
+
+    // ============================================
+    // BUILDING MANAGEMENT METHODS (ADMIN UNIT ONLY)
+    // ============================================
+
+    /**
+     * Get base query for admin unit's buildings.
+     */
+    private function getAdminBuildingsQuery($user)
+    {
+        return Building::query()->where('unit_id', $user->unit_id);
+    }
+
+    /**
+     * List buildings for admin unit (with pagination).
+     */
+    public function listBuildings(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (!$user->isAdminUnit()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses hanya untuk Admin Unit.'
+            ], 403);
+        }
+
+        if (!$user->unit_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unit admin tidak ditemukan.'
+            ], 422);
+        }
+
+        $request->validate([
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1|max:100',
+            'search' => 'nullable|string|max:100',
+        ]);
+
+        $perPage = $request->input('per_page', 10);
+        $search = $request->input('search');
+
+        $query = $this->getAdminBuildingsQuery($user)
+            ->with(['unit:id,unit_name'])
+            ->withCount('rooms');
+
+        if ($search) {
+            $query->where('building_name', 'like', "%{$search}%");
+        }
+
+        $query->orderBy('building_name');
+
+        $buildings = $query->paginate($perPage);
+
+        $transformedData = $buildings->getCollection()->map(function ($building) {
+            return [
+                'id' => $building->id,
+                'building_name' => $building->building_name,
+                'description' => $building->description,
+                'is_active' => $building->is_active,
+                'rooms_count' => $building->rooms_count ?? 0,
+                'unit' => [
+                    'id' => $building->unit_id,
+                    'name' => $building->unit->unit_name ?? null,
+                ],
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $transformedData,
+            'meta' => [
+                'current_page' => $buildings->currentPage(),
+                'last_page' => $buildings->lastPage(),
+                'per_page' => $buildings->perPage(),
+                'total' => $buildings->total(),
+            ]
+        ]);
+    }
+
+    /**
+     * Create a new building (Admin Unit only).
+     */
+    public function createBuilding(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (!$user->isAdminUnit()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses hanya untuk Admin Unit.'
+            ], 403);
+        }
+
+        if (!$user->unit_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unit admin tidak ditemukan.'
+            ], 422);
+        }
+
+        $messages = [
+            'building_name.required' => 'Nama gedung wajib diisi.',
+            'building_name.max' => 'Nama gedung maksimal 100 karakter.',
+            'building_name.regex' => 'Nama gedung hanya boleh berisi huruf, angka, spasi, dan karakter umum.',
+            'description.max' => 'Deskripsi maksimal 500 karakter.',
+        ];
+
+        $validated = $request->validate([
+            'building_name' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z0-9\s\-\.,\/()&]+$/'],
+            'description' => ['nullable', 'string', 'max:500'],
+        ], $messages);
+
+        $buildingName = trim($validated['building_name']);
+        $buildingName = preg_replace('/\s+/', ' ', $buildingName);
+
+        if ($buildingName === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nama gedung wajib diisi.'
+            ], 422);
+        }
+
+        $description = $request->filled('description') ? trim($request->input('description')) : null;
+        $description = $description ? strip_tags($description) : null;
+
+        $duplicate = Building::where('unit_id', $user->unit_id)
+            ->where('building_name', $buildingName)
+            ->exists();
+
+        if ($duplicate) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nama gedung sudah digunakan di unit Anda.'
+            ], 422);
+        }
+
+        $building = Building::create([
+            'building_name' => $buildingName,
+            'unit_id' => $user->unit_id,
+            'description' => $description,
+            'is_active' => true,
+        ]);
+
+        $building->load(['unit:id,unit_name']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Gedung berhasil ditambahkan.',
+            'data' => [
+                'id' => $building->id,
+                'building_name' => $building->building_name,
+                'description' => $building->description,
+                'is_active' => $building->is_active,
+                'rooms_count' => 0,
+                'unit' => [
+                    'id' => $building->unit_id,
+                    'name' => $building->unit->unit_name ?? null,
+                ],
+            ]
+        ], 201);
+    }
+
+    /**
+     * Get building detail (Admin Unit only).
+     */
+    public function getBuildingDetail(int $id): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (!$user->isAdminUnit()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses hanya untuk Admin Unit.'
+            ], 403);
+        }
+
+        $building = Building::where('id', $id)
+            ->where('unit_id', $user->unit_id)
+            ->first();
+
+        if (!$building) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gedung tidak ditemukan atau tidak dalam cakupan Anda.'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $building->id,
+                'building_name' => $building->building_name,
+                'description' => $building->description,
+                'is_active' => $building->is_active,
+            ]
+        ]);
+    }
+
+    /**
+     * Update building (Admin Unit only).
+     */
+    public function updateBuilding(Request $request, int $id): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (!$user->isAdminUnit()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses hanya untuk Admin Unit.'
+            ], 403);
+        }
+
+        if (!$user->unit_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unit admin tidak ditemukan.'
+            ], 422);
+        }
+
+        $messages = [
+            'building_name.required' => 'Nama gedung wajib diisi.',
+            'building_name.max' => 'Nama gedung maksimal 100 karakter.',
+            'building_name.regex' => 'Nama gedung hanya boleh berisi huruf, angka, spasi, dan karakter umum.',
+            'description.max' => 'Deskripsi maksimal 500 karakter.',
+        ];
+
+        $validated = $request->validate([
+            'building_name' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z0-9\s\-\.,\/()&]+$/'],
+            'description' => ['nullable', 'string', 'max:500'],
+        ], $messages);
+
+        $building = Building::where('id', $id)
+            ->where('unit_id', $user->unit_id)
+            ->first();
+
+        if (!$building) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gedung tidak ditemukan atau tidak dalam cakupan Anda.'
+            ], 404);
+        }
+
+        $buildingName = trim($validated['building_name']);
+        $buildingName = preg_replace('/\s+/', ' ', $buildingName);
+
+        if ($buildingName === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nama gedung wajib diisi.'
+            ], 422);
+        }
+
+        $description = $request->filled('description') ? trim($request->input('description')) : null;
+        $description = $description ? strip_tags($description) : null;
+
+        $duplicate = Building::where('unit_id', $user->unit_id)
+            ->where('building_name', $buildingName)
+            ->where('id', '!=', $building->id)
+            ->exists();
+
+        if ($duplicate) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nama gedung sudah digunakan di unit Anda.'
+            ], 422);
+        }
+
+        $building->update([
+            'building_name' => $buildingName,
+            'description' => $description,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Gedung berhasil diperbarui.',
+            'data' => [
+                'id' => $building->id,
+                'building_name' => $building->building_name,
+                'description' => $building->description,
+                'is_active' => $building->is_active,
+            ]
+        ]);
+    }
+
+    /**
+     * Toggle building active status (Admin Unit only).
+     */
+    public function toggleBuildingStatus(int $id): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (!$user->isAdminUnit()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses hanya untuk Admin Unit.'
+            ], 403);
+        }
+
+        $building = Building::where('id', $id)
+            ->where('unit_id', $user->unit_id)
+            ->first();
+
+        if (!$building) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gedung tidak ditemukan atau tidak dalam cakupan Anda.'
+            ], 404);
+        }
+
+        $building->is_active = !$building->is_active;
+        $building->save();
+
+        $statusText = $building->is_active ? 'diaktifkan' : 'dinonaktifkan';
+
+        return response()->json([
+            'success' => true,
+            'message' => "Gedung berhasil {$statusText}.",
+            'data' => [
+                'id' => $building->id,
+                'is_active' => $building->is_active,
             ]
         ]);
     }

@@ -1,5 +1,5 @@
 /**
- * Admin Room Management Page JavaScript
+ * Admin Building Management Page JavaScript
  * PLN Nusantara Power Services - Reservasi Ruang Rapat
  */
 
@@ -9,60 +9,53 @@ document.addEventListener('DOMContentLoaded', function() {
     // ============================================
     const API_BASE = '/api/admin';
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    
+
     let currentPage = 1;
     let perPage = 10;
     let totalPages = 1;
     let currentFilters = {
-        status: 'all',
-        building_id: '',
         search: ''
     };
-    let buildings = [];
-    let editingRoomId = null;
     let debounceTimer = null;
+    let editingBuildingId = null;
 
     // ============================================
     // DOM Elements
     // ============================================
-    const roomTableBody = document.getElementById('roomTableBody');
+    const buildingTableBody = document.getElementById('buildingTableBody');
     const loadingState = document.getElementById('loadingState');
     const emptyState = document.getElementById('emptyState');
     const paginationContainer = document.getElementById('paginationContainer');
     const paginationButtons = document.getElementById('paginationButtons');
     const showingFrom = document.getElementById('showingFrom');
     const showingTo = document.getElementById('showingTo');
-    const totalRooms = document.getElementById('totalRooms');
-    
+    const totalBuildings = document.getElementById('totalBuildings');
+
     // Filter elements
-    const searchInput = document.getElementById('searchRoom');
-    const filterBuilding = document.getElementById('filterBuilding');
-    const filterStatus = document.getElementById('filterStatus');
-    
+    const searchInput = document.getElementById('searchBuilding');
+
     // Modal elements
-    const roomModal = document.getElementById('roomModal');
-    const roomModalTitle = document.getElementById('roomModalTitle');
-    const roomForm = document.getElementById('roomForm');
-    const roomIdInput = document.getElementById('roomId');
-    const roomNameInput = document.getElementById('roomName');
-    const roomBuildingSelect = document.getElementById('roomBuilding');
-    const roomCapacityInput = document.getElementById('roomCapacity');
-    const roomLocationInput = document.getElementById('roomLocation');
+    const buildingModal = document.getElementById('buildingModal');
+    const buildingForm = document.getElementById('buildingForm');
+    const buildingIdInput = document.getElementById('buildingId');
+    const buildingNameInput = document.getElementById('buildingName');
+    const buildingDescriptionInput = document.getElementById('buildingDescription');
+    const buildingModalTitle = document.getElementById('buildingModalTitle');
+    const submitBtnText = document.getElementById('submitBtnText');
     const formError = document.getElementById('formError');
     const formErrorText = document.getElementById('formErrorText');
-    const submitBtnText = document.getElementById('submitBtnText');
-    
+
     // Toggle status modal elements
-    const toggleStatusModal = document.getElementById('toggleStatusModal');
-    const toggleRoomIdInput = document.getElementById('toggleRoomId');
-    const toggleNewStatusInput = document.getElementById('toggleNewStatus');
-    const toggleStatusMessage = document.getElementById('toggleStatusMessage');
+    const toggleStatusModal = document.getElementById('toggleBuildingStatusModal');
+    const toggleBuildingIdInput = document.getElementById('toggleBuildingId');
+    const toggleBuildingNewStatusInput = document.getElementById('toggleBuildingNewStatus');
+    const toggleBuildingStatusMessage = document.getElementById('toggleBuildingStatusMessage');
 
     // ============================================
     // Utility Functions
     // ============================================
     function showLoading() {
-        roomTableBody.innerHTML = '';
+        buildingTableBody.innerHTML = '';
         loadingState.classList.remove('hidden');
         emptyState.classList.add('hidden');
         paginationContainer.classList.add('hidden');
@@ -88,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const toastMessage = document.getElementById('toastMessage');
 
         toastContent.className = 'flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg';
-        
+
         if (type === 'success') {
             toastContent.classList.add('toast-success');
             toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>';
@@ -138,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         const data = await response.json();
-        
+
         if (!response.ok) {
             throw new Error(data.message || 'Terjadi kesalahan');
         }
@@ -146,131 +139,101 @@ document.addEventListener('DOMContentLoaded', function() {
         return data;
     }
 
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text || '';
+        return div.innerHTML;
+    }
+
     // ============================================
     // Data Loading Functions
     // ============================================
-    async function loadBuildingOptions() {
-        try {
-            const response = await fetchApi('/buildings');
-            buildings = response.data || [];
-            
-            // Populate filter dropdown (for admin_unit only)
-            if (filterBuilding) {
-                filterBuilding.innerHTML = '<option value="">Semua Gedung</option>';
-                buildings.forEach(building => {
-                    filterBuilding.innerHTML += `<option value="${building.id}">${building.building_name}</option>`;
-                });
-            }
-            
-            // Populate form dropdown
-            roomBuildingSelect.innerHTML = '<option value="">Pilih Gedung</option>';
-            buildings.forEach(building => {
-                roomBuildingSelect.innerHTML += `<option value="${building.id}">${building.building_name}</option>`;
-            });
-        } catch (error) {
-            console.error('Error loading buildings:', error);
-        }
-    }
-
-
-    async function loadRooms() {
+    async function loadBuildings() {
         showLoading();
-        
+
         try {
             const params = new URLSearchParams({
                 page: currentPage,
                 per_page: perPage,
-                status: currentFilters.status,
             });
-
-            if (currentFilters.building_id) {
-                params.append('building_id', currentFilters.building_id);
-            }
 
             if (currentFilters.search) {
                 params.append('search', currentFilters.search);
             }
 
-            const response = await fetchApi(`/rooms/list?${params.toString()}`);
-            
+            const response = await fetchApi(`/buildings/list?${params.toString()}`);
+
             hideLoading();
-            
+
             if (response.data && response.data.length > 0) {
                 hideEmpty();
-                renderRooms(response.data);
+                renderBuildings(response.data);
                 renderPagination(response.meta);
             } else {
-                roomTableBody.innerHTML = '';
+                buildingTableBody.innerHTML = '';
                 showEmpty();
             }
         } catch (error) {
             hideLoading();
-            console.error('Error loading rooms:', error);
-            showToast(error.message || 'Gagal memuat data ruangan', 'error');
+            console.error('Error loading buildings:', error);
+            showToast(error.message || 'Gagal memuat data gedung', 'error');
         }
     }
 
     // ============================================
     // Render Functions
     // ============================================
-    function renderRooms(rooms) {
-        roomTableBody.innerHTML = '';
-        
-        rooms.forEach(room => {
+    function renderBuildings(buildings) {
+        buildingTableBody.innerHTML = '';
+
+        buildings.forEach((building) => {
             const tr = document.createElement('tr');
-            tr.setAttribute('data-room-id', room.id);
+            const description = building.description ? escapeHtml(building.description) : '-';
+            const isActive = Boolean(building.is_active);
+            tr.setAttribute('data-building-id', building.id);
+
             tr.innerHTML = `
                 <td>
-                    <div class="room-info">
-                        <span class="room-name">${escapeHtml(room.room_name)}</span>
-                        <span class="room-location">${escapeHtml(room.location)}</span>
+                    <div class="building-info">
+                        <span class="building-name">${escapeHtml(building.building_name)}</span>
                     </div>
                 </td>
-                <td>${escapeHtml(room.building?.name || '-')}</td>
-                <td>${escapeHtml(room.unit?.name || '-')}</td>
                 <td>
-                    <span class="capacity-badge">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                        ${room.capacity}
-                    </span>
+                    <span class="building-description">${description}</span>
                 </td>
                 <td>
-                    <label class="toggle-switch" title="${room.is_active ? 'Klik untuk menonaktifkan' : 'Klik untuk mengaktifkan'}">
-                        <input type="checkbox" ${room.is_active ? 'checked' : ''} onchange="toggleRoomStatus(${room.id}, this.checked)">
+                    <label class="toggle-switch" title="${isActive ? 'Klik untuk menonaktifkan' : 'Klik untuk mengaktifkan'}">
+                        <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleBuildingStatus(${building.id}, this.checked)">
                         <span class="toggle-slider"></span>
                     </label>
                 </td>
                 <td>
-                    <button type="button" class="action-btn edit" title="Edit Ruangan" onclick="editRoom(${room.id})">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                        </svg>
-                    </button>
+                    <div class="action-group">
+                        <button type="button" class="action-btn edit" title="Edit Gedung" onclick="editBuilding(${building.id})">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </td>
             `;
-            roomTableBody.appendChild(tr);
+            buildingTableBody.appendChild(tr);
         });
     }
 
-
     function renderPagination(meta) {
         const { current_page, last_page, per_page, total } = meta;
-        
+
         totalPages = last_page;
-        
-        // Update showing text
+
         const from = total > 0 ? (current_page - 1) * per_page + 1 : 0;
         const to = Math.min(current_page * per_page, total);
         showingFrom.textContent = from;
         showingTo.textContent = to;
-        totalRooms.textContent = total;
+        totalBuildings.textContent = total;
 
-        // Generate pagination buttons
         paginationButtons.innerHTML = '';
 
-        // Previous button
         const prevBtn = document.createElement('button');
         prevBtn.type = 'button';
         prevBtn.className = 'pagination-btn';
@@ -283,11 +246,10 @@ document.addEventListener('DOMContentLoaded', function() {
         prevBtn.addEventListener('click', () => goToPage(current_page - 1));
         paginationButtons.appendChild(prevBtn);
 
-        // Page number buttons
         const maxVisiblePages = 5;
         let startPage = Math.max(1, current_page - Math.floor(maxVisiblePages / 2));
         let endPage = Math.min(last_page, startPage + maxVisiblePages - 1);
-        
+
         if (endPage - startPage + 1 < maxVisiblePages) {
             startPage = Math.max(1, endPage - maxVisiblePages + 1);
         }
@@ -295,7 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (startPage > 1) {
             const firstBtn = createPageButton(1);
             paginationButtons.appendChild(firstBtn);
-            
+
             if (startPage > 2) {
                 const ellipsis = document.createElement('span');
                 ellipsis.className = 'px-2 text-gray-400';
@@ -316,12 +278,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 ellipsis.textContent = '...';
                 paginationButtons.appendChild(ellipsis);
             }
-            
+
             const lastBtn = createPageButton(last_page);
             paginationButtons.appendChild(lastBtn);
         }
 
-        // Next button
         const nextBtn = document.createElement('button');
         nextBtn.type = 'button';
         nextBtn.className = 'pagination-btn';
@@ -349,151 +310,124 @@ document.addEventListener('DOMContentLoaded', function() {
     function goToPage(page) {
         if (page < 1 || page > totalPages) return;
         currentPage = page;
-        loadRooms();
+        loadBuildings();
     }
 
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text || '';
-        return div.innerHTML;
-    }
-
-    // Room CRUD Functions
     // ============================================
-    window.editRoom = async function(roomId) {
-        try {
-            const response = await fetchApi(`/rooms/${roomId}`);
-            const room = response.data;
-            
-            editingRoomId = room.id;
-            roomIdInput.value = room.id;
-            roomNameInput.value = room.room_name;
-            roomBuildingSelect.value = room.building_id;
-            roomCapacityInput.value = room.capacity;
-            roomLocationInput.value = room.location;
-            
-            // Set status radio
-            const activeRadio = document.querySelector('input[name="is_active"][value="1"]');
-            const inactiveRadio = document.querySelector('input[name="is_active"][value="0"]');
-            if (room.is_active) {
-                activeRadio.checked = true;
-            } else {
-                inactiveRadio.checked = true;
-            }
-            
-            roomModalTitle.textContent = 'Edit Ruangan';
-            submitBtnText.textContent = 'Simpan Perubahan';
-            formError.classList.add('hidden');
-            
-            openModal(roomModal);
-        } catch (error) {
-            console.error('Error loading room detail:', error);
-            showToast(error.message || 'Gagal memuat detail ruangan', 'error');
-        }
-    };
+    // Building Create & Update Functions
+    // ============================================
+    window.toggleBuildingStatus = function(buildingId, newStatus) {
+        toggleBuildingIdInput.value = buildingId;
+        toggleBuildingNewStatusInput.value = newStatus ? '1' : '0';
 
-    window.toggleRoomStatus = function(roomId, newStatus) {
-        // Store values for confirmation
-        toggleRoomIdInput.value = roomId;
-        toggleNewStatusInput.value = newStatus ? '1' : '0';
-        
-        // Find room name for the message
-        const roomRow = document.querySelector(`tr[data-room-id="${roomId}"]`);
-        const roomName = roomRow?.querySelector('.room-name')?.textContent || 'ruangan ini';
-        
-        // Set confirmation message
+        const buildingRow = document.querySelector(`tr[data-building-id="${buildingId}"]`);
+        const buildingName = buildingRow?.querySelector('.building-name')?.textContent || 'gedung ini';
         const statusText = newStatus ? 'mengaktifkan' : 'menonaktifkan';
-        toggleStatusMessage.textContent = `Apakah Anda yakin ingin ${statusText} ${roomName}?`;
-        
-        // Revert toggle temporarily until confirmed
-        const toggleInput = document.querySelector(`tr[data-room-id="${roomId}"] .toggle-switch input`);
+        toggleBuildingStatusMessage.textContent = `Apakah Anda yakin ingin ${statusText} ${buildingName}?`;
+
+        const toggleInput = document.querySelector(`tr[data-building-id="${buildingId}"] .toggle-switch input`);
         if (toggleInput) {
             toggleInput.checked = !newStatus;
         }
-        
-        // Open confirmation modal
+
         openModal(toggleStatusModal);
     };
 
-    async function confirmToggleStatus() {
-        const roomId = toggleRoomIdInput.value;
-        const newStatus = toggleNewStatusInput.value === '1';
-        const toggleInput = document.querySelector(`tr[data-room-id="${roomId}"] .toggle-switch input`);
-        
+    async function confirmToggleBuildingStatus() {
+        const buildingId = toggleBuildingIdInput.value;
+        const newStatus = toggleBuildingNewStatusInput.value === '1';
+        const toggleInput = document.querySelector(`tr[data-building-id="${buildingId}"] .toggle-switch input`);
+
         try {
-            const response = await fetchApi(`/rooms/${roomId}/toggle-status`, {
+            const response = await fetchApi(`/buildings/${buildingId}/toggle-status`, {
                 method: 'PUT',
             });
-            
-            // Update toggle state on success
+
             if (toggleInput) {
                 toggleInput.checked = newStatus;
             }
-            
-            showToast(response.message || 'Status ruangan berhasil diubah', 'success');
+
+            showToast(response.message || 'Status gedung berhasil diubah', 'success');
             closeModal(toggleStatusModal);
         } catch (error) {
-            console.error('Error toggling room status:', error);
-            showToast(error.message || 'Gagal mengubah status ruangan', 'error');
+            console.error('Error toggling building status:', error);
+            showToast(error.message || 'Gagal mengubah status gedung', 'error');
             closeModal(toggleStatusModal);
         }
     }
 
-    async function submitRoomForm(e) {
+    window.editBuilding = async function(buildingId) {
+        try {
+            const response = await fetchApi(`/buildings/${buildingId}`);
+            const building = response.data;
+
+            editingBuildingId = building.id;
+            buildingIdInput.value = building.id;
+            buildingNameInput.value = building.building_name;
+            buildingDescriptionInput.value = building.description || '';
+
+            if (buildingModalTitle) {
+                buildingModalTitle.textContent = 'Edit Gedung';
+            }
+            if (submitBtnText) {
+                submitBtnText.textContent = 'Simpan Perubahan';
+            }
+            formError.classList.add('hidden');
+
+            openModal(buildingModal);
+        } catch (error) {
+            console.error('Error loading building detail:', error);
+            showToast(error.message || 'Gagal memuat detail gedung', 'error');
+        }
+    };
+
+    async function submitBuildingForm(e) {
         e.preventDefault();
-        
-        const submitBtn = document.getElementById('submitRoomForm');
+
+        const submitBtn = document.getElementById('submitBuildingForm');
         submitBtn.disabled = true;
         submitBtn.classList.add('btn-loading');
-        
+
         const formData = {
-            room_name: roomNameInput.value.trim(),
-            building_id: parseInt(roomBuildingSelect.value),
-            capacity: parseInt(roomCapacityInput.value),
-            location: roomLocationInput.value.trim(),
-            is_active: document.querySelector('input[name="is_active"]:checked').value === '1',
+            building_name: buildingNameInput.value.trim(),
+            description: buildingDescriptionInput.value.trim() || null,
         };
-        
+
         try {
-            let response;
-            
-            if (editingRoomId) {
-                // Update existing room
-                response = await fetchApi(`/rooms/${editingRoomId}`, {
-                    method: 'PUT',
-                    body: JSON.stringify(formData),
-                });
-            } else {
-                // Create new room
-                response = await fetchApi('/rooms', {
-                    method: 'POST',
-                    body: JSON.stringify(formData),
-                });
-            }
-            
-            showToast(response.message || 'Ruangan berhasil disimpan', 'success');
-            closeModal(roomModal);
-            loadRooms();
+            const endpoint = editingBuildingId ? `/buildings/${editingBuildingId}` : '/buildings';
+            const method = editingBuildingId ? 'PUT' : 'POST';
+
+            const response = await fetchApi(endpoint, {
+                method,
+                body: JSON.stringify(formData),
+            });
+
+            showToast(response.message || 'Gedung berhasil disimpan', 'success');
+            closeModal(buildingModal);
+            resetBuildingForm();
+            currentPage = 1;
+            loadBuildings();
         } catch (error) {
-            console.error('Error saving room:', error);
+            console.error('Error saving building:', error);
             formError.classList.remove('hidden');
-            formErrorText.textContent = error.message || 'Gagal menyimpan ruangan';
+            formErrorText.textContent = error.message || 'Gagal menyimpan gedung';
         } finally {
             submitBtn.disabled = false;
             submitBtn.classList.remove('btn-loading');
         }
     }
 
-    function resetRoomForm() {
-        editingRoomId = null;
-        roomIdInput.value = '';
-        roomForm.reset();
-        roomModalTitle.textContent = 'Tambah Ruangan';
-        submitBtnText.textContent = 'Simpan';
+    function resetBuildingForm() {
+        editingBuildingId = null;
+        buildingIdInput.value = '';
+        buildingForm.reset();
         formError.classList.add('hidden');
-        
-        // Reset to active by default
-        document.querySelector('input[name="is_active"][value="1"]').checked = true;
+        if (buildingModalTitle) {
+            buildingModalTitle.textContent = 'Tambah Gedung';
+        }
+        if (submitBtnText) {
+            submitBtnText.textContent = 'Simpan';
+        }
     }
 
     // ============================================
@@ -504,20 +438,8 @@ document.addEventListener('DOMContentLoaded', function() {
         debounceTimer = setTimeout(() => {
             currentFilters.search = searchInput.value.trim();
             currentPage = 1;
-            loadRooms();
+            loadBuildings();
         }, 300);
-    }
-
-    function handleBuildingFilter() {
-        currentFilters.building_id = filterBuilding?.value || '';
-        currentPage = 1;
-        loadRooms();
-    }
-
-    function handleStatusFilter() {
-        currentFilters.status = filterStatus.value;
-        currentPage = 1;
-        loadRooms();
     }
 
     // ============================================
@@ -594,13 +516,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     const form = document.createElement('form');
                     form.method = 'POST';
                     form.action = '/logout';
-                    
+
                     const csrfInput = document.createElement('input');
                     csrfInput.type = 'hidden';
                     csrfInput.name = '_token';
                     csrfInput.value = csrfToken;
                     form.appendChild(csrfInput);
-                    
+
                     document.body.appendChild(form);
                     form.submit();
                 } catch (error) {
@@ -615,72 +537,60 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event Listeners
     // ============================================
     function initEventListeners() {
-        // Add Room button
-        const addRoomBtn = document.getElementById('addRoomBtn');
-        if (addRoomBtn) {
-            addRoomBtn.addEventListener('click', () => {
-                resetRoomForm();
-                openModal(roomModal);
+        const addBuildingBtn = document.getElementById('addBuildingBtn');
+        if (addBuildingBtn) {
+            addBuildingBtn.addEventListener('click', () => {
+                resetBuildingForm();
+                openModal(buildingModal);
             });
         }
 
-        // Room modal close buttons
-        const closeRoomModal = document.getElementById('closeRoomModal');
-        const cancelRoomForm = document.getElementById('cancelRoomForm');
+        const closeBuildingModal = document.getElementById('closeBuildingModal');
+        const cancelBuildingForm = document.getElementById('cancelBuildingForm');
 
-        if (closeRoomModal) {
-            closeRoomModal.addEventListener('click', () => {
-                closeModal(roomModal);
+        if (closeBuildingModal) {
+            closeBuildingModal.addEventListener('click', () => {
+                resetBuildingForm();
+                closeModal(buildingModal);
             });
         }
 
-        if (cancelRoomForm) {
-            cancelRoomForm.addEventListener('click', () => {
-                closeModal(roomModal);
+        if (cancelBuildingForm) {
+            cancelBuildingForm.addEventListener('click', () => {
+                resetBuildingForm();
+                closeModal(buildingModal);
             });
         }
 
-        // Room form submit
-        if (roomForm) {
-            roomForm.addEventListener('submit', submitRoomForm);
+        if (buildingForm) {
+            buildingForm.addEventListener('submit', submitBuildingForm);
         }
 
-        // Toggle status modal event listeners
-        const closeToggleStatusModal = document.getElementById('closeToggleStatusModal');
-        const cancelToggleStatus = document.getElementById('cancelToggleStatus');
-        const confirmToggleStatusBtn = document.getElementById('confirmToggleStatus');
+        const closeToggleBuildingStatusModal = document.getElementById('closeToggleBuildingStatusModal');
+        const cancelToggleBuildingStatus = document.getElementById('cancelToggleBuildingStatus');
+        const confirmToggleBuildingStatusBtn = document.getElementById('confirmToggleBuildingStatus');
 
-        if (closeToggleStatusModal) {
-            closeToggleStatusModal.addEventListener('click', () => {
+        if (closeToggleBuildingStatusModal) {
+            closeToggleBuildingStatusModal.addEventListener('click', () => {
                 closeModal(toggleStatusModal);
             });
         }
 
-        if (cancelToggleStatus) {
-            cancelToggleStatus.addEventListener('click', () => {
+        if (cancelToggleBuildingStatus) {
+            cancelToggleBuildingStatus.addEventListener('click', () => {
                 closeModal(toggleStatusModal);
             });
         }
 
-        if (confirmToggleStatusBtn) {
-            confirmToggleStatusBtn.addEventListener('click', confirmToggleStatus);
+        if (confirmToggleBuildingStatusBtn) {
+            confirmToggleBuildingStatusBtn.addEventListener('click', confirmToggleBuildingStatus);
         }
 
-        // Filter event listeners
         if (searchInput) {
             searchInput.addEventListener('input', handleSearch);
         }
 
-        if (filterBuilding) {
-            filterBuilding.addEventListener('change', handleBuildingFilter);
-        }
-
-        if (filterStatus) {
-            filterStatus.addEventListener('change', handleStatusFilter);
-        }
-
-        // Close modals on overlay click
-        [roomModal, toggleStatusModal].forEach(modal => {
+        [buildingModal, toggleStatusModal].forEach((modal) => {
             if (modal) {
                 modal.addEventListener('click', (e) => {
                     if (e.target === modal) {
@@ -690,11 +600,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Close modals on Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                if (roomModal && roomModal.classList.contains('active')) {
-                    closeModal(roomModal);
+                if (buildingModal && buildingModal.classList.contains('active')) {
+                    closeModal(buildingModal);
                 }
                 if (toggleStatusModal && toggleStatusModal.classList.contains('active')) {
                     closeModal(toggleStatusModal);
@@ -711,9 +620,8 @@ document.addEventListener('DOMContentLoaded', function() {
         initUserDropdown();
         initLogoutModal();
         initEventListeners();
-        
-        await loadBuildingOptions();
-        await loadRooms();
+
+        await loadBuildings();
     }
 
     init();

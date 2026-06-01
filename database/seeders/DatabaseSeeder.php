@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Booking;
 use App\Models\Notification;
+use App\Models\Room;
 use App\Models\Unit;
 
 class DatabaseSeeder extends Seeder
@@ -973,122 +974,241 @@ class DatabaseSeeder extends Seeder
      */
     private function seedBookings(): void
     {
-        DB::table('bookings')->insert([
+        $nextWeekStart = now()->addWeek()->startOfWeek();
+        $dates = [
+            'mon' => $nextWeekStart->copy(),
+            'tue' => $nextWeekStart->copy()->addDays(1),
+            'wed' => $nextWeekStart->copy()->addDays(2),
+            'thu' => $nextWeekStart->copy()->addDays(3),
+            'fri' => $nextWeekStart->copy()->addDays(4),
+            'sat' => $nextWeekStart->copy()->addDays(5),
+        ];
+
+        $adminUnitUsers = User::whereHas('role', function ($query) {
+            $query->where('role_name', 'admin_unit');
+        })->whereNotNull('unit_id')->get()->keyBy('unit_id');
+
+        $adminGedungByBuilding = User::whereHas('role', function ($query) {
+            $query->where('role_name', 'admin_gedung');
+        })->whereNotNull('building_id')->get()->keyBy('building_id');
+
+        $adminUnitUser = $adminUnitUsers->first();
+        $adminGedungUsers = $adminGedungByBuilding->values()->take(2);
+
+        $regularUsers = User::whereHas('role', function ($query) {
+            $query->where('role_name', 'user');
+        })->whereNotNull('unit_id')->take(3)->get()->values();
+
+        $createdAt = now()->subDays(2);
+        $updatedAt = now()->subDay();
+        $approvedAt = now()->subDay();
+
+        $bookings = [];
+
+        if ($adminUnitUser) {
+            $adminUnitRooms = Room::with('building.unit')
+                ->where('is_active', true)
+                ->whereHas('building', function ($query) use ($adminUnitUser) {
+                    $query->where('unit_id', $adminUnitUser->unit_id);
+                })
+                ->orderBy('id')
+                ->take(2)
+                ->get();
+
+            if ($adminUnitRooms->count() > 0) {
+                $room = $adminUnitRooms->first();
+                $bookings[] = [
+                    'user_id' => $adminUnitUser->id,
+                    'room_id' => $room->id,
+                    'start_date' => $dates['tue']->toDateString(),
+                    'end_date' => $dates['tue']->toDateString(),
+                    'start_time' => '09:00:00',
+                    'end_time' => '11:00:00',
+                    'agenda_name' => 'Koordinasi Unit',
+                    'pic_name' => $adminUnitUser->name,
+                    'pic_phone' => '081234567890',
+                    'participant_count' => min(12, (int) $room->capacity),
+                    'agenda_detail' => 'Koordinasi mingguan unit.',
+                    'status' => Booking::STATUS_APPROVED,
+                    'rejection_reason' => null,
+                    'approved_by' => $adminUnitUser->id,
+                    'approved_at' => $approvedAt,
+                    'created_at' => $createdAt,
+                    'updated_at' => $updatedAt,
+                ];
+            }
+
+            if ($adminUnitRooms->count() > 1) {
+                $room = $adminUnitRooms->get(1);
+                $bookings[] = [
+                    'user_id' => $adminUnitUser->id,
+                    'room_id' => $room->id,
+                    'start_date' => $dates['thu']->toDateString(),
+                    'end_date' => $dates['thu']->toDateString(),
+                    'start_time' => '14:00:00',
+                    'end_time' => '16:00:00',
+                    'agenda_name' => 'Review Program Unit',
+                    'pic_name' => $adminUnitUser->name,
+                    'pic_phone' => '081234567890',
+                    'participant_count' => min(15, (int) $room->capacity),
+                    'agenda_detail' => 'Review program kerja dan target unit.',
+                    'status' => Booking::STATUS_APPROVED,
+                    'rejection_reason' => null,
+                    'approved_by' => $adminUnitUser->id,
+                    'approved_at' => $approvedAt,
+                    'created_at' => $createdAt,
+                    'updated_at' => $updatedAt,
+                ];
+            }
+        }
+
+        if ($adminGedungUsers->count() > 0) {
+            $adminGedungUser = $adminGedungUsers->get(0);
+            $room = Room::with('building.unit')
+                ->where('building_id', $adminGedungUser->building_id)
+                ->where('is_active', true)
+                ->orderBy('id')
+                ->first();
+
+            if ($room) {
+                $bookings[] = [
+                    'user_id' => $adminGedungUser->id,
+                    'room_id' => $room->id,
+                    'start_date' => $dates['wed']->toDateString(),
+                    'end_date' => $dates['thu']->toDateString(),
+                    'start_time' => '13:00:00',
+                    'end_time' => '15:00:00',
+                    'agenda_name' => 'Inspeksi Gedung',
+                    'pic_name' => $adminGedungUser->name,
+                    'pic_phone' => '081234567891',
+                    'participant_count' => min(12, (int) $room->capacity),
+                    'agenda_detail' => 'Inspeksi fasilitas dan kesiapan ruangan.',
+                    'status' => Booking::STATUS_APPROVED,
+                    'rejection_reason' => null,
+                    'approved_by' => $adminGedungUser->id,
+                    'approved_at' => $approvedAt,
+                    'created_at' => $createdAt,
+                    'updated_at' => $updatedAt,
+                ];
+            }
+        }
+
+        if ($adminGedungUsers->count() > 1) {
+            $adminGedungUser = $adminGedungUsers->get(1);
+            $room = Room::with('building.unit')
+                ->where('building_id', $adminGedungUser->building_id)
+                ->where('is_active', true)
+                ->orderBy('id')
+                ->first();
+
+            if ($room) {
+                $bookings[] = [
+                    'user_id' => $adminGedungUser->id,
+                    'room_id' => $room->id,
+                    'start_date' => $dates['fri']->toDateString(),
+                    'end_date' => $dates['fri']->toDateString(),
+                    'start_time' => '10:00:00',
+                    'end_time' => '12:00:00',
+                    'agenda_name' => 'Maintenance Ruang',
+                    'pic_name' => $adminGedungUser->name,
+                    'pic_phone' => '081234567892',
+                    'participant_count' => min(10, (int) $room->capacity),
+                    'agenda_detail' => 'Maintenance rutin ruangan dan perangkat.',
+                    'status' => Booking::STATUS_APPROVED,
+                    'rejection_reason' => null,
+                    'approved_by' => $adminGedungUser->id,
+                    'approved_at' => $approvedAt,
+                    'created_at' => $createdAt,
+                    'updated_at' => $updatedAt,
+                ];
+            }
+        }
+
+        $userBookingTemplates = [
             [
-                'user_id' => 17,
-                'room_id' => 1,
-                'start_date' => '2026-02-11',
-                'end_date' => '2026-02-12',
-                'start_time' => '08:00:00',
-                'end_time' => '11:00:00',
-                'agenda_name' => 'Rapat bulanan',
-                'pic_name' => 'Budi Wijaya',
-                'pic_phone' => '08223344556',
-                'participant_count' => 10,
-                'agenda_detail' => 'Rapat tiap bulan.',
-                'status' => 'Disetujui',
-                'rejection_reason' => null,
-                'approved_by' => 3,
-                'approved_at' => now()->subDays(3),
-                'created_at' => now()->subDays(5),
-                'updated_at' => now()->subDays(3),
-            ],
-            [
-                'user_id' => 19,
-                'room_id' => 1,
-                'start_date' => '2026-02-16',
-                'end_date' => '2026-02-19',
-                'start_time' => '08:00:00',
-                'end_time' => '11:00:00',
-                'agenda_name' => 'Coba reject',
-                'pic_name' => 'Andi Wijaya',
-                'pic_phone' => '08223344556',
-                'participant_count' => 8,
-                'agenda_detail' => 'Coba coba coba.',
-                'status' => 'Ditolak',
-                'rejection_reason' => 'ruangan sudah dipesan',
-                'approved_by' => 3,
-                'approved_at' => now()->subDays(3),
-                'created_at' => now()->subDays(5),
-                'updated_at' => now()->subDays(3),
-            ],
-            [
-                'user_id' => 19,
-                'room_id' => 10,
-                'start_date' => '2026-02-16',
-                'end_date' => '2026-02-19',
-                'start_time' => '08:00:00',
-                'end_time' => '11:00:00',
-                'agenda_name' => 'Coba coba',
-                'pic_name' => 'Andi Wijaya',
-                'pic_phone' => '08223344556',
-                'participant_count' => 12,
-                'agenda_detail' => 'Coba coba coba.',
-                'status' => 'Menunggu',
-                'rejection_reason' => null,
-                'approved_by' => null,
-                'approved_at' => now()->subDays(3),
-                'created_at' => now()->subDays(5),
-                'updated_at' => now()->subDays(3),
-            ],
-            [
-                'user_id' => 18,
-                'room_id' => 15,
-                'start_date' => '2026-02-09',
-                'end_date' => '2026-02-12',
-                'start_time' => '08:00:00',
-                'end_time' => '11:00:00',
-                'agenda_name' => 'test agenda',
-                'pic_name' => 'Siti Aminah',
-                'pic_phone' => '08223987556',
-                'participant_count' => 15,
-                'agenda_detail' => 'test test11.',
-                'status' => 'Menunggu',
-                'rejection_reason' => null,
-                'approved_by' => null,
-                'approved_at' => now()->subDays(3),
-                'created_at' => now()->subDays(5),
-                'updated_at' => now()->subDays(3),
-            ],
-            [
-                'user_id' => 18,
-                'room_id' => 15,
-                'start_date' => '2026-02-06',
-                'end_date' => '2026-02-06',
-                'start_time' => '11:00:00',
-                'end_time' => '13:00:00',
-                'agenda_name' => 'test test agenda',
-                'pic_name' => 'Siti Aminah',
-                'pic_phone' => '08223987556',
-                'participant_count' => 20,
-                'agenda_detail' => 'test111 test11.',
-                'status' => 'Disetujui',
-                'rejection_reason' => null,
-                'approved_by' => 4,
-                'approved_at' => now()->subDays(3),
-                'created_at' => now()->subDays(5),
-                'updated_at' => now()->subDays(3),
-            ],
-            [
-                'user_id' => 19,
-                'room_id' => 16,
-                'start_date' => '2026-02-16',
-                'end_date' => '2026-02-17',
+                'date' => 'mon',
                 'start_time' => '09:00:00',
-                'end_time' => '11:00:00',
-                'agenda_name' => 'test test agenda',
-                'pic_name' => 'Andi Wijaya',
-                'pic_phone' => '08223987556',
-                'participant_count' => 25,
-                'agenda_detail' => 'test111 test11.',
-                'status' => 'Ditolak',
-                'rejection_reason' => 'test ditolak',
-                'approved_by' => null,
-                'approved_at' => now()->subDays(3),
-                'created_at' => now()->subDays(5),
-                'updated_at' => now()->subDays(3),
+                'end_time' => '10:30:00',
+                'agenda_name' => 'Sinkronisasi Tim',
+                'agenda_detail' => 'Sinkronisasi rencana kerja mingguan.',
+                'status' => Booking::STATUS_PENDING,
+                'rejection_reason' => null,
             ],
-        ]);
+            [
+                'date' => 'fri',
+                'start_time' => '14:00:00',
+                'end_time' => '16:00:00',
+                'agenda_name' => 'Presentasi Proyek',
+                'agenda_detail' => 'Presentasi progres proyek unit.',
+                'status' => Booking::STATUS_APPROVED,
+                'rejection_reason' => null,
+            ],
+            [
+                'date' => 'sat',
+                'start_time' => '08:00:00',
+                'end_time' => '09:30:00',
+                'agenda_name' => 'Rapat Evaluasi',
+                'agenda_detail' => 'Evaluasi hasil kerja pekanan.',
+                'status' => Booking::STATUS_REJECTED,
+                'rejection_reason' => 'Ruangan sudah terjadwal.',
+            ],
+        ];
+
+        foreach ($userBookingTemplates as $index => $template) {
+            $user = $regularUsers->get($index);
+            if (!$user) {
+                continue;
+            }
+
+            $room = Room::with('building.unit')
+                ->where('is_active', true)
+                ->whereHas('building', function ($query) use ($user) {
+                    $query->where('unit_id', $user->unit_id);
+                })
+                ->orderBy('id')
+                ->first();
+
+            if (!$room) {
+                continue;
+            }
+
+            $approver = $adminGedungByBuilding->get($room->building_id)
+                ?? $adminUnitUsers->get($room->building->unit_id)
+                ?? $adminGedungByBuilding->first()
+                ?? $adminUnitUsers->first();
+
+            $approvedBy = null;
+            $approvedAtValue = null;
+
+            if (in_array($template['status'], [Booking::STATUS_APPROVED, Booking::STATUS_REJECTED], true)) {
+                $approvedBy = $approver?->id;
+                $approvedAtValue = $approvedAt;
+            }
+
+            $bookings[] = [
+                'user_id' => $user->id,
+                'room_id' => $room->id,
+                'start_date' => $dates[$template['date']]->toDateString(),
+                'end_date' => $dates[$template['date']]->toDateString(),
+                'start_time' => $template['start_time'],
+                'end_time' => $template['end_time'],
+                'agenda_name' => $template['agenda_name'],
+                'pic_name' => $user->name,
+                'pic_phone' => '081234567899',
+                'participant_count' => min(12, (int) $room->capacity),
+                'agenda_detail' => $template['agenda_detail'],
+                'status' => $template['status'],
+                'rejection_reason' => $template['rejection_reason'],
+                'approved_by' => $approvedBy,
+                'approved_at' => $approvedAtValue,
+                'created_at' => $createdAt,
+                'updated_at' => $updatedAt,
+            ];
+        }
+
+        if (!empty($bookings)) {
+            DB::table('bookings')->insert($bookings);
+        }
     }
 
     /**
