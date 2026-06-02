@@ -39,6 +39,7 @@ class DatabaseSeeder extends Seeder
         $this->seedUsers();
         $this->assignUnitToExistingUsers();
         $this->seedBookings();
+        $this->seedBookingsJuni();
         $this->seedNotifications();
     }
 
@@ -1298,5 +1299,723 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->command->info('Notification seeder completed successfully!');
+    }
+
+    /**
+     * Seed bookings bulan Juni 2026
+     *
+     * Varian status:
+     *   - Menunggu         (pending)
+     *   - Disetujui        (approved)
+     *   - Ditolak          (rejected)
+     *   - Kadaluarsa       (expired)
+     *   - Dibatalkan oleh User (cancelled_by_user)
+     *
+     * Melibatkan: regular user, admin_unit, admin_gedung.
+     */
+    private function seedBookingsJuni(): void
+    {
+        // ----------------------------------------------------------------
+        // Ambil data users berdasarkan role
+        // ----------------------------------------------------------------
+        $regularUsers = User::whereHas('role', fn ($q) => $q->where('role_name', 'user'))
+            ->whereNotNull('unit_id')
+            ->get()
+            ->values();
+
+        $adminGedungUsers = User::whereHas('role', fn ($q) => $q->where('role_name', 'admin_gedung'))
+            ->whereNotNull('building_id')
+            ->get()
+            ->keyBy('building_id');
+
+        $adminUnitUsers = User::whereHas('role', fn ($q) => $q->where('role_name', 'admin_unit'))
+            ->whereNotNull('unit_id')
+            ->get()
+            ->values();
+
+        if ($regularUsers->isEmpty()) {
+            return;
+        }
+
+        // ----------------------------------------------------------------
+        // Ambil daftar room aktif
+        // ----------------------------------------------------------------
+        $rooms = Room::where('is_active', true)->orderBy('id')->get();
+
+        if ($rooms->isEmpty()) {
+            return;
+        }
+
+        // Helper: pilih approver berdasarkan room
+        $getApprover = function (Room $room) use ($adminGedungUsers, $adminUnitUsers) {
+            return $adminGedungUsers->get($room->building_id)
+                ?? $adminUnitUsers->first();
+        };
+
+        // Helper: ambil room berdasarkan index (modulo)
+        $getRoom = fn (int $index) => $rooms->get($index % $rooms->count());
+
+        // ----------------------------------------------------------------
+        // Kumpulan booking bulan Juni 2026
+        // ----------------------------------------------------------------
+        $bookings = [];
+
+        // ════════════════════════════════════════════════════════════
+        // MINGGU 1 — 2–6 Juni 2026
+        // ════════════════════════════════════════════════════════════
+
+        // [1] User 1 — Senin 2 Juni — STATUS: Disetujui
+        if ($regularUsers->get(0)) {
+            $user     = $regularUsers->get(0);
+            $room     = $getRoom(0);
+            $approver = $getApprover($room);
+            $bookings[] = $this->makeBooking(
+                userId: $user->id,
+                roomId: $room->id,
+                startDate: '2026-06-02',
+                endDate: '2026-06-02',
+                startTime: '08:00:00',
+                endTime: '10:00:00',
+                agendaName: 'Kick-off Proyek Q2',
+                agendaDetail: 'Pertemuan awal proyek kuartal kedua, pembagian tugas dan target.',
+                picName: $user->name,
+                picPhone: '081211110001',
+                participantCount: 12,
+                status: Booking::STATUS_APPROVED,
+                rejectionReason: null,
+                approvedBy: $approver?->id,
+                approvedAt: '2026-06-01 15:00:00',
+                createdAt: '2026-05-30 09:00:00',
+                updatedAt: '2026-06-01 15:00:00',
+            );
+        }
+
+        // [2] User 2 — Selasa 3 Juni — STATUS: Disetujui
+        if ($regularUsers->get(1)) {
+            $user     = $regularUsers->get(1);
+            $room     = $getRoom(1);
+            $approver = $getApprover($room);
+            $bookings[] = $this->makeBooking(
+                userId: $user->id,
+                roomId: $room->id,
+                startDate: '2026-06-03',
+                endDate: '2026-06-03',
+                startTime: '10:00:00',
+                endTime: '12:00:00',
+                agendaName: 'Rapat Koordinasi Divisi',
+                agendaDetail: 'Koordinasi antar sub-divisi terkait rencana kerja Juni.',
+                picName: $user->name,
+                picPhone: '081211110002',
+                participantCount: 8,
+                status: Booking::STATUS_APPROVED,
+                rejectionReason: null,
+                approvedBy: $approver?->id,
+                approvedAt: '2026-06-02 11:00:00',
+                createdAt: '2026-05-31 10:00:00',
+                updatedAt: '2026-06-02 11:00:00',
+            );
+        }
+
+        // [3] User 3 — Rabu 4 Juni — STATUS: Ditolak
+        if ($regularUsers->get(2)) {
+            $user     = $regularUsers->get(2);
+            $room     = $getRoom(2);
+            $approver = $getApprover($room);
+            $bookings[] = $this->makeBooking(
+                userId: $user->id,
+                roomId: $room->id,
+                startDate: '2026-06-04',
+                endDate: '2026-06-04',
+                startTime: '13:00:00',
+                endTime: '15:00:00',
+                agendaName: 'Presentasi Anggaran',
+                agendaDetail: 'Presentasi usulan anggaran semester 2 kepada manajemen.',
+                picName: $user->name,
+                picPhone: '081211110003',
+                participantCount: 10,
+                status: Booking::STATUS_REJECTED,
+                rejectionReason: 'Ruangan sudah dipakai untuk kegiatan lain di waktu yang sama.',
+                approvedBy: $approver?->id,
+                approvedAt: '2026-06-03 10:00:00',
+                createdAt: '2026-06-01 14:00:00',
+                updatedAt: '2026-06-03 10:00:00',
+            );
+        }
+
+        // [4] Admin Gedung pertama — Kamis–Jumat 5–6 Juni — STATUS: Disetujui (multi-hari)
+        $adminGedung1 = $adminGedungUsers->first();
+        if ($adminGedung1) {
+            $room = Room::where('building_id', $adminGedung1->building_id)
+                ->where('is_active', true)->first();
+            if ($room) {
+                $approver = $getApprover($room);
+                $bookings[] = $this->makeBooking(
+                    userId: $adminGedung1->id,
+                    roomId: $room->id,
+                    startDate: '2026-06-05',
+                    endDate: '2026-06-06',
+                    startTime: '09:00:00',
+                    endTime: '16:00:00',
+                    agendaName: 'Workshop Manajemen Gedung',
+                    agendaDetail: 'Workshop 2 hari tentang manajemen dan perawatan fasilitas gedung.',
+                    picName: $adminGedung1->name,
+                    picPhone: '081211110004',
+                    participantCount: 20,
+                    status: Booking::STATUS_APPROVED,
+                    rejectionReason: null,
+                    approvedBy: $approver?->id,
+                    approvedAt: '2026-06-04 08:00:00',
+                    createdAt: '2026-06-02 09:00:00',
+                    updatedAt: '2026-06-04 08:00:00',
+                );
+            }
+        }
+
+        // [5] User 1 — Jumat 6 Juni — STATUS: Kadaluarsa
+        if ($regularUsers->get(0)) {
+            $user = $regularUsers->get(0);
+            $room = $getRoom(3);
+            $bookings[] = $this->makeBooking(
+                userId: $user->id,
+                roomId: $room->id,
+                startDate: '2026-06-06',
+                endDate: '2026-06-06',
+                startTime: '14:00:00',
+                endTime: '15:00:00',
+                agendaName: 'Review Sprint Mingguan',
+                agendaDetail: 'Review hasil sprint minggu pertama Juni.',
+                picName: $user->name,
+                picPhone: '081211110001',
+                participantCount: 6,
+                status: Booking::STATUS_EXPIRED,
+                rejectionReason: null,
+                approvedBy: null,
+                approvedAt: null,
+                createdAt: '2026-06-04 11:00:00',
+                updatedAt: '2026-06-07 00:01:00',
+            );
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // MINGGU 2 — 9–13 Juni 2026
+        // ════════════════════════════════════════════════════════════
+
+        // [6] User 2 — Senin 9 Juni — STATUS: Menunggu
+        if ($regularUsers->get(1)) {
+            $user = $regularUsers->get(1);
+            $room = $getRoom(4);
+            $bookings[] = $this->makeBooking(
+                userId: $user->id,
+                roomId: $room->id,
+                startDate: '2026-06-09',
+                endDate: '2026-06-09',
+                startTime: '09:00:00',
+                endTime: '11:00:00',
+                agendaName: 'Briefing Mingguan',
+                agendaDetail: 'Briefing agenda kerja minggu kedua Juni.',
+                picName: $user->name,
+                picPhone: '081211110002',
+                participantCount: 15,
+                status: Booking::STATUS_PENDING,
+                rejectionReason: null,
+                approvedBy: null,
+                approvedAt: null,
+                createdAt: '2026-06-06 16:00:00',
+                updatedAt: '2026-06-06 16:00:00',
+            );
+        }
+
+        // [7] Admin Unit pertama — Selasa 10 Juni — STATUS: Disetujui
+        $adminUnit1 = $adminUnitUsers->get(0);
+        if ($adminUnit1) {
+            $unitRooms = Room::whereHas('building', fn ($q) => $q->where('unit_id', $adminUnit1->unit_id))
+                ->where('is_active', true)->orderBy('id')->get();
+            $room = $unitRooms->first();
+            if ($room) {
+                $approver = $getApprover($room);
+                $bookings[] = $this->makeBooking(
+                    userId: $adminUnit1->id,
+                    roomId: $room->id,
+                    startDate: '2026-06-10',
+                    endDate: '2026-06-10',
+                    startTime: '13:00:00',
+                    endTime: '15:00:00',
+                    agendaName: 'Evaluasi Kinerja Unit',
+                    agendaDetail: 'Evaluasi pencapaian kinerja unit selama bulan Mei.',
+                    picName: $adminUnit1->name,
+                    picPhone: '081211110005',
+                    participantCount: 18,
+                    status: Booking::STATUS_APPROVED,
+                    rejectionReason: null,
+                    approvedBy: $approver?->id,
+                    approvedAt: '2026-06-09 10:00:00',
+                    createdAt: '2026-06-07 14:00:00',
+                    updatedAt: '2026-06-09 10:00:00',
+                );
+            }
+        }
+
+        // [8] User 3 — Rabu 11 Juni — STATUS: Dibatalkan oleh User
+        if ($regularUsers->get(2)) {
+            $user = $regularUsers->get(2);
+            $room = $getRoom(5);
+            $bookings[] = $this->makeBooking(
+                userId: $user->id,
+                roomId: $room->id,
+                startDate: '2026-06-11',
+                endDate: '2026-06-11',
+                startTime: '10:00:00',
+                endTime: '12:00:00',
+                agendaName: 'Focus Group Discussion',
+                agendaDetail: 'FGD tentang peningkatan layanan internal divisi.',
+                picName: $user->name,
+                picPhone: '081211110003',
+                participantCount: 9,
+                status: Booking::STATUS_CANCELLED_BY_USER,
+                rejectionReason: null,
+                approvedBy: null,
+                approvedAt: null,
+                createdAt: '2026-06-08 09:00:00',
+                updatedAt: '2026-06-10 14:30:00',
+            );
+        }
+
+        // [9] User 1 — Kamis 12 Juni — STATUS: Disetujui
+        if ($regularUsers->get(0)) {
+            $user     = $regularUsers->get(0);
+            $room     = $getRoom(6);
+            $approver = $getApprover($room);
+            $bookings[] = $this->makeBooking(
+                userId: $user->id,
+                roomId: $room->id,
+                startDate: '2026-06-12',
+                endDate: '2026-06-12',
+                startTime: '08:30:00',
+                endTime: '10:30:00',
+                agendaName: 'Training Internal',
+                agendaDetail: 'Pelatihan internal penggunaan sistem baru.',
+                picName: $user->name,
+                picPhone: '081211110001',
+                participantCount: 25,
+                status: Booking::STATUS_APPROVED,
+                rejectionReason: null,
+                approvedBy: $approver?->id,
+                approvedAt: '2026-06-11 09:00:00',
+                createdAt: '2026-06-09 10:00:00',
+                updatedAt: '2026-06-11 09:00:00',
+            );
+        }
+
+        // [10] User 2 — Jumat 13 Juni — STATUS: Ditolak
+        if ($regularUsers->get(1)) {
+            $user     = $regularUsers->get(1);
+            $room     = $getRoom(7);
+            $approver = $getApprover($room);
+            $bookings[] = $this->makeBooking(
+                userId: $user->id,
+                roomId: $room->id,
+                startDate: '2026-06-13',
+                endDate: '2026-06-13',
+                startTime: '15:00:00',
+                endTime: '17:00:00',
+                agendaName: 'Rapat Perencanaan SDM',
+                agendaDetail: 'Perencanaan rekrutmen dan pelatihan karyawan baru.',
+                picName: $user->name,
+                picPhone: '081211110002',
+                participantCount: 7,
+                status: Booking::STATUS_REJECTED,
+                rejectionReason: 'Kapasitas ruangan tidak mencukupi untuk kebutuhan kegiatan.',
+                approvedBy: $approver?->id,
+                approvedAt: '2026-06-12 13:00:00',
+                createdAt: '2026-06-10 15:00:00',
+                updatedAt: '2026-06-12 13:00:00',
+            );
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // MINGGU 3 — 16–20 Juni 2026
+        // ════════════════════════════════════════════════════════════
+
+        // [11] Admin Gedung kedua — Senin 16 Juni — STATUS: Disetujui
+        $adminGedung2 = $adminGedungUsers->skip(1)->first();
+        if ($adminGedung2) {
+            $room = Room::where('building_id', $adminGedung2->building_id)
+                ->where('is_active', true)->first();
+            if ($room) {
+                $approver = $getApprover($room);
+                $bookings[] = $this->makeBooking(
+                    userId: $adminGedung2->id,
+                    roomId: $room->id,
+                    startDate: '2026-06-16',
+                    endDate: '2026-06-16',
+                    startTime: '09:00:00',
+                    endTime: '11:00:00',
+                    agendaName: 'Inspeksi Fasilitas Rutin',
+                    agendaDetail: 'Inspeksi rutin kesiapan fasilitas dan ruangan pertengahan bulan.',
+                    picName: $adminGedung2->name,
+                    picPhone: '081211110006',
+                    participantCount: 5,
+                    status: Booking::STATUS_APPROVED,
+                    rejectionReason: null,
+                    approvedBy: $approver?->id,
+                    approvedAt: '2026-06-14 10:00:00',
+                    createdAt: '2026-06-13 11:00:00',
+                    updatedAt: '2026-06-14 10:00:00',
+                );
+            }
+        }
+
+        // [12] User 3 — Selasa 17 Juni — STATUS: Menunggu
+        if ($regularUsers->get(2)) {
+            $user = $regularUsers->get(2);
+            $room = $getRoom(8);
+            $bookings[] = $this->makeBooking(
+                userId: $user->id,
+                roomId: $room->id,
+                startDate: '2026-06-17',
+                endDate: '2026-06-17',
+                startTime: '13:00:00',
+                endTime: '15:00:00',
+                agendaName: 'Diskusi Teknis Proyek',
+                agendaDetail: 'Diskusi teknis progress dan kendala proyek pertengahan tahun.',
+                picName: $user->name,
+                picPhone: '081211110003',
+                participantCount: 11,
+                status: Booking::STATUS_PENDING,
+                rejectionReason: null,
+                approvedBy: null,
+                approvedAt: null,
+                createdAt: '2026-06-15 09:00:00',
+                updatedAt: '2026-06-15 09:00:00',
+            );
+        }
+
+        // [13] User 1 — Rabu 18 Juni — STATUS: Disetujui
+        if ($regularUsers->get(0)) {
+            $user     = $regularUsers->get(0);
+            $room     = $getRoom(9);
+            $approver = $getApprover($room);
+            $bookings[] = $this->makeBooking(
+                userId: $user->id,
+                roomId: $room->id,
+                startDate: '2026-06-18',
+                endDate: '2026-06-18',
+                startTime: '10:00:00',
+                endTime: '12:00:00',
+                agendaName: 'Rapat Review Mid-Year',
+                agendaDetail: 'Review pencapaian semester pertama dan target semester kedua.',
+                picName: $user->name,
+                picPhone: '081211110001',
+                participantCount: 30,
+                status: Booking::STATUS_APPROVED,
+                rejectionReason: null,
+                approvedBy: $approver?->id,
+                approvedAt: '2026-06-17 11:00:00',
+                createdAt: '2026-06-15 14:00:00',
+                updatedAt: '2026-06-17 11:00:00',
+            );
+        }
+
+        // [14] Admin Unit kedua — Kamis–Jumat 19–20 Juni — STATUS: Disetujui (multi-hari)
+        $adminUnit2 = $adminUnitUsers->get(1);
+        if ($adminUnit2) {
+            $unitRooms = Room::whereHas('building', fn ($q) => $q->where('unit_id', $adminUnit2->unit_id))
+                ->where('is_active', true)->orderBy('capacity', 'desc')->get();
+            $room = $unitRooms->first();
+            if ($room) {
+                $approver = $getApprover($room);
+                $bookings[] = $this->makeBooking(
+                    userId: $adminUnit2->id,
+                    roomId: $room->id,
+                    startDate: '2026-06-19',
+                    endDate: '2026-06-20',
+                    startTime: '08:00:00',
+                    endTime: '17:00:00',
+                    agendaName: 'Seminar Inovasi Unit',
+                    agendaDetail: 'Seminar 2 hari tentang inovasi dan peningkatan proses kerja di unit.',
+                    picName: $adminUnit2->name,
+                    picPhone: '081211110007',
+                    participantCount: 45,
+                    status: Booking::STATUS_APPROVED,
+                    rejectionReason: null,
+                    approvedBy: $approver?->id,
+                    approvedAt: '2026-06-17 14:00:00',
+                    createdAt: '2026-06-14 10:00:00',
+                    updatedAt: '2026-06-17 14:00:00',
+                );
+            }
+        }
+
+        // [15] User 2 — Jumat 20 Juni — STATUS: Ditolak
+        if ($regularUsers->get(1)) {
+            $user     = $regularUsers->get(1);
+            $room     = $getRoom(10);
+            $approver = $getApprover($room);
+            $bookings[] = $this->makeBooking(
+                userId: $user->id,
+                roomId: $room->id,
+                startDate: '2026-06-20',
+                endDate: '2026-06-20',
+                startTime: '14:00:00',
+                endTime: '16:00:00',
+                agendaName: 'Rapat Tim Dokumentasi',
+                agendaDetail: 'Koordinasi dokumentasi proyek mid-year.',
+                picName: $user->name,
+                picPhone: '081211110002',
+                participantCount: 8,
+                status: Booking::STATUS_REJECTED,
+                rejectionReason: 'Ruangan tidak tersedia, sedang digunakan untuk seminar unit.',
+                approvedBy: $approver?->id,
+                approvedAt: '2026-06-18 16:00:00',
+                createdAt: '2026-06-16 13:00:00',
+                updatedAt: '2026-06-18 16:00:00',
+            );
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // MINGGU 4 — 23–27 Juni 2026
+        // ════════════════════════════════════════════════════════════
+
+        // [16] User 3 — Senin 23 Juni — STATUS: Menunggu
+        if ($regularUsers->get(2)) {
+            $user = $regularUsers->get(2);
+            $room = $getRoom(11);
+            $bookings[] = $this->makeBooking(
+                userId: $user->id,
+                roomId: $room->id,
+                startDate: '2026-06-23',
+                endDate: '2026-06-23',
+                startTime: '09:00:00',
+                endTime: '10:30:00',
+                agendaName: 'Sinkronisasi Akhir Bulan',
+                agendaDetail: 'Sinkronisasi progress kerja menjelang akhir bulan Juni.',
+                picName: $user->name,
+                picPhone: '081211110003',
+                participantCount: 10,
+                status: Booking::STATUS_PENDING,
+                rejectionReason: null,
+                approvedBy: null,
+                approvedAt: null,
+                createdAt: '2026-06-20 15:00:00',
+                updatedAt: '2026-06-20 15:00:00',
+            );
+        }
+
+        // [17] User 1 — Selasa 24 Juni — STATUS: Disetujui
+        if ($regularUsers->get(0)) {
+            $user     = $regularUsers->get(0);
+            $room     = $getRoom(12);
+            $approver = $getApprover($room);
+            $bookings[] = $this->makeBooking(
+                userId: $user->id,
+                roomId: $room->id,
+                startDate: '2026-06-24',
+                endDate: '2026-06-24',
+                startTime: '11:00:00',
+                endTime: '13:00:00',
+                agendaName: 'Rapat Persiapan Audit',
+                agendaDetail: 'Persiapan dokumen dan data untuk audit internal akhir semester.',
+                picName: $user->name,
+                picPhone: '081211110001',
+                participantCount: 14,
+                status: Booking::STATUS_APPROVED,
+                rejectionReason: null,
+                approvedBy: $approver?->id,
+                approvedAt: '2026-06-23 09:00:00',
+                createdAt: '2026-06-21 10:00:00',
+                updatedAt: '2026-06-23 09:00:00',
+            );
+        }
+
+        // [18] Admin Gedung ketiga — Rabu 25 Juni — STATUS: Menunggu
+        $adminGedung3 = $adminGedungUsers->skip(2)->first();
+        if ($adminGedung3) {
+            $room = Room::where('building_id', $adminGedung3->building_id)
+                ->where('is_active', true)->first();
+            if ($room) {
+                $bookings[] = $this->makeBooking(
+                    userId: $adminGedung3->id,
+                    roomId: $room->id,
+                    startDate: '2026-06-25',
+                    endDate: '2026-06-25',
+                    startTime: '09:00:00',
+                    endTime: '11:00:00',
+                    agendaName: 'Koordinasi Operasional',
+                    agendaDetail: 'Koordinasi operasional dan jadwal pemeliharaan akhir bulan.',
+                    picName: $adminGedung3->name,
+                    picPhone: '081211110008',
+                    participantCount: 12,
+                    status: Booking::STATUS_PENDING,
+                    rejectionReason: null,
+                    approvedBy: null,
+                    approvedAt: null,
+                    createdAt: '2026-06-23 11:00:00',
+                    updatedAt: '2026-06-23 11:00:00',
+                );
+            }
+        }
+
+        // [19] User 2 — Kamis 26 Juni — STATUS: Dibatalkan oleh User
+        if ($regularUsers->get(1)) {
+            $user = $regularUsers->get(1);
+            $room = $getRoom(13);
+            $bookings[] = $this->makeBooking(
+                userId: $user->id,
+                roomId: $room->id,
+                startDate: '2026-06-26',
+                endDate: '2026-06-26',
+                startTime: '14:00:00',
+                endTime: '15:30:00',
+                agendaName: 'Meeting Klien Eksternal',
+                agendaDetail: 'Pertemuan dengan klien untuk presentasi laporan progres.',
+                picName: $user->name,
+                picPhone: '081211110002',
+                participantCount: 6,
+                status: Booking::STATUS_CANCELLED_BY_USER,
+                rejectionReason: null,
+                approvedBy: null,
+                approvedAt: null,
+                createdAt: '2026-06-23 13:00:00',
+                updatedAt: '2026-06-25 10:00:00',
+            );
+        }
+
+        // [20] User 3 — Jumat 27 Juni — STATUS: Menunggu
+        if ($regularUsers->get(2)) {
+            $user = $regularUsers->get(2);
+            $room = $getRoom(14);
+            $bookings[] = $this->makeBooking(
+                userId: $user->id,
+                roomId: $room->id,
+                startDate: '2026-06-27',
+                endDate: '2026-06-27',
+                startTime: '10:00:00',
+                endTime: '11:30:00',
+                agendaName: 'Closing Meeting Juni',
+                agendaDetail: 'Rapat penutupan bulan Juni, evaluasi dan rencana Juli.',
+                picName: $user->name,
+                picPhone: '081211110003',
+                participantCount: 20,
+                status: Booking::STATUS_PENDING,
+                rejectionReason: null,
+                approvedBy: null,
+                approvedAt: null,
+                createdAt: '2026-06-25 14:00:00',
+                updatedAt: '2026-06-25 14:00:00',
+            );
+        }
+
+        // ════════════════════════════════════════════════════════════
+        // AKHIR BULAN — 28–30 Juni 2026
+        // ════════════════════════════════════════════════════════════
+
+        // [21] Admin Unit ketiga — 28–30 Juni — STATUS: Disetujui (multi-hari)
+        $adminUnit3 = $adminUnitUsers->get(2);
+        if ($adminUnit3) {
+            $unitRooms = Room::whereHas('building', fn ($q) => $q->where('unit_id', $adminUnit3->unit_id))
+                ->where('is_active', true)->orderBy('capacity', 'desc')->get();
+            $room = $unitRooms->first();
+            if ($room) {
+                $approver = $getApprover($room);
+                $bookings[] = $this->makeBooking(
+                    userId: $adminUnit3->id,
+                    roomId: $room->id,
+                    startDate: '2026-06-28',
+                    endDate: '2026-06-30',
+                    startTime: '08:00:00',
+                    endTime: '17:00:00',
+                    agendaName: 'Pelatihan Akhir Semester',
+                    agendaDetail: 'Program pelatihan akhir semester selama 3 hari untuk seluruh staf unit.',
+                    picName: $adminUnit3->name,
+                    picPhone: '081211110009',
+                    participantCount: 35,
+                    status: Booking::STATUS_APPROVED,
+                    rejectionReason: null,
+                    approvedBy: $approver?->id,
+                    approvedAt: '2026-06-25 10:00:00',
+                    createdAt: '2026-06-20 09:00:00',
+                    updatedAt: '2026-06-25 10:00:00',
+                );
+            }
+        }
+
+        // [22] User 1 — 30 Juni — STATUS: Menunggu
+        if ($regularUsers->get(0)) {
+            $user = $regularUsers->get(0);
+            $room = $getRoom(15);
+            $bookings[] = $this->makeBooking(
+                userId: $user->id,
+                roomId: $room->id,
+                startDate: '2026-06-30',
+                endDate: '2026-06-30',
+                startTime: '15:00:00',
+                endTime: '17:00:00',
+                agendaName: 'Rapat Tutup Buku Bulan Juni',
+                agendaDetail: 'Pembahasan hasil kerja dan perencanaan awal Juli.',
+                picName: $user->name,
+                picPhone: '081211110001',
+                participantCount: 10,
+                status: Booking::STATUS_PENDING,
+                rejectionReason: null,
+                approvedBy: null,
+                approvedAt: null,
+                createdAt: '2026-06-28 10:00:00',
+                updatedAt: '2026-06-28 10:00:00',
+            );
+        }
+
+        // ----------------------------------------------------------------
+        // Insert semua booking sekaligus
+        // ----------------------------------------------------------------
+        $validBookings = array_values(array_filter($bookings));
+
+        if (!empty($validBookings)) {
+            DB::table('bookings')->insert($validBookings);
+        }
+    }
+
+    /**
+     * Helper untuk membuat array data satu booking.
+     */
+    private function makeBooking(
+        int $userId,
+        int $roomId,
+        string $startDate,
+        string $endDate,
+        string $startTime,
+        string $endTime,
+        string $agendaName,
+        string $agendaDetail,
+        string $picName,
+        string $picPhone,
+        int $participantCount,
+        string $status,
+        ?string $rejectionReason,
+        ?int $approvedBy,
+        ?string $approvedAt,
+        string $createdAt,
+        string $updatedAt,
+    ): array {
+        return [
+            'user_id'               => $userId,
+            'room_id'               => $roomId,
+            'start_date'            => $startDate,
+            'end_date'              => $endDate,
+            'start_time'            => $startTime,
+            'end_time'              => $endTime,
+            'agenda_name'           => $agendaName,
+            'agenda_detail'         => $agendaDetail,
+            'pic_name'              => $picName,
+            'pic_phone'             => $picPhone,
+            'participant_count'     => $participantCount,
+            'status'                => $status,
+            'rejection_reason'      => $rejectionReason,
+            'approved_by'           => $approvedBy,
+            'approved_at'           => $approvedAt,
+            'is_rescheduled'        => false,
+            'schedule_changed_data' => null,
+            'created_at'            => $createdAt,
+            'updated_at'            => $updatedAt,
+        ];
     }
 }
