@@ -993,9 +993,6 @@ class DatabaseSeeder extends Seeder
             $query->where('role_name', 'admin_gedung');
         })->whereNotNull('building_id')->get()->keyBy('building_id');
 
-        $adminUnitUser = $adminUnitUsers->first();
-        $adminGedungUsers = $adminGedungByBuilding->values()->take(2);
-
         $regularUsers = User::whereHas('role', function ($query) {
             $query->where('role_name', 'user');
         })->whereNotNull('unit_id')->take(3)->get()->values();
@@ -1005,125 +1002,6 @@ class DatabaseSeeder extends Seeder
         $approvedAt = now()->subDay();
 
         $bookings = [];
-
-        if ($adminUnitUser) {
-            $adminUnitRooms = Room::with('building.unit')
-                ->where('is_active', true)
-                ->whereHas('building', function ($query) use ($adminUnitUser) {
-                    $query->where('unit_id', $adminUnitUser->unit_id);
-                })
-                ->orderBy('id')
-                ->take(2)
-                ->get();
-
-            if ($adminUnitRooms->count() > 0) {
-                $room = $adminUnitRooms->first();
-                $bookings[] = [
-                    'user_id' => $adminUnitUser->id,
-                    'room_id' => $room->id,
-                    'start_date' => $dates['tue']->toDateString(),
-                    'end_date' => $dates['tue']->toDateString(),
-                    'start_time' => '09:00:00',
-                    'end_time' => '11:00:00',
-                    'agenda_name' => 'Koordinasi Unit',
-                    'pic_name' => $adminUnitUser->name,
-                    'pic_phone' => '081234567890',
-                    'participant_count' => min(12, (int) $room->capacity),
-                    'agenda_detail' => 'Koordinasi mingguan unit.',
-                    'status' => Booking::STATUS_APPROVED,
-                    'rejection_reason' => null,
-                    'approved_by' => $adminUnitUser->id,
-                    'approved_at' => $approvedAt,
-                    'created_at' => $createdAt,
-                    'updated_at' => $updatedAt,
-                ];
-            }
-
-            if ($adminUnitRooms->count() > 1) {
-                $room = $adminUnitRooms->get(1);
-                $bookings[] = [
-                    'user_id' => $adminUnitUser->id,
-                    'room_id' => $room->id,
-                    'start_date' => $dates['thu']->toDateString(),
-                    'end_date' => $dates['thu']->toDateString(),
-                    'start_time' => '14:00:00',
-                    'end_time' => '16:00:00',
-                    'agenda_name' => 'Review Program Unit',
-                    'pic_name' => $adminUnitUser->name,
-                    'pic_phone' => '081234567890',
-                    'participant_count' => min(15, (int) $room->capacity),
-                    'agenda_detail' => 'Review program kerja dan target unit.',
-                    'status' => Booking::STATUS_APPROVED,
-                    'rejection_reason' => null,
-                    'approved_by' => $adminUnitUser->id,
-                    'approved_at' => $approvedAt,
-                    'created_at' => $createdAt,
-                    'updated_at' => $updatedAt,
-                ];
-            }
-        }
-
-        if ($adminGedungUsers->count() > 0) {
-            $adminGedungUser = $adminGedungUsers->get(0);
-            $room = Room::with('building.unit')
-                ->where('building_id', $adminGedungUser->building_id)
-                ->where('is_active', true)
-                ->orderBy('id')
-                ->first();
-
-            if ($room) {
-                $bookings[] = [
-                    'user_id' => $adminGedungUser->id,
-                    'room_id' => $room->id,
-                    'start_date' => $dates['wed']->toDateString(),
-                    'end_date' => $dates['thu']->toDateString(),
-                    'start_time' => '13:00:00',
-                    'end_time' => '15:00:00',
-                    'agenda_name' => 'Inspeksi Gedung',
-                    'pic_name' => $adminGedungUser->name,
-                    'pic_phone' => '081234567891',
-                    'participant_count' => min(12, (int) $room->capacity),
-                    'agenda_detail' => 'Inspeksi fasilitas dan kesiapan ruangan.',
-                    'status' => Booking::STATUS_APPROVED,
-                    'rejection_reason' => null,
-                    'approved_by' => $adminGedungUser->id,
-                    'approved_at' => $approvedAt,
-                    'created_at' => $createdAt,
-                    'updated_at' => $updatedAt,
-                ];
-            }
-        }
-
-        if ($adminGedungUsers->count() > 1) {
-            $adminGedungUser = $adminGedungUsers->get(1);
-            $room = Room::with('building.unit')
-                ->where('building_id', $adminGedungUser->building_id)
-                ->where('is_active', true)
-                ->orderBy('id')
-                ->first();
-
-            if ($room) {
-                $bookings[] = [
-                    'user_id' => $adminGedungUser->id,
-                    'room_id' => $room->id,
-                    'start_date' => $dates['fri']->toDateString(),
-                    'end_date' => $dates['fri']->toDateString(),
-                    'start_time' => '10:00:00',
-                    'end_time' => '12:00:00',
-                    'agenda_name' => 'Maintenance Ruang',
-                    'pic_name' => $adminGedungUser->name,
-                    'pic_phone' => '081234567892',
-                    'participant_count' => min(10, (int) $room->capacity),
-                    'agenda_detail' => 'Maintenance rutin ruangan dan perangkat.',
-                    'status' => Booking::STATUS_APPROVED,
-                    'rejection_reason' => null,
-                    'approved_by' => $adminGedungUser->id,
-                    'approved_at' => $approvedAt,
-                    'created_at' => $createdAt,
-                    'updated_at' => $updatedAt,
-                ];
-            }
-        }
 
         $userBookingTemplates = [
             [
@@ -1311,7 +1189,7 @@ class DatabaseSeeder extends Seeder
      *   - Kadaluarsa       (expired)
      *   - Dibatalkan oleh User (cancelled_by_user)
      *
-     * Melibatkan: regular user, admin_unit, admin_gedung.
+     * Melibatkan: regular user (sebagai pemohon).
      */
     private function seedBookingsJuni(): void
     {
@@ -1442,35 +1320,6 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        // [4] Admin Gedung pertama — Kamis–Jumat 5–6 Juni — STATUS: Disetujui (multi-hari)
-        $adminGedung1 = $adminGedungUsers->first();
-        if ($adminGedung1) {
-            $room = Room::where('building_id', $adminGedung1->building_id)
-                ->where('is_active', true)->first();
-            if ($room) {
-                $approver = $getApprover($room);
-                $bookings[] = $this->makeBooking(
-                    userId: $adminGedung1->id,
-                    roomId: $room->id,
-                    startDate: '2026-06-05',
-                    endDate: '2026-06-06',
-                    startTime: '09:00:00',
-                    endTime: '16:00:00',
-                    agendaName: 'Workshop Manajemen Gedung',
-                    agendaDetail: 'Workshop 2 hari tentang manajemen dan perawatan fasilitas gedung.',
-                    picName: $adminGedung1->name,
-                    picPhone: '081211110004',
-                    participantCount: 20,
-                    status: Booking::STATUS_APPROVED,
-                    rejectionReason: null,
-                    approvedBy: $approver?->id,
-                    approvedAt: '2026-06-04 08:00:00',
-                    createdAt: '2026-06-02 09:00:00',
-                    updatedAt: '2026-06-04 08:00:00',
-                );
-            }
-        }
-
         // [5] User 1 — Jumat 6 Juni — STATUS: Kadaluarsa
         if ($regularUsers->get(0)) {
             $user = $regularUsers->get(0);
@@ -1523,36 +1372,6 @@ class DatabaseSeeder extends Seeder
                 createdAt: '2026-06-06 16:00:00',
                 updatedAt: '2026-06-06 16:00:00',
             );
-        }
-
-        // [7] Admin Unit pertama — Selasa 10 Juni — STATUS: Disetujui
-        $adminUnit1 = $adminUnitUsers->get(0);
-        if ($adminUnit1) {
-            $unitRooms = Room::whereHas('building', fn ($q) => $q->where('unit_id', $adminUnit1->unit_id))
-                ->where('is_active', true)->orderBy('id')->get();
-            $room = $unitRooms->first();
-            if ($room) {
-                $approver = $getApprover($room);
-                $bookings[] = $this->makeBooking(
-                    userId: $adminUnit1->id,
-                    roomId: $room->id,
-                    startDate: '2026-06-10',
-                    endDate: '2026-06-10',
-                    startTime: '13:00:00',
-                    endTime: '15:00:00',
-                    agendaName: 'Evaluasi Kinerja Unit',
-                    agendaDetail: 'Evaluasi pencapaian kinerja unit selama bulan Mei.',
-                    picName: $adminUnit1->name,
-                    picPhone: '081211110005',
-                    participantCount: 18,
-                    status: Booking::STATUS_APPROVED,
-                    rejectionReason: null,
-                    approvedBy: $approver?->id,
-                    approvedAt: '2026-06-09 10:00:00',
-                    createdAt: '2026-06-07 14:00:00',
-                    updatedAt: '2026-06-09 10:00:00',
-                );
-            }
         }
 
         // [8] User 3 — Rabu 11 Juni — STATUS: Dibatalkan oleh User
@@ -1636,35 +1455,6 @@ class DatabaseSeeder extends Seeder
         // MINGGU 3 — 16–20 Juni 2026
         // ════════════════════════════════════════════════════════════
 
-        // [11] Admin Gedung kedua — Senin 16 Juni — STATUS: Disetujui
-        $adminGedung2 = $adminGedungUsers->skip(1)->first();
-        if ($adminGedung2) {
-            $room = Room::where('building_id', $adminGedung2->building_id)
-                ->where('is_active', true)->first();
-            if ($room) {
-                $approver = $getApprover($room);
-                $bookings[] = $this->makeBooking(
-                    userId: $adminGedung2->id,
-                    roomId: $room->id,
-                    startDate: '2026-06-16',
-                    endDate: '2026-06-16',
-                    startTime: '09:00:00',
-                    endTime: '11:00:00',
-                    agendaName: 'Inspeksi Fasilitas Rutin',
-                    agendaDetail: 'Inspeksi rutin kesiapan fasilitas dan ruangan pertengahan bulan.',
-                    picName: $adminGedung2->name,
-                    picPhone: '081211110006',
-                    participantCount: 5,
-                    status: Booking::STATUS_APPROVED,
-                    rejectionReason: null,
-                    approvedBy: $approver?->id,
-                    approvedAt: '2026-06-14 10:00:00',
-                    createdAt: '2026-06-13 11:00:00',
-                    updatedAt: '2026-06-14 10:00:00',
-                );
-            }
-        }
-
         // [12] User 3 — Selasa 17 Juni — STATUS: Menunggu
         if ($regularUsers->get(2)) {
             $user = $regularUsers->get(2);
@@ -1714,36 +1504,6 @@ class DatabaseSeeder extends Seeder
                 createdAt: '2026-06-15 14:00:00',
                 updatedAt: '2026-06-17 11:00:00',
             );
-        }
-
-        // [14] Admin Unit kedua — Kamis–Jumat 19–20 Juni — STATUS: Disetujui (multi-hari)
-        $adminUnit2 = $adminUnitUsers->get(1);
-        if ($adminUnit2) {
-            $unitRooms = Room::whereHas('building', fn ($q) => $q->where('unit_id', $adminUnit2->unit_id))
-                ->where('is_active', true)->orderBy('capacity', 'desc')->get();
-            $room = $unitRooms->first();
-            if ($room) {
-                $approver = $getApprover($room);
-                $bookings[] = $this->makeBooking(
-                    userId: $adminUnit2->id,
-                    roomId: $room->id,
-                    startDate: '2026-06-19',
-                    endDate: '2026-06-20',
-                    startTime: '08:00:00',
-                    endTime: '17:00:00',
-                    agendaName: 'Seminar Inovasi Unit',
-                    agendaDetail: 'Seminar 2 hari tentang inovasi dan peningkatan proses kerja di unit.',
-                    picName: $adminUnit2->name,
-                    picPhone: '081211110007',
-                    participantCount: 45,
-                    status: Booking::STATUS_APPROVED,
-                    rejectionReason: null,
-                    approvedBy: $approver?->id,
-                    approvedAt: '2026-06-17 14:00:00',
-                    createdAt: '2026-06-14 10:00:00',
-                    updatedAt: '2026-06-17 14:00:00',
-                );
-            }
         }
 
         // [15] User 2 — Jumat 20 Juni — STATUS: Ditolak
@@ -1827,34 +1587,6 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        // [18] Admin Gedung ketiga — Rabu 25 Juni — STATUS: Menunggu
-        $adminGedung3 = $adminGedungUsers->skip(2)->first();
-        if ($adminGedung3) {
-            $room = Room::where('building_id', $adminGedung3->building_id)
-                ->where('is_active', true)->first();
-            if ($room) {
-                $bookings[] = $this->makeBooking(
-                    userId: $adminGedung3->id,
-                    roomId: $room->id,
-                    startDate: '2026-06-25',
-                    endDate: '2026-06-25',
-                    startTime: '09:00:00',
-                    endTime: '11:00:00',
-                    agendaName: 'Koordinasi Operasional',
-                    agendaDetail: 'Koordinasi operasional dan jadwal pemeliharaan akhir bulan.',
-                    picName: $adminGedung3->name,
-                    picPhone: '081211110008',
-                    participantCount: 12,
-                    status: Booking::STATUS_PENDING,
-                    rejectionReason: null,
-                    approvedBy: null,
-                    approvedAt: null,
-                    createdAt: '2026-06-23 11:00:00',
-                    updatedAt: '2026-06-23 11:00:00',
-                );
-            }
-        }
-
         // [19] User 2 — Kamis 26 Juni — STATUS: Dibatalkan oleh User
         if ($regularUsers->get(1)) {
             $user = $regularUsers->get(1);
@@ -1908,36 +1640,6 @@ class DatabaseSeeder extends Seeder
         // ════════════════════════════════════════════════════════════
         // AKHIR BULAN — 28–30 Juni 2026
         // ════════════════════════════════════════════════════════════
-
-        // [21] Admin Unit ketiga — 28–30 Juni — STATUS: Disetujui (multi-hari)
-        $adminUnit3 = $adminUnitUsers->get(2);
-        if ($adminUnit3) {
-            $unitRooms = Room::whereHas('building', fn ($q) => $q->where('unit_id', $adminUnit3->unit_id))
-                ->where('is_active', true)->orderBy('capacity', 'desc')->get();
-            $room = $unitRooms->first();
-            if ($room) {
-                $approver = $getApprover($room);
-                $bookings[] = $this->makeBooking(
-                    userId: $adminUnit3->id,
-                    roomId: $room->id,
-                    startDate: '2026-06-28',
-                    endDate: '2026-06-30',
-                    startTime: '08:00:00',
-                    endTime: '17:00:00',
-                    agendaName: 'Pelatihan Akhir Semester',
-                    agendaDetail: 'Program pelatihan akhir semester selama 3 hari untuk seluruh staf unit.',
-                    picName: $adminUnit3->name,
-                    picPhone: '081211110009',
-                    participantCount: 35,
-                    status: Booking::STATUS_APPROVED,
-                    rejectionReason: null,
-                    approvedBy: $approver?->id,
-                    approvedAt: '2026-06-25 10:00:00',
-                    createdAt: '2026-06-20 09:00:00',
-                    updatedAt: '2026-06-25 10:00:00',
-                );
-            }
-        }
 
         // [22] User 1 — 30 Juni — STATUS: Menunggu
         if ($regularUsers->get(0)) {

@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('pic_phone');
             $table->unsignedInteger('participant_count')->comment('Jumlah peserta yang akan menggunakan ruangan');
             $table->text('agenda_detail');
-            $table->enum('status', ['Menunggu', 'Disetujui', 'Ditolak', 'Kadaluarsa'])->default('Menunggu');
+            $table->enum('status', ['Menunggu', 'Disetujui', 'Ditolak', 'Kadaluarsa', 'Dibatalkan oleh User'])->default('Menunggu');
             $table->text('rejection_reason')->nullable();
             $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamp('approved_at')->nullable();
