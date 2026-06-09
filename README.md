@@ -125,7 +125,7 @@
 | Fitur | Guest | User | Admin Gedung | Admin Unit | Super Admin |
 |-------|:-----:|:----:|:------------:|:----------:|:-----------:|
 | Lihat agenda publik | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Buat reservasi | ❌ | ✅ | ✅ | ✅ | ❌ |
+| Buat reservasi | ❌ | ✅ | ❌ | ❌ | ❌ |
 | Approve/Reject | ❌ | ❌ | ✅ | ✅ | ❌ |
 | Reschedule booking | ❌ | ❌ | ✅ | ✅ | ❌ |
 | Kelola ruangan | ❌ | ❌ | ✅ | ✅ | ❌ |
